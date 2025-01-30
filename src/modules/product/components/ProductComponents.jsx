@@ -91,9 +91,7 @@ const ProductComponents = () => {
             </div>
           </div>
           <div className="col-span-2 row-span-3 col-start-4">
-            <div className="border">
-
-            </div>
+            <div className="border"></div>
           </div>
           <div className="col-span-3 row-span-2 row-start-4">3</div>
           <div className="col-span-2 row-span-2 col-start-4 row-start-4">4</div>
