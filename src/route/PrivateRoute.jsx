@@ -1,11 +1,9 @@
 /* eslint-disable react/prop-types */
-import { Navigate } from "react-router-dom";
-import useAuthStore from "../store";
-import { jwtDecode } from "jwt-decode";
+import { Navigate } from 'react-router-dom';
+import useAuthStore from '../store';
 
 export const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
-  
+	const { isAuthenticated } = useAuthStore();
 
-  return isAuthenticated ? <>{children}</> : <Navigate to="/auth/login" />;
+	return isAuthenticated ? <>{children}</> : <Navigate to='/auth/login' />;
 };

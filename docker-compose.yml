@@ -1,0 +1,9 @@
+services:
+  web:
+    build:
+      context: .
+    ports:
+      - '80:80'
+    volumes:
+      - ./dist:/usr/share/nginx/html
+    restart: always
