@@ -10,6 +10,7 @@ import useInfiniteScrollQuery from '../../../hooks/api/useInfiniteScrollQuery';
 const Recommenduem = ({ addFilter }) => {
 	const { id } = useParams();
 	const [formatFilters, setFormatFilter] = useState([]);
+	const [reData, setReData] = useState([]);
 
 	useEffect(() => {
 		const valueFilter = addFilter.map(item => ({
@@ -19,11 +20,21 @@ const Recommenduem = ({ addFilter }) => {
 		setFormatFilter(valueFilter);
 	}, [addFilter]);
 
-	const filterValue = formatFilters?.map(item => item?.filter);
+	useEffect(() => {
+		const filterValue = formatFilters?.map(item => item?.filter);
+		const minMaxValues = filterValue.filter(item => typeof item === 'object');
+
+		const min = minMaxValues.map(item => item?.min);
+		const max = minMaxValues.map(item => item?.max);
+
+		setReData({ min, max });
+	}, [formatFilters]);
 
 	const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
 		useInfiniteScrollQuery({
-			key: `${KEYS.product_list}/${filterValue}/${id}`,
+			key: `${KEYS.product_list}_${
+				JSON.stringify(formatFilters) || JSON.stringify(reData)
+			}/${id}`,
 			url: URLS.product_list,
 			elements: {
 				search: '',

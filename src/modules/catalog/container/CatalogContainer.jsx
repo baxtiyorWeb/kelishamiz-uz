@@ -1,7 +1,9 @@
 import { get, isArray, isEqual } from 'lodash';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import KEYS from '../../../export/keys';
+import URLS from '../../../export/urls';
 import useGetAllQuery from '../../../hooks/api/useGetAllQuery';
 import CatalogComponents from '../components/CatalogComponents';
 
@@ -11,6 +13,7 @@ const CatalogContainer = () => {
 	const [value, setValue] = useState('');
 	const [selectedFilter, setSelectedFilter] = useState({});
 	const [addFilter, setAddFilter] = useState([]);
+	const [initaliValue, setInitialValue] = useState(null);
 
 	const handleFilter = item => {
 		setAddFilter(prevFilters => {
@@ -37,6 +40,8 @@ const CatalogContainer = () => {
 				];
 			}
 		});
+
+		setInitialValue(item);
 	};
 
 	const { data } = useGetAllQuery({
@@ -64,12 +69,35 @@ const CatalogContainer = () => {
 		? get(getFilters, 'data.data')
 		: [];
 
+	const { data: parentCategory } = useGetAllQuery({
+		key: `${KEYS.category_list}_${id}`,
+		url: `${URLS.category_list}?parentId=${id}`,
+		enabled: !!id,
+	});
+
+	const subCategoryList = isArray(get(parentCategory, 'data.data.content', []))
+		? get(parentCategory, 'data.data.content', [])
+		: [];
+
 	const filterTypeChange = (value, id, name, item) => {
+		let minMax = value;
+
+		const max = Number(value.max);
+		const min = Number(value.min);
+
+		if (minMax.max && minMax.min) {
+			minMax = { min, max };
+		} else if (minMax.max) {
+			minMax = { min, max };
+		} else if (minMax.min) {
+			minMax = { min, max };
+		}
+
 		const isFilterType =
-			get(item, '?.valueTypeDto.typeName') === 'NUMBER'
+			get(item, 'valueTypeDto.typeName') === 'DOUBLE' ||
+			get(item, 'valueTypeDto.typeName') === 'INTEGER'
 				? {
-						min: value,
-						max: value,
+						...minMax,
 				  }
 				: value;
 
@@ -130,6 +158,7 @@ const CatalogContainer = () => {
 								filterTypeChange(
 									{
 										min: e.target.value,
+										max: initaliValue?.filter?.max || 0,
 									},
 									get(item, 'id'),
 									get(item, 'name'),
@@ -149,6 +178,7 @@ const CatalogContainer = () => {
 							onChange={e =>
 								filterTypeChange(
 									{
+										min: initaliValue?.filter?.min || 0,
 										max: e.target.value,
 									},
 									get(item, 'id'),
@@ -213,6 +243,15 @@ const CatalogContainer = () => {
 		<div className='mt-10'>
 			<div className='grid grid-cols-12 grid-rows-7 gap-4'>
 				<div className='row-span-7 col-span-3'>
+					{subCategoryList?.map(item => {
+						return (
+							<div key={get(item, 'id')}>
+								<Link to={`/catalog/${get(item, 'id')}`}>
+									{get(item, 'name')}
+								</Link>
+							</div>
+						);
+					})}
 					<div className='border px-1'>
 						{items?.map(item => (
 							<div

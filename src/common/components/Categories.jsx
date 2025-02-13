@@ -11,6 +11,7 @@ const Categories = () => {
 			params: {
 				page: 2,
 				size: 10,
+				parentId: null,
 			},
 		},
 	});
