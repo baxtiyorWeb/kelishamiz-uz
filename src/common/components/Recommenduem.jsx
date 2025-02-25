@@ -30,7 +30,7 @@ const Recommenduem = () => {
 		: [];
 
 	return (
-		<div>
+		<div className='mt-14'>
 			<InfiniteScroll
 				dataLength={items?.length}
 				next={fetchNextPage}
@@ -39,7 +39,7 @@ const Recommenduem = () => {
 				style={{ width: '100%', paddingTop: 15 }}
 				pullDownToRefreshThreshold={50}
 			>
-				<div className={`response_product_category grid grid-cols-5 gap-5 `}>
+				<div className={`response_product_category grid grid-cols-5 gap-4  `}>
 					{items?.map((item, index) => (
 						<ItemCard key={index} item={item} />
 					))}

@@ -2,6 +2,7 @@
 
 import { get, isArray } from 'lodash';
 import { useEffect, useState } from 'react';
+import api from '../../../config/auth/api';
 import KEYS from '../../../export/keys';
 import URLS from '../../../export/urls';
 import useGetAllQuery from '../../../hooks/api/useGetAllQuery';
@@ -60,7 +61,6 @@ const AddItemContainer = () => {
 			categoryId: id,
 		}));
 
-		// Reset sub-categories when a new main category is selected
 		if (saveIds.length === 1) {
 			setData(prev => ({
 				...prev,
@@ -148,8 +148,8 @@ const AddItemContainer = () => {
 
 	// to'lov turini olish
 	const { data: paymentType } = useGetAllQuery({
-		key: `${KEYS.payment_type}`, // Updated: key for payment type
-		url: `${URLS.payment_type}`, // Updated: URL for payment type
+		key: `${KEYS.payment_type}`,
+		url: `${URLS.payment_type}`,
 	});
 
 	const paymentTypeItems = isArray(get(paymentType, 'data.data'))
@@ -179,7 +179,6 @@ const AddItemContainer = () => {
 
 	const onFileChange = event => {
 		const files = Array.from(event.target.files);
-		console.log(files);
 
 		setFileList(prev => ({
 			...prev,
@@ -215,9 +214,8 @@ const AddItemContainer = () => {
 					onSuccess: res => {
 						const id = res?.data?.data?.id;
 						if (id) {
-							console.log(`Fayl yuklandi: ${file.name}, ID: ${id}`);
-
 							setData(prev => ({
+								...data,
 								files: [
 									...prev.files,
 									{
@@ -260,14 +258,12 @@ const AddItemContainer = () => {
 	};
 
 	useEffect(() => {
-		console.log(data);
 		setSaveData(data);
 	}, [data]);
 
 	const fetchSubCategories = async parentId => {
 		try {
-			// Replace with your actual API call to fetch subcategories
-			const response = await fetch(`/api/categories?parentId=${parentId}`);
+			const response = await api.get(`${URLS.category_list}?${parentId}`);
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
@@ -275,7 +271,7 @@ const AddItemContainer = () => {
 			return subCategories;
 		} catch (error) {
 			console.error('Error fetching subcategories:', error);
-			return []; // Return an empty array on error
+			return [];
 		}
 	};
 
@@ -292,62 +288,6 @@ const AddItemContainer = () => {
 
 	return (
 		<div className='min-h-screen bg-gray-50'>
-			{/* Header */}
-			<header className='bg-white border-b'>
-				<div className='container mx-auto px-4 py-2 flex justify-between items-center'>
-					<div className='flex items-center space-x-4'>
-						<button className='text-gray-600 hover:text-gray-800'>
-							<span className='flex items-center'>
-								<svg
-									className='w-5 h-5 mr-2'
-									fill='none'
-									stroke='currentColor'
-									viewBox='0 0 24 24'
-								>
-									<path
-										strokeLinecap='round'
-										strokeLinejoin='round'
-										strokeWidth='2'
-										d='M4 6h16M4 12h16M4 18h16'
-									/>
-								</svg>
-								Kategoriya
-							</span>
-						</button>
-						<button className='text-gray-600 hover:text-gray-800'>
-							<span className='flex items-center'>
-								<svg
-									className='w-5 h-5 mr-2'
-									fill='none'
-									stroke='currentColor'
-									viewBox='0 0 24 24'
-								>
-									<path
-										strokeLinecap='round'
-										strokeLinejoin='round'
-										strokeWidth='2'
-										d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
-									/>
-									<path
-										strokeLinecap='round'
-										strokeLinejoin='round'
-										strokeWidth='2'
-										d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'
-									/>
-								</svg>
-								O'zbekiston
-							</span>
-						</button>
-					</div>
-					<div className='flex items-center space-x-4'>
-						<button className='text-teal-600 border border-teal-600 px-4 py-2 rounded-md hover:bg-teal-50'>
-							Qo'shish
-						</button>
-					</div>
-				</div>
-			</header>
-
-			{/* Main Form */}
 			<main className='container mx-auto px-4 py-8'>
 				<div className='max-w-4xl mx-auto bg-white rounded-lg shadow p-6'>
 					<h1 className='text-2xl font-semibold mb-6'>Kartira</h1>
@@ -364,7 +304,7 @@ const AddItemContainer = () => {
 										</label>
 										<select
 											onChange={e => onCategoryChange(e.target.value)}
-											className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+											className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 										>
 											<option value=''>Kategoriyani tanlang</option>
 											{categoriesData[id]?.map(item => (
@@ -385,7 +325,7 @@ const AddItemContainer = () => {
 									</label>
 									<select
 										onChange={e => onCategoryChange(e.target.value)}
-										className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+										className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 									>
 										<option value=''>Kategoriyani tanlang</option>
 										{categoryItems?.map(item => (
@@ -403,7 +343,7 @@ const AddItemContainer = () => {
 								</label>
 								<select
 									onChange={e => onRegionChange(e.target.value)}
-									className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+									className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 								>
 									<option value=''>Hududni tanlang</option>
 									{regionItems?.map(item => (
@@ -420,7 +360,7 @@ const AddItemContainer = () => {
 								</label>
 								<input
 									type='text'
-									className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+									className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 									placeholder="E'lon nomini kiriting"
 									value={data.name}
 									onChange={e =>
@@ -438,7 +378,7 @@ const AddItemContainer = () => {
 								</label>
 								<input
 									type='tel'
-									className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+									className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 									placeholder='+998'
 								/>
 							</div>
@@ -450,7 +390,7 @@ const AddItemContainer = () => {
 									</label>
 									<select
 										onChange={e => onDistrictChange(e.target.value)}
-										className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+										className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 									>
 										<option value=''>Tumanni tanlang</option>
 										{districtItems?.map(item => (
@@ -486,7 +426,7 @@ const AddItemContainer = () => {
 														e.target.value
 													)
 												}
-												className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+												className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 												placeholder={`${item.name}ni kiriting`}
 											/>
 										)}
@@ -500,7 +440,7 @@ const AddItemContainer = () => {
 														e.target.value
 													)
 												}
-												className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+												className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 												placeholder='0'
 											/>
 										)}
@@ -517,7 +457,7 @@ const AddItemContainer = () => {
 													}
 													className='sr-only peer'
 												/>
-												<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+												<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-btnColor/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-btnColor"></div>
 												<span className='ml-3 text-sm font-medium text-gray-700'>
 													{item.name}
 												</span>
@@ -534,7 +474,7 @@ const AddItemContainer = () => {
 														e.target.value
 													)
 												}
-												className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+												className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 												placeholder='0.00'
 											/>
 										)}
@@ -548,7 +488,7 @@ const AddItemContainer = () => {
 														e.target.value
 													)
 												}
-												className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+												className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 											/>
 										)}
 									</div>
@@ -564,7 +504,7 @@ const AddItemContainer = () => {
 						</label>
 						<textarea
 							rows={4}
-							className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+							className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 							placeholder="Batafsil ma'lumot kiriting"
 							value={data.description}
 							onChange={e =>
@@ -582,7 +522,7 @@ const AddItemContainer = () => {
 							</label>
 							<select
 								onChange={e => onSellTypeChange(e.target.value)}
-								className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+								className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 							>
 								<option value=''>Narx turini tanlang</option>
 								{sellTypeItems?.map(item => (
@@ -600,7 +540,7 @@ const AddItemContainer = () => {
 							</label>
 							<select
 								onChange={e => onPaymentTypeChange(e.target.value)}
-								className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+								className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 							>
 								<option value=''>To'lov turini tanlang</option>
 								{paymentTypeItems?.map(item => (
@@ -615,7 +555,7 @@ const AddItemContainer = () => {
 								Valyuta turi
 							</label>
 							<div className='grid grid-cols-2 gap-2'>
-								<button className='p-2 bg-teal-600 text-white rounded-md'>
+								<button className='p-2 bg-btnColor text-white rounded-md'>
 									UZS
 								</button>
 								<button className='p-2 border border-gray-300 rounded-md'>
@@ -629,7 +569,7 @@ const AddItemContainer = () => {
 							</label>
 							<input
 								type='text'
-								className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+								className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 								placeholder='Narxni kiriting'
 								value={data.price}
 								onChange={e =>
@@ -650,7 +590,7 @@ const AddItemContainer = () => {
 									setData(prev => ({ ...prev, canAgree: e.target.checked }))
 								}
 							/>
-							<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+							<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-btnColor/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-btnColor"></div>
 							<span className='ml-3 text-sm font-medium text-gray-700'>
 								Kelishish mumkin
 							</span>
@@ -663,7 +603,7 @@ const AddItemContainer = () => {
 						</label>
 						<input
 							type='text'
-							className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500'
+							className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-btnColor'
 							placeholder='Manzilni kiriting'
 							value={data.address}
 							onChange={e =>
@@ -742,7 +682,7 @@ const AddItemContainer = () => {
 					<div className='mt-8 flex space-x-4'>
 						<button
 							onClick={handleAddProduct}
-							className='flex-1 bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700 transition duration-200'
+							className='flex-1 bg-btnColor text-white py-2 px-4 rounded-md hover:bg-btnColor/80 transition duration-200'
 						>
 							E'lonni yuklash
 						</button>

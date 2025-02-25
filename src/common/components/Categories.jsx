@@ -21,9 +21,9 @@ const Categories = () => {
 		: [];
 
 	return (
-		<div className='flex justify-between items-center px-32'>
+		<div className='flex  justify-between items-center px-10'>
 			{items.map((item, index) => (
-				<div key={index}>
+				<div key={index} className='relative mb-10'>
 					<Link
 						key={get(item, 'id')}
 						to={`/catalog/${get(item, 'id')}`}
@@ -34,7 +34,7 @@ const Categories = () => {
 							className='xs:p-1 my-2 xl:w-[80px_!important] xl:h-[80px_!important] h-[100px] w-[100px] rounded-full  border border-bgColor object-cover p-[10px]   xs:h-[60px_!important] xs:w-[60px_!important]'
 							alt=''
 						/>
-						<span className='mt-3 text-center font-poppins font-normal  not-italic  leading-[100%] text-textDarkColor group-hover:text-bgColor xs:text-xs'>
+						<span className='mt-3 text-center font-poppins font-normal  not-italic  leading-[100%] text-textDarkColor group-hover:text-bgColor xs:text-xs absolute -bottom-8'>
 							{get(item, 'name')}
 						</span>
 					</Link>

@@ -1,5 +1,6 @@
 const KEYS = {
 	categories: 'category_all',
+	category: 'category',
 	category_list: 'category_list',
 	category_properties: 'category_properties',
 	category_filter: 'category_filter',
