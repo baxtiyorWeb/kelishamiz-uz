@@ -7,7 +7,7 @@ const ItemCard = ({ item, index }) => {
 		<div
 			className={` ${
 				index ? 'animation' : ''
-			} relative h-[460px]  flex-shrink-0 rounded-md px-[10px] pt-2 transition-all hover:shadow-lg xs:h-[368px] `}
+			} relative h-[460px]  flex-shrink-0 rounded-md px-[10px] pt-2 transition-all hover:shadow-lg xs:h-[368px] shadow-md`}
 		>
 			<span className='absolute left-3 top-5 z-50 bg-red-500 px-1 text-sm text-white'>
 				TOP

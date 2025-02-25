@@ -23,7 +23,6 @@ const ProductComponents = () => {
 		? get(item, 'propertyValues', [])
 		: [];
 
-	// Asosiy katta rasmni olish (selected bo'lmasa, birinchi rasm chiqadi)
 	const mainImage = selected || head(item?.files)?.file?.fileBase64;
 
 	const renderProperties = (typeName, item) => {
@@ -69,8 +68,8 @@ const ProductComponents = () => {
 			<div className='container mt-10'>
 				<div className='grid grid-cols-5 gap-4 auto-rows-min'>
 					{/* Asosiy katta rasm joyi */}
-					<div className='col-span-3 row-span-3 border'>
-						<div className='border w-full'>
+					<div className='col-span-3 row-span-3 '>
+						<div className=' w-full'>
 							<div
 								className={`h-[400px] select-none overflow-clip rounded-2xl border bg-gray-500/20 bg-center w-full mb-5 transition-transform duration-500 ease-in-out`}
 								style={{
@@ -110,7 +109,7 @@ const ProductComponents = () => {
 					</div>
 
 					{/* Pastki tafsilotlar qismi */}
-					<div className='col-span-3 row-span-2 border p-4 space-y-5 mb-24'>
+					<div className='col-span-3 row-span-2  p-4 space-y-5 mb-24'>
 						<div className='flex justify-start items-center space-x-3'>
 							<span className='text-[12px] font-normal leading-[18px] text-[#959EA7]'>
 								{get(item, 'address')}

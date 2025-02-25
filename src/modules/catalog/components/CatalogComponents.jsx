@@ -15,7 +15,7 @@ const Recommenduem = ({ addFilter }) => {
 	useEffect(() => {
 		const valueFilter = addFilter.map(item => ({
 			...item,
-			filter: Array.isArray(item.filter) ? item.filter : item.filter, // Ens uri ng filt er is always an array
+			filter: Array.isArray(item.filter) ? item.filter : item.filter,
 		}));
 		setFormatFilter(valueFilter);
 	}, [addFilter]);

@@ -1,14 +1,20 @@
+import { get } from 'lodash';
 import { Heart, MapPin, Menu, Search, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import useGetUser from '../../hooks/services/useGetUser';
+import useAuthStore from '../../store';
 import { ButtonUI } from '../ui/ButtonUI';
 import HeaderCatalog from './HeaderCatalog';
 
 const Header = () => {
 	const [isOpen, setisOpen] = useState(false);
+	const user = useGetUser();
+	const { isAuthenticated } = useAuthStore();
+
 	return (
-		<>
-			{isOpen && <HeaderCatalog isOpen={isOpen} />}
+		<div className='h-[150px] flex justify-center items-center'>
+			{isOpen && <HeaderCatalog setisOpen={setisOpen} isOpen={isOpen} />}
 			<div className={`grid grid-cols-12 w-full`}>
 				<div className='col-span-4 flex justify-between items-center'>
 					<Link to={'/'}>
@@ -18,7 +24,6 @@ const Header = () => {
 							className='h-[60px] w-[180px] object-cover'
 						/>
 					</Link>
-
 					<div className='flex justify-center items-center space-x-3'>
 						<div onClick={() => setisOpen(!isOpen)}>
 							<ButtonUI>
@@ -59,7 +64,10 @@ const Header = () => {
 				<div className='col-span-4 flex justify-end items-center  w-full'>
 					<div className={'  flex justify-around items-center w-full  '}>
 						<div className=' flex justify-center items-center '>
-							<Link className='flex h-[35px] items-center justify-center rounded-md  bg-btnColor px-3 py-2 '>
+							<Link
+								to={'http://localhost:5173/add-item'}
+								className='flex h-[35px] items-center justify-center rounded-md  bg-btnColor px-3 py-2 '
+							>
 								<span className='text text-center text-[16px] text-textColor '>
 									E&apos;lon qo&apos;shish
 								</span>
@@ -77,15 +85,27 @@ const Header = () => {
 							</Link>
 						</div>
 						<div className=' flex justify-center items-center '>
-							<Link
-								to={`#`}
-								className='flex flex-col items-center justify-center'
-							>
-								<User className='text text-base  text-btnDarkColor font-poppins' />
-								<span className='text text-[16px] text-textPrimaryColor'>
-									kabinet
-								</span>
-							</Link>
+							{isAuthenticated ? (
+								<Link
+									to={`/user/${get(user, 'id')}`}
+									className='flex flex-col items-center justify-center'
+								>
+									<User className='text text-base  text-btnDarkColor font-poppins' />
+									<span className='text text-[16px] text-textPrimaryColor'>
+										kabinet
+									</span>
+								</Link>
+							) : (
+								<Link
+									to={`/auth/login`}
+									className='flex flex-col items-center justify-center'
+								>
+									<User className='text text-base  text-btnDarkColor font-poppins' />
+									<span className='text text-[16px] text-textPrimaryColor'>
+										login
+									</span>
+								</Link>
+							)}
 						</div>
 						<div className=' flex justify-center items-center '>
 							<select name='' id=''>
@@ -97,7 +117,7 @@ const Header = () => {
 					</div>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 };
 

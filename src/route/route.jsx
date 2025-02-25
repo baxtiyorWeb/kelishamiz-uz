@@ -6,6 +6,7 @@ import AddItem from '../modules/add-item/pages/AddItem.jsx';
 import Login from '../modules/auth/pages/Login';
 import CatalogPage from '../modules/catalog/pages/CatalogPage.jsx';
 import ProductPages from '../modules/product/pages/ProductPages';
+import UserPage from '../modules/user/pages/userPage.jsx';
 import { PrivateRoute } from './PrivateRoute.jsx';
 
 export const AppRouter = () => {
@@ -23,6 +24,7 @@ export const AppRouter = () => {
 				<Route path='detail/:id' element={<ProductPages />} />
 				<Route path='catalog/:id' element={<CatalogPage />} />
 				<Route path='add-item' element={<AddItem />} />
+				<Route path='user/:id' element={<UserPage />} />
 			</Route>
 
 			<Route path='/auth' element={<AuthLayout />}>
