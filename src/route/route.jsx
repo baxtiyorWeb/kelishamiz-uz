@@ -7,7 +7,7 @@ import Login from '../modules/auth/pages/Login';
 import CatalogPage from '../modules/catalog/pages/CatalogPage.jsx';
 import ProductPages from '../modules/product/pages/ProductPages';
 import UserPage from '../modules/user/pages/userPage.jsx';
-import { PrivateRoute } from './PrivateRoute.jsx';
+import PrivateRoute from './PrivateRoute.jsx';
 
 export const AppRouter = () => {
 	return (
