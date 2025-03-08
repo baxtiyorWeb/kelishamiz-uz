@@ -4,6 +4,7 @@ import useAuthStore from '../store';
 
 export const PrivateRoute = ({ children }) => {
 	const { isAuthenticated } = useAuthStore();
+	console.log(isAuthenticated);
 
 	return isAuthenticated ? <>{children}</> : <Navigate to='/auth/login' />;
 };
