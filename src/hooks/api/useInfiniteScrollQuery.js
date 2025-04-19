@@ -35,14 +35,20 @@ const useInfiniteScrollQuery = ({
 		isFetchingNextPage,
 	} = useInfiniteQuery(
 		key,
-		({ pageParam = initialPageParam }) =>
-			api
+		({ pageParam = initialPageParam }) => {
+			const page = pageParam; // `pageParam`ni oling
+			const limit = elements.limit || 10; // Limitni olish (agar elements.da limit yo'q bo'lsa, default 10)
+
+			const skip = (page - 1) * limit; // `skip`ni sahifa va limitga moslashtiring
+
+			return api
 				.post(
 					url,
 					{
-						page: pageParam,
-
-						...elements,
+						page, // Sahifa raqami
+						limit, // Limit
+						skip, // Offset
+						...elements, // Boshqa parametrlar
 					},
 					{
 						headers: {
@@ -50,15 +56,15 @@ const useInfiniteScrollQuery = ({
 						},
 					}
 				)
-				.then(response => response?.data?.data)
+				.then(response => response?.data?.content)
 				.catch(error => {
 					console.error('Error fetching data:', error);
 					throw error;
-				}),
-
+				});
+		},
 		{
 			getNextPageParam: (lastPage, allPages) => {
-				return lastPage?.length ? allPages?.length : undefined;
+				return lastPage?.length > 0 ? allPages?.length + 1 : undefined;
 			},
 			enabled,
 			...options,
