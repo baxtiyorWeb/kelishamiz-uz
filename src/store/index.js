@@ -9,8 +9,8 @@ const useAuthStore = create((set, getState) => ({
 
 	login: async credentials => {
 		try {
-			const response = await api.post('/authority/sign-in', credentials);
-			const { accessToken, refreshToken } = get(response, 'data.data');
+			const response = await api.post('/auth/login', credentials);
+			const { accessToken, refreshToken } = get(response, 'data.content');
 
 			set({
 				accessToken,

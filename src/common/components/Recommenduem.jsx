@@ -7,27 +7,32 @@ import ItemCard from './ItemCard';
 const Recommenduem = () => {
 	const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
 		useInfiniteScrollQuery({
-			key: KEYS.product_list,
-			url: URLS.product_list,
+			key: KEYS.product_filter,
+			url: URLS.product_filter,
 			elements: {
-				search: '',
-				size: 5,
-				lang: '',
-				categoryId: 0,
-				districtId: 0,
+				categoryId: 1,
+				minPrice: 10000000,
+				maxPrice: 13000000,
+				title: 'Redmi',
+				ownProduct: false,
+				properties: null,
+				page: 1, // Sahifa raqami
+				limit: 5, // Sahifa boshiga keladigan mahsulotlar soni
+				sortBy: 'price',
+				sortOrder: 'DESC',
+				paymentType: 'Pullik',
+				currencyType: 'UZS',
+				negotiable: true,
 				regionId: 0,
-				paymentTypeId: 0,
-				sellTypeId: 0,
-				ownProducts: false,
-				userId: 0,
-				valueFilter: [],
-				productIdList: [],
+				districtId: 0,
 			},
 		});
 
 	const items = isArray(get(data, 'pages', []))
 		? get(data, 'pages', []).flat()
 		: [];
+
+	console.log(items);
 
 	return (
 		<div className='mt-14'>

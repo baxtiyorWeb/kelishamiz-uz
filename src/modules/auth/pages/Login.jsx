@@ -1,7 +1,7 @@
-import { LoginComponent } from "../../../common/components/auth/LoginComponent";
+import { LoginComponent } from '../../../common/components/auth/LoginComponent';
 
 const Login = () => {
-  return <LoginComponent />;
+	return <LoginComponent />;
 };
 
 export default Login;

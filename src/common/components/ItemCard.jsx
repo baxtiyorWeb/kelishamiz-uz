@@ -20,7 +20,7 @@ const ItemCard = ({ item, index }) => {
 					>
 						<div className='h-[200px]  xs:h-[100%_!important] xs:w-[100%_!important]'>
 							<img
-								src={`data:image/png;base64,${get(item, 'file.fileBase64')}`}
+								src={`${get(item, 'imageUrl')}`}
 								alt='img'
 								width={'100%'}
 								height={'200px'}
