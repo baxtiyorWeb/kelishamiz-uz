@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import api from '../../../config/auth/api';
 
 const AddItemContainer = () => {
-	// Form state
 	const [formData, setFormData] = useState({
 		title: '',
 		description: '',
@@ -32,20 +31,17 @@ const AddItemContainer = () => {
 	const [isLoadingProperties, setIsLoadingProperties] = useState(false);
 	const [uploadingImages, setUploadingImages] = useState([]);
 
-	// Data states
 	const [categories, setCategories] = useState([]);
 	const [subcategories, setSubcategories] = useState([]);
 	const [regions, setRegions] = useState([]);
 	const [districts, setDistricts] = useState([]);
 	const [categoryProperties, setCategoryProperties] = useState([]);
 
-	// Fetch initial data
 	useEffect(() => {
 		fetchCategories();
 		fetchRegions();
 	}, []);
 
-	// Fetch categories
 	const fetchCategories = async () => {
 		setIsLoadingCategories(true);
 		try {
@@ -62,7 +58,6 @@ const AddItemContainer = () => {
 		}
 	};
 
-	// Fetch subcategories when category changes
 	useEffect(() => {
 		if (formData.categoryId) {
 			fetchSubcategories(formData.categoryId);
@@ -70,7 +65,6 @@ const AddItemContainer = () => {
 		}
 	}, [formData.categoryId]);
 
-	// Fetch subcategories
 	const fetchSubcategories = async categoryId => {
 		setIsLoadingSubcategories(true);
 		try {
@@ -86,7 +80,6 @@ const AddItemContainer = () => {
 		}
 	};
 
-	// Fetch category properties
 	const fetchCategoryProperties = async categoryId => {
 		setIsLoadingProperties(true);
 		try {
@@ -94,7 +87,6 @@ const AddItemContainer = () => {
 			if (response.data.success) {
 				setCategoryProperties(response.data.content.properties || []);
 
-				// Initialize properties array with empty values
 				const initialProperties = (response.data.content.properties || []).map(
 					prop => ({
 						propertyId: prop.id,
@@ -119,7 +111,6 @@ const AddItemContainer = () => {
 		}
 	};
 
-	// Fetch regions
 	const fetchRegions = async () => {
 		setIsLoadingRegions(true);
 		try {
@@ -145,7 +136,6 @@ const AddItemContainer = () => {
 		}
 	}, [formData.regionId]);
 
-	// Fetch districts
 	const fetchDistricts = async regionId => {
 		setIsLoadingDistricts(true);
 		try {
@@ -161,7 +151,6 @@ const AddItemContainer = () => {
 		}
 	};
 
-	// Handle form input changes
 	const handleChange = e => {
 		const { name, value, type, checked } = e.target;
 		setFormData(prev => ({
@@ -170,7 +159,6 @@ const AddItemContainer = () => {
 		}));
 	};
 
-	// Handle property value changes
 	const handlePropertyChange = (propertyId, value) => {
 		setFormData(prev => ({
 			...prev,
@@ -182,7 +170,6 @@ const AddItemContainer = () => {
 		}));
 	};
 
-	// Handle image upload
 	const uploadImage = async file => {
 		const formData = new FormData();
 		formData.append('file', file);
@@ -205,13 +192,11 @@ const AddItemContainer = () => {
 		}
 	};
 
-	// Handle main image drop
 	const onMainImageDrop = useCallback(async acceptedFiles => {
 		if (acceptedFiles.length === 0) return;
 
 		const file = acceptedFiles[0];
 
-		// Add to uploading state
 		const uploadId = Date.now().toString();
 		setUploadingImages(prev => [
 			...prev,
@@ -219,41 +204,32 @@ const AddItemContainer = () => {
 		]);
 
 		try {
-			// Upload the image
 			const imageUrl = await uploadImage(file);
 
-			// Update progress
 			setUploadingImages(prev =>
 				prev.map(img => (img.id === uploadId ? { ...img, progress: 100 } : img))
 			);
 
-			// Set as main image
 			setFormData(prev => ({ ...prev, mainImage: imageUrl }));
 
-			// Remove from uploading state after a delay
 			setTimeout(() => {
 				setUploadingImages(prev => prev.filter(img => img.id !== uploadId));
 			}, 1000);
 		} catch (error) {
-			// Update uploading state to show error
 			setUploadingImages(prev =>
 				prev.map(img => (img.id === uploadId ? { ...img, error: true } : img))
 			);
 
-			// Remove from uploading state after a delay
 			setTimeout(() => {
 				setUploadingImages(prev => prev.filter(img => img.id !== uploadId));
 			}, 3000);
 		}
 	}, []);
 
-	// Handle additional images drop
 	const onAdditionalImagesDrop = useCallback(async acceptedFiles => {
 		if (acceptedFiles.length === 0) return;
 
-		// Process each file sequentially
 		for (const file of acceptedFiles) {
-			// Add to uploading state
 			const uploadId =
 				Date.now().toString() + Math.random().toString(36).substring(2, 9);
 			setUploadingImages(prev => [
@@ -262,44 +238,36 @@ const AddItemContainer = () => {
 			]);
 
 			try {
-				// Upload the image
 				const imageUrl = await uploadImage(file);
 
-				// Update progress
 				setUploadingImages(prev =>
 					prev.map(img =>
 						img.id === uploadId ? { ...img, progress: 100 } : img
 					)
 				);
 
-				// Add to images array
 				setFormData(prev => ({
 					...prev,
 					images: [...prev.images, imageUrl],
 				}));
 
-				// Remove from uploading state after a delay
 				setTimeout(() => {
 					setUploadingImages(prev => prev.filter(img => img.id !== uploadId));
 				}, 1000);
 			} catch (error) {
-				// Update uploading state to show error
 				setUploadingImages(prev =>
 					prev.map(img => (img.id === uploadId ? { ...img, error: true } : img))
 				);
 
-				// Remove from uploading state after a delay
 				setTimeout(() => {
 					setUploadingImages(prev => prev.filter(img => img.id !== uploadId));
 				}, 3000);
 			}
 
-			// Add a small delay between uploads
 			await new Promise(resolve => setTimeout(resolve, 500));
 		}
 	}, []);
 
-	// Dropzone hooks
 	const mainImageDropzone = useDropzone({
 		onDrop: onMainImageDrop,
 		accept: {
@@ -316,7 +284,6 @@ const AddItemContainer = () => {
 		maxFiles: 10,
 	});
 
-	// Remove an additional image
 	const removeAdditionalImage = index => {
 		setFormData(prev => ({
 			...prev,
@@ -324,11 +291,9 @@ const AddItemContainer = () => {
 		}));
 	};
 
-	// Handle form submission
 	const handleSubmit = async e => {
 		e.preventDefault();
 
-		// Validate form
 		if (!formData.title.trim()) {
 			toast.error('Iltimos, sarlavhani kiriting');
 			return;
@@ -368,7 +333,6 @@ const AddItemContainer = () => {
 			return;
 		}
 
-		// Prepare data for submission
 		const submitData = {
 			...formData,
 			price: Number(formData.price),
@@ -424,7 +388,6 @@ const AddItemContainer = () => {
 							<h2 className='text-lg font-semibold mb-4'>Asosiy ma'lumotlar</h2>
 
 							<div className='space-y-4'>
-								{/* Title */}
 								<div>
 									<label
 										htmlFor='title'
@@ -444,7 +407,6 @@ const AddItemContainer = () => {
 									/>
 								</div>
 
-								{/* Description */}
 								<div>
 									<label
 										htmlFor='description'
@@ -464,7 +426,6 @@ const AddItemContainer = () => {
 									/>
 								</div>
 
-								{/* Price */}
 								<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
 									<div>
 										<label
@@ -537,7 +498,6 @@ const AddItemContainer = () => {
 							</div>
 						</div>
 
-						{/* Category Selection */}
 						<div className='bg-white rounded-lg shadow-sm p-6'>
 							<h2 className='text-lg font-semibold mb-4'>Kategoriya</h2>
 
@@ -607,7 +567,6 @@ const AddItemContainer = () => {
 							</div>
 						</div>
 
-						{/* Properties - Show only if properties exist */}
 						{categoryProperties.length > 0 && (
 							<div className='bg-white rounded-lg shadow-sm p-6'>
 								<h2 className='text-lg font-semibold mb-4'>Xususiyatlar</h2>
@@ -716,12 +675,10 @@ const AddItemContainer = () => {
 							</div>
 						)}
 
-						{/* Location */}
 						<div className='bg-white rounded-lg shadow-sm p-6'>
 							<h2 className='text-lg font-semibold mb-4'>Joylashuv</h2>
 
 							<div className='space-y-4'>
-								{/* Region and District */}
 								<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
 									<div>
 										<label
