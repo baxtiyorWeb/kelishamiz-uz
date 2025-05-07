@@ -413,7 +413,7 @@ const AddItemContainer = () => {
 	return (
 		<div className='bg-gray-50 min-h-screen py-8'>
 			<div className='container mx-auto px-4'>
-				<div className='max-w-3xl mx-auto'>
+				<div className='max-w-full mx-auto'>
 					<h1 className='text-2xl font-bold text-gray-800 mb-6'>
 						Yangi e'lon qo'shish
 					</h1>
@@ -465,7 +465,7 @@ const AddItemContainer = () => {
 								</div>
 
 								{/* Price */}
-								<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+								<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
 									<div>
 										<label
 											htmlFor='price'
@@ -542,66 +542,68 @@ const AddItemContainer = () => {
 							<h2 className='text-lg font-semibold mb-4'>Kategoriya</h2>
 
 							<div className='space-y-4'>
-								{/* Main Category */}
-								<div>
-									<label
-										htmlFor='categoryId'
-										className='block text-sm font-medium text-gray-700 mb-1'
-									>
-										Asosiy kategoriya <span className='text-red-500'>*</span>
-									</label>
-									<select
-										id='categoryId'
-										name='categoryId'
-										value={formData.categoryId}
-										onChange={handleChange}
-										className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
-										required
-									>
-										<option value=''>Kategoriyani tanlang</option>
-										{categories.map(category => (
-											<option key={category.id} value={category.id}>
-												{category.name}
-											</option>
-										))}
-									</select>
-									{isLoadingCategories && (
-										<p className='mt-1 text-sm text-gray-500'>
-											Kategoriyalar yuklanmoqda...
-										</p>
-									)}
-								</div>
-
-								{/* Subcategory - Show only if subcategories exist */}
-								{subcategories.length > 0 && (
+								<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+									{/* Main Category */}
 									<div>
 										<label
-											htmlFor='subcategoryId'
+											htmlFor='categoryId'
 											className='block text-sm font-medium text-gray-700 mb-1'
 										>
-											Subkategoriya
+											Asosiy kategoriya <span className='text-red-500'>*</span>
 										</label>
 										<select
-											id='subcategoryId'
-											name='subcategoryId'
-											value={formData.subcategoryId || ''}
+											id='categoryId'
+											name='categoryId'
+											value={formData.categoryId}
 											onChange={handleChange}
 											className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
+											required
 										>
-											<option value=''>Subkategoriyani tanlang</option>
-											{subcategories.map(subcategory => (
-												<option key={subcategory.id} value={subcategory.id}>
-													{subcategory.name}
+											<option value=''>Kategoriyani tanlang</option>
+											{categories.map(category => (
+												<option key={category.id} value={category.id}>
+													{category.name}
 												</option>
 											))}
 										</select>
-										{isLoadingSubcategories && (
+										{isLoadingCategories && (
 											<p className='mt-1 text-sm text-gray-500'>
-												Subkategoriyalar yuklanmoqda...
+												Kategoriyalar yuklanmoqda...
 											</p>
 										)}
 									</div>
-								)}
+
+									{/* Subcategory - Show only if subcategories exist */}
+									{subcategories.length > 0 && (
+										<div>
+											<label
+												htmlFor='subcategoryId'
+												className='block text-sm font-medium text-gray-700 mb-1'
+											>
+												Subkategoriya
+											</label>
+											<select
+												id='subcategoryId'
+												name='subcategoryId'
+												value={formData.subcategoryId || ''}
+												onChange={handleChange}
+												className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
+											>
+												<option value=''>Subkategoriyani tanlang</option>
+												{subcategories.map(subcategory => (
+													<option key={subcategory.id} value={subcategory.id}>
+														{subcategory.name}
+													</option>
+												))}
+											</select>
+											{isLoadingSubcategories && (
+												<p className='mt-1 text-sm text-gray-500'>
+													Subkategoriyalar yuklanmoqda...
+												</p>
+											)}
+										</div>
+									)}
+								</div>
 							</div>
 						</div>
 
@@ -611,35 +613,19 @@ const AddItemContainer = () => {
 								<h2 className='text-lg font-semibold mb-4'>Xususiyatlar</h2>
 
 								<div className='space-y-4'>
-									{categoryProperties.map(property => (
-										<div key={property.id}>
-											<label
-												htmlFor={`property-${property.id}`}
-												className='block text-sm font-medium text-gray-700 mb-1'
-											>
-												{property.name}
-											</label>
+									<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+										{categoryProperties.map(property => (
+											<div key={property.id}>
+												<label
+													htmlFor={`property-${property.id}`}
+													className='block text-sm font-medium text-gray-700 mb-1'
+												>
+													{property.name}
+												</label>
 
-											{property.type === 'STRING' && !property.options && (
-												<input
-													type='text'
-													id={`property-${property.id}`}
-													value={
-														formData.properties.find(
-															p => p.propertyId === property.id
-														)?.value.value || ''
-													}
-													onChange={e =>
-														handlePropertyChange(property.id, e.target.value)
-													}
-													className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
-													placeholder={`${property.name} kiriting`}
-												/>
-											)}
-
-											{property.type === 'SELECT' ||
-												(property.type === 'STRING' && property.options && (
-													<select
+												{property.type === 'STRING' && !property.options && (
+													<input
+														type='text'
 														id={`property-${property.id}`}
 														value={
 															formData.properties.find(
@@ -650,61 +636,82 @@ const AddItemContainer = () => {
 															handlePropertyChange(property.id, e.target.value)
 														}
 														className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
-													>
-														<option value=''>Tanlang</option>
-														{property.options &&
-															property.options.map((option, index) => (
-																<option key={index} value={option}>
-																	{option}
-																</option>
-															))}
-													</select>
-												))}
+														placeholder={`${property.name} kiriting`}
+													/>
+												)}
 
-											{property.type === 'DATE' && (
-												<input
-													type='date'
-													id={`property-${property.id}`}
-													value={
-														formData.properties.find(
-															p => p.propertyId === property.id
-														)?.value.value || ''
-													}
-													onChange={e =>
-														handlePropertyChange(property.id, e.target.value)
-													}
-													className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
-												/>
-											)}
+												{property.type === 'SELECT' ||
+													(property.type === 'STRING' && property.options && (
+														<select
+															id={`property-${property.id}`}
+															value={
+																formData.properties.find(
+																	p => p.propertyId === property.id
+																)?.value.value || ''
+															}
+															onChange={e =>
+																handlePropertyChange(
+																	property.id,
+																	e.target.value
+																)
+															}
+															className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
+														>
+															<option value=''>Tanlang</option>
+															{property.options &&
+																property.options.map((option, index) => (
+																	<option key={index} value={option}>
+																		{option}
+																	</option>
+																))}
+														</select>
+													))}
 
-											{property.type === 'BOOLEAN' && (
-												<div className='flex items-center'>
+												{property.type === 'DATE' && (
 													<input
-														type='checkbox'
+														type='date'
 														id={`property-${property.id}`}
-														checked={
+														value={
 															formData.properties.find(
 																p => p.propertyId === property.id
-															)?.value.value === 'true'
+															)?.value.value || ''
 														}
 														onChange={e =>
-															handlePropertyChange(
-																property.id,
-																e.target.checked ? 'true' : 'false'
-															)
+															handlePropertyChange(property.id, e.target.value)
 														}
-														className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+														className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
 													/>
-													<label
-														htmlFor={`property-${property.id}`}
-														className='ml-2 block text-sm text-gray-700'
-													>
-														{property.name}
-													</label>
-												</div>
-											)}
-										</div>
-									))}
+												)}
+
+												{property.type === 'BOOLEAN' && (
+													<div className='flex items-center'>
+														<input
+															type='checkbox'
+															id={`property-${property.id}`}
+															checked={
+																formData.properties.find(
+																	p => p.propertyId === property.id
+																)?.value.value === 'true'
+															}
+															onChange={e =>
+																handlePropertyChange(
+																	property.id,
+																	e.target.checked ? 'true' : 'false'
+																)
+															}
+															className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+														/>
+														<label
+															htmlFor={`property-${property.id}`}
+															className='ml-2 block text-sm text-gray-700'
+														>
+															{property.name}
+														</label>
+													</div>
+												)}
+											</div>
+										))}
+									</div>
 								</div>
 							</div>
 						)}
@@ -715,7 +722,7 @@ const AddItemContainer = () => {
 
 							<div className='space-y-4'>
 								{/* Region and District */}
-								<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+								<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
 									<div>
 										<label
 											htmlFor='regionId'
@@ -916,7 +923,7 @@ const AddItemContainer = () => {
 
 									{/* Display additional images */}
 									{formData.images.length > 0 && (
-										<div className='mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4'>
+										<div className='mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4'>
 											{formData.images.map((image, index) => (
 												<div key={index} className='relative'>
 													<img
