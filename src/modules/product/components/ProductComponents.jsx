@@ -10,8 +10,8 @@ const ProductComponents = () => {
 	const [selected, setSelected] = useState(null);
 
 	const { data } = useGetOneQuery({
-		key: `${KEYS.product}/${id}`,
-		url: `${URLS.product}/${id}`,
+		key: `${KEYS.product_detail}/${id}`,
+		url: `${URLS.product_detail}/${id}`,
 		enabled: !!id,
 	});
 
