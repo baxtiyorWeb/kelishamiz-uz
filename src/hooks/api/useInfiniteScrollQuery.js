@@ -5,11 +5,10 @@ const useInfiniteScrollQuery = ({
 	key = 'infinite-query',
 	url = '/',
 	elements = {},
-	initialPageParam = 0,
+	initialPageParam = 1, // Start from page 1 instead of 0
 	showSuccessMsg = false,
 	hideErrorMsg = false,
 	enabled = true,
-
 	options = {
 		onSuccess: data => {
 			if (showSuccessMsg) {
@@ -36,19 +35,18 @@ const useInfiniteScrollQuery = ({
 	} = useInfiniteQuery(
 		key,
 		({ pageParam = initialPageParam }) => {
-			const page = pageParam; // `pageParam`ni oling
-			const limit = elements.limit || 10; // Limitni olish (agar elements.da limit yo'q bo'lsa, default 10)
-
-			const skip = (page - 1) * limit; // `skip`ni sahifa va limitga moslashtiring
+			const page = pageParam;
+			const limit = elements.limit || 10;
+			const skip = (page - 1) * limit; // Ensure skip increments with page
 
 			return api
 				.post(
 					url,
 					{
-						page, // Sahifa raqami
-						limit, // Limit
-						skip, // Offset
-						...elements, // Boshqa parametrlar
+						page, // Pass the current page
+						limit, // Pass the limit
+						skip, // Pass the calculated skip
+						...elements, // Other parameters
 					},
 					{
 						headers: {
@@ -64,7 +62,10 @@ const useInfiniteScrollQuery = ({
 		},
 		{
 			getNextPageParam: (lastPage, allPages) => {
-				return lastPage?.length > 0 ? allPages?.length + 1 : undefined;
+				// Only increment the page if there are more items to fetch
+				return lastPage?.length === elements.limit
+					? allPages.length + 1
+					: undefined;
 			},
 			enabled,
 			...options,
@@ -83,5 +84,4 @@ const useInfiniteScrollQuery = ({
 		error,
 	};
 };
-
 export default useInfiniteScrollQuery;

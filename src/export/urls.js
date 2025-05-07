@@ -3,7 +3,7 @@ const URLS = {
 	property: '/properties',
 
 	// Category
-	category: '/categories',
+	category: '/category',
 
 	// File
 	file_upload: '/files/upload',

@@ -98,7 +98,6 @@ api.interceptors.response.use(
 							refreshToken: newRefreshToken,
 						} = response.data?.data;
 
-						// Tokenlarni yangilash
 						setAccessToken(newAccessToken);
 						if (newRefreshToken) {
 							setRefreshToken(newRefreshToken);

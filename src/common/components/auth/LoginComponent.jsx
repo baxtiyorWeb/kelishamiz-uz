@@ -1,235 +1,159 @@
-import { ArrowRight, Eye, EyeClosed, Loader } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import api from '../../../config/auth/api';
-import { useGenerateUuid } from '../../../hooks/services/useGenerateuuid.js';
-import useAuthStore from '../../../store/index.js';
 
 export const LoginComponent = () => {
-	const { login, isAuthenticated } = useAuthStore();
-	const [params, setParams] = useSearchParams();
-	const [signIn, setSignIn] = useState({
-		phone: '',
-		password: '',
-	});
-
-	const navigate = useNavigate();
-	const [isLoading, setisLoading] = useState(false);
-	const [inputType, setInputType] = useState('text');
 	const [phone, setPhone] = useState('');
-	const { generateUuid } = useGenerateUuid();
+	const [step, setStep] = useState('phone'); // phone | otp | register
+	const [code, setCode] = useState('');
+	const [username, setUsername] = useState('');
+	const [location, setLocation] = useState('');
+	const [error, setError] = useState('');
+	const [isNewUser, setIsNewUser] = useState(false); // Yangi foydalanuvchimi yoki yo'qmi
 
-	const toggle = params.get('auth') || 'login';
-	const loginParams = () => {
-		setParams({ auth: 'login' });
-	};
-	const registerParams = () => {
-		setParams({ auth: 'register' });
-	};
-
-	const loginNameAndPassword = async e => {
-		e.preventDefault();
+	const handleSendPhone = async () => {
+		setError('');
 		try {
-			setisLoading(true);
-			await login({ phone: signIn.phone, password: signIn.password });
-		} catch (error) {
-			console.log(error);
-		} finally {
-			setisLoading(false);
+			const checkRes = await api.post('/auth/check-phone', { phone });
+			setIsNewUser(!checkRes.data?.exists);
+			console.log(!checkRes.data?.exists);
+
+			try {
+				await api.post('/auth/send-otp', { phone });
+				setStep('otp');
+			} catch (otpError) {
+				if (otpError?.response?.status === 409) {
+					setStep('otp');
+					setError(
+						"Bu telefon raqam allaqachon ro'yxatdan o'tgan. OTP kodini kiriting."
+					);
+				} else {
+					setError("OTP yuborishda xatolik yuz berdi. Qayta urinib ko'ring.");
+				}
+			}
+		} catch (checkErr) {
+			setError(
+				"Telefon raqamini tekshirishda xatolik yuz berdi. Qayta urinib ko'ring."
+			);
 		}
 	};
 
-	useEffect(() => {
-		if (isAuthenticated) {
-			navigate('/');
-		}
-	}, [isAuthenticated, navigate]);
-
-	const registerPhoneOrPhone = async () => {
-		const generateUId = generateUuid();
-
+	const handleVerifyOtp = async () => {
+		setError('');
 		try {
-			setisLoading(true);
-			const data = await api.post(`/authority/register-by-phone`, null, {
-				params: { phone: phone },
-				headers: {
-					secretKey: generateUId,
-				},
-				xsrfCookieName: 'XSRF-TOKEN',
+			const verifyRes = await api.post('/auth/verify-otp', { phone, code });
+			if (verifyRes.data?.success) {
+				if (isNewUser) {
+					setStep('register');
+				} else {
+					try {
+						const loginRes = await api.post('/auth/login/verify-otp', {
+							phone,
+							code,
+						});
+						localStorage.setItem('accessToken', loginRes.data?.accessToken);
+						localStorage.setItem('refreshToken', loginRes.data?.refreshToken);
+						// window.location.href = '/';
+					} catch (loginErr) {
+						setError('Tizimga kirishda xatolik yuz berdi.');
+					}
+				}
+			} else {
+				setError(
+					verifyRes.data?.message || "OTP kodi noto'g'ri yoki muddati o'tgan."
+				);
+			}
+		} catch (err) {
+			setError('OTP tekshirishda xatolik yuz berdi.');
+		}
+	};
+
+	const handleCreateAccount = async () => {
+		setError('');
+		try {
+			const res = await api.post('/auth/create-account', {
+				phone,
+				username,
+				location,
 			});
-			setPhone('');
-			navigate('/auth/confirm');
-			localStorage.setItem('secretKey', generateUId);
-		} catch (error) {
-		} finally {
-			setisLoading(false);
+
+			localStorage.setItem('accessToken', res.data?.accessToken);
+			localStorage.setItem('refreshToken', res.data?.refreshToken);
+			// window.location.href = '/';
+		} catch (err) {
+			if (err?.response?.status === 409) {
+				setError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.");
+			} else {
+				setError("Hisob yaratishda xato. Qayta urinib ko'ring.");
+			}
 		}
 	};
 
 	return (
-		<div className='flex w-full flex-col items-center '>
-			<div className='flex h-20 items-center justify-center'>
-				<button
-					className='mx-10 h-12 w-[200px]  border-b border-bgColor hover:bg-bgColor hover:text-whiteTextColor'
-					onClick={() => loginParams()}
-				>
-					login
-				</button>
-				<button
-					className='mx-10 h-12 w-[200px]  border-b border-bgColor hover:bg-bgColor hover:text-whiteTextColor'
-					onClick={() => registerParams()}
-				>
-					register
-				</button>
-			</div>
-			{toggle === 'login' ? (
-				<form
-					onSubmit={loginNameAndPassword}
-					className='flex h-[580px] w-[80%] flex-col items-center justify-center '
-				>
-					<h1 className='mb-5 mt-3 text-center text-2xl'>Profilga kirish</h1>
-					<div className=' flex w-full flex-col items-start justify-center '>
-						<span className='mb-1 w-auto text-left'>loginingizni kiriting</span>
-						<input
-							type='text'
-							placeholder='login'
-							className='mb-3 mt-3 h-14  w-full rounded-[5px_!important] p-3  text-xl outline-none'
-							onChange={e => setSignIn({ ...signIn, phone: e.target.value })}
-						/>
-					</div>
-					<div className='relative flex w-full flex-col items-start justify-center '>
-						<span className='mb-1 w-auto text-left '>
-							parolingizni kiriting
-						</span>
-						<input
-							type={inputType ? 'password' : 'text'}
-							placeholder='password'
-							className='mt-3 h-14  w-full rounded-[5px_!important] p-3  text-xl outline-none'
-							onChange={e => setSignIn({ ...signIn, password: e.target.value })}
-						/>
-						<span
-							className='absolute bottom-5 right-5 cursor-pointer'
-							onClick={() => setInputType(!inputType)}
-						>
-							{inputType ? (
-								<Eye className='text-lg' />
-							) : (
-								<EyeClosed className='text-lg' />
-							)}
-						</span>
-					</div>
+		<div className='space-y-4'>
+			{step === 'phone' && (
+				<div>
+					<input
+						type='text'
+						value={phone}
+						onChange={e => setPhone(e.target.value)}
+						placeholder='Telefon raqam'
+						className='border p-2 w-full'
+					/>
+					<button
+						onClick={handleSendPhone}
+						className='bg-blue-500 text-white px-4 py-2 mt-2'
+					>
+						Yuborish
+					</button>
+					{error && <p className='text-red-500 text-sm mt-1'>{error}</p>}
+				</div>
+			)}
 
-					<div className='send-details w-full'>
-						<button
-							disabled={
-								signIn.username != '' && signIn.password != '' ? false : true
-							}
-							className='mb-5 mt-5 h-[50px] flex justify-center items-center w-full rounded-md bg-btnColor text-white hover:text-[#fff] disabled:cursor-not-allowed disabled:bg-btnColor/60'
-							type={'submit'}
-						>
-							{isLoading ? (
-								<Loader className='animate-spin' />
-							) : (
-								<span className='flex items-center justify-center'>
-									Kirish <ArrowRight className='mx-3' />
-								</span>
-							)}
-						</button>
-					</div>
-					<span>yoki</span>
+			{step === 'otp' && (
+				<div>
+					<p className='mb-2'>{phone} raqamiga yuborilgan kodni kiriting</p>
+					<input
+						type='text'
+						value={code}
+						onChange={e => setCode(e.target.value)}
+						placeholder='OTP kod'
+						className='border p-2 w-full'
+					/>
+					<button
+						onClick={handleVerifyOtp}
+						className='bg-green-500 text-white px-4 py-2 mt-2'
+					>
+						Tasdiqlash
+					</button>
+					{error && <p className='text-red-500 text-sm mt-1'>{error}</p>}
+				</div>
+			)}
 
-					<div className='w-full'>
-						<button className='mb-1 mt-3 flex h-[50px] w-full items-center justify-start rounded-md border border-borderColor bg-whiteTextColor px-5 text-textColor disabled:cursor-not-allowed disabled:bg-bgColor/60'>
-							Google
-							<span className='m-auto'>Google orqali kirish</span>
-						</button>
-					</div>
-					<div className='w-full'>
-						<button className='mb-1 mt-3 flex h-[50px] w-full items-center justify-start rounded-md border border-borderColor bg-whiteTextColor px-5 text-textColor disabled:cursor-not-allowed disabled:bg-bgColor/60'>
-							telegram
-							<span className='m-auto'>Google orqali kirish</span>
-						</button>
-					</div>
-					<Link to={'/auth/register'} className='my-3 w-full text-end'>
-						<span className='cursor-pointer text-sky-500 hover:underline'>
-							ro&apos;yxatdan o&apos;tish
-						</span>
-					</Link>
-				</form>
-			) : (
-				<div
-					className={`flex h-[580px] w-[80%] flex-col items-center justify-center  transition-all duration-100 ${
-						toggle === 'register' ? 'opacity-100 ' : 'opacity-0 '
-					} `}
-				>
-					<h1 className='mb-5 mt-3 text-center text-2xl'>
-						Ro&apos;yxatdan o&apos;tish
-					</h1>
-					<div></div>
-					<div className=' mt-10 flex h-full w-full flex-col items-center justify-center '>
-						<span className='mb-3 w-full  text-left'>
-							telefon raqamingizni kiriting
-						</span>
-						<div className='relative flex w-full flex-col items-start justify-center '>
-							<span
-								className={`absolute left-0 top-[27px] z-10 text-xl ${
-									phone.length > 0
-										? `${phone.length >= 10 ? 'text-red-500 ' : ''}`
-										: 'text-[#BFBFBF]'
-								}`}
-							>
-								+998
-							</span>
-							<input
-								type='number'
-								placeholder='99 999 99 99'
-								onChange={e => setPhone(e.target.value)}
-								maxLength={9}
-								value={phone}
-								className='mb-3 mt-3 h-14 w-full  rounded-[5px_!important] p-3 indent-10  text-xl outline-none'
-							/>
-						</div>
-						{phone.length >= 10 ? (
-							<span className='text-red-300'>
-								telefon raqam no&apos;to&apos;g&apos;ri kiritildi
-							</span>
-						) : (
-							''
-						)}
-						<div className='send-details w-full'>
-							<button
-								disabled={phone.length === 9 ? false : true}
-								onClick={() => registerPhoneOrPhone()}
-								className='mb-5 mt-5 h-[50px] w-full rounded-md bg-bgColor text-textDarkColor hover:text-[#fff] disabled:cursor-not-allowed disabled:bg-bgColor/60'
-							>
-								{isLoading ? 'loading ... ' : 'Davom etish'}
-							</button>
-						</div>
-
-						<span> yoki </span>
-
-						<hr className='my-1 w-full' />
-						<span className='my-3'>
-							ijtmoiy tarmoqlar orqali ro&apos;yxatdan o&apos;ting
-						</span>
-
-						<div className='w-full'>
-							<button className='mb-1 mt-3 flex h-[50px] w-full items-center justify-start rounded-md border border-borderColor bg-whiteTextColor px-5 text-textColor disabled:cursor-not-allowed disabled:bg-bgColor/60'>
-								telegram
-								<span className='m-auto'>
-									Telegram orqali ro&apos;yxatdan o&apos;tish
-								</span>
-							</button>
-						</div>
-						<div className='w-full'>
-							<button className='mb-1 mt-3 flex h-[50px] w-full items-center justify-start rounded-md border border-borderColor bg-whiteTextColor px-5 text-textColor disabled:cursor-not-allowed disabled:bg-bgColor/60'>
-								Google
-								<span className='m-auto'>
-									Google orqali ro&apos;yxatdan o&apos;tish
-								</span>
-							</button>
-						</div>
-					</div>
+			{step === 'register' && (
+				<div>
+					<input
+						type='text'
+						value={username}
+						onChange={e => setUsername(e.target.value)}
+						placeholder='Foydalanuvchi nomi'
+						className='border p-2 w-full'
+						required
+					/>
+					<input
+						type='text'
+						value={location}
+						onChange={e => setLocation(e.target.value)}
+						placeholder='Manzil'
+						className='border p-2 w-full mt-2'
+						required
+					/>
+					<button
+						onClick={handleCreateAccount}
+						className='bg-purple-600 text-white px-4 py-2 mt-2'
+					>
+						Ro'yxatdan o'tish
+					</button>
+					{error && <p className='text-red-500 text-sm mt-1'>{error}</p>}
 				</div>
 			)}
 		</div>

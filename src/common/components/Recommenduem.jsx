@@ -10,21 +10,23 @@ const Recommenduem = () => {
 			key: KEYS.product_filter,
 			url: URLS.product_filter,
 			elements: {
-				categoryId: 1,
-				minPrice: 10000000,
-				maxPrice: 13000000,
-				title: 'Redmi',
-				ownProduct: false,
-				properties: null,
-				page: 1, // Sahifa raqami
-				limit: 5, // Sahifa boshiga keladigan mahsulotlar soni
-				sortBy: 'price',
-				sortOrder: 'DESC',
-				paymentType: 'Pullik',
-				currencyType: 'UZS',
-				negotiable: true,
-				regionId: 0,
-				districtId: 0,
+				categoryId: null, // Kategoriya identifikatori, default null
+				minPrice: null, // Minimal narx, default null
+				maxPrice: null, // Maksimal narx, default null
+				title: '', // Sarlavha, default bo'sh string
+				ownProduct: false, // Faqat o'zining mahsulotlari, default false
+				properties: null, // Xususiyatlar, default null
+				page: 1, // Sahifa raqami, default 1
+				size: 10, // Mahsulotlar soni, default 10
+				limit: 5, // Sahifa boshiga keladigan mahsulotlar soni, default 5
+				sortBy: null, // Tartiblash bo'yicha, default null
+				sortOrder: null, // Tartiblashning yo'nalishi, default null
+				paymentType: null, // To'lov turi, default null
+				currencyType: null, // Valyuta turi, default null
+				negotiable: true, // Kelishish imkoniyati, default true
+				skip: 0, // Skipp qilish, default 0
+				regionId: null, // Hudud, default null
+				districtId: null, // Tuman, default null
 			},
 		});
 
