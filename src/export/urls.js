@@ -24,6 +24,7 @@ const URLS = {
 	product_create: '/products',
 	product_liked_by_user: '/products/liked',
 	product_filter: '/products/filter',
+	product_detail: '/products',
 
 	// Profiles
 	profile_create: '/profiles',
