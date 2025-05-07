@@ -2,10 +2,11 @@
 import axios from 'axios';
 
 const api = axios.create({
-	baseURL: 'https://kelishamiz.uz',
+	baseURL: 'https://kelishamiz.uz/api',
 	headers: {
 		'Content-Type': 'application/json',
 	},
+	withCredentials: true,
 });
 
 export const getAccessToken = () => localStorage.getItem('accessToken');
