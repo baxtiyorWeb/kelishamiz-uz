@@ -374,6 +374,9 @@ const AddItemContainer = () => {
 		}
 	};
 
+	console.log(categoryProperties);
+
+
 	return (
 		<div className='bg-gray-50 min-h-screen py-8'>
 			<div className='container mx-auto px-4'>
@@ -598,33 +601,31 @@ const AddItemContainer = () => {
 														placeholder={`${property.name} kiriting`}
 													/>
 												)}
+												{property.type === 'SELECT' && property.options && (
+													<select
+														id={`property-${property.id}`}
+														value={
+															formData.properties.find(
+																p => p.propertyId === property.id
+															)?.value.value || ''
+														}
+														onChange={e =>
+															handlePropertyChange(
+																property.id,
+																e.target.value
+															)
+														}
+														className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
+													>
+														<option value=''>Tanlang</option>
+														{property.options.map((option, index) => (
+															<option key={index} value={option}>
+																{option}
+															</option>
+														))}
+													</select>
+												)}
 
-												{property.type === 'SELECT' ||
-													(property.type === 'STRING' && property.options && (
-														<select
-															id={`property-${property.id}`}
-															value={
-																formData.properties.find(
-																	p => p.propertyId === property.id
-																)?.value.value || ''
-															}
-															onChange={e =>
-																handlePropertyChange(
-																	property.id,
-																	e.target.value
-																)
-															}
-															className='w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500'
-														>
-															<option value=''>Tanlang</option>
-															{property.options &&
-																property.options.map((option, index) => (
-																	<option key={index} value={option}>
-																		{option}
-																	</option>
-																))}
-														</select>
-													))}
 
 												{property.type === 'DATE' && (
 													<input
@@ -774,11 +775,10 @@ const AddItemContainer = () => {
 
 									<div
 										{...mainImageDropzone.getRootProps()}
-										className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-											mainImageDropzone.isDragActive
-												? 'border-blue-400 bg-blue-50'
-												: 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-										}`}
+										className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${mainImageDropzone.isDragActive
+											? 'border-blue-400 bg-blue-50'
+											: 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+											}`}
 									>
 										<input {...mainImageDropzone.getInputProps()} />
 
@@ -846,11 +846,10 @@ const AddItemContainer = () => {
 
 									<div
 										{...additionalImagesDropzone.getRootProps()}
-										className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-											additionalImagesDropzone.isDragActive
-												? 'border-blue-400 bg-blue-50'
-												: 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-										}`}
+										className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${additionalImagesDropzone.isDragActive
+											? 'border-blue-400 bg-blue-50'
+											: 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+											}`}
 									>
 										<input {...additionalImagesDropzone.getInputProps()} />
 
@@ -927,9 +926,8 @@ const AddItemContainer = () => {
 												</div>
 												<div className='w-full bg-gray-200 rounded-full h-2'>
 													<div
-														className={`h-2 rounded-full ${
-															img.error ? 'bg-red-500' : 'bg-blue-500'
-														}`}
+														className={`h-2 rounded-full ${img.error ? 'bg-red-500' : 'bg-blue-500'
+															}`}
 														style={{ width: `${img.progress}%` }}
 													></div>
 												</div>
@@ -950,9 +948,8 @@ const AddItemContainer = () => {
 							<button
 								type='submit'
 								disabled={isSubmitting}
-								className={`px-6 py-3 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-									isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-								}`}
+								className={`px-6 py-3 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+									}`}
 							>
 								{isSubmitting ? 'Yuklanmoqda...' : "E'lonni qo'shish"}
 							</button>
