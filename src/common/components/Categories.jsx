@@ -5,19 +5,12 @@ import URLS from './../../export/urls';
 import useGetAllQuery from './../../hooks/api/useGetAllQuery';
 const Categories = () => {
 	const { data } = useGetAllQuery({
-		key: KEYS.category_list,
-		url: URLS.category_list,
-		params: {
-			params: {
-				page: 2,
-				size: 10,
-				parentId: null,
-			},
-		},
+		key: KEYS.categories,
+		url: URLS.categories,
 	});
 
-	const items = isArray(get(data, 'data.data.content', []))
-		? get(data, 'data.data.content', [])
+	const items = isArray(get(data, 'data.content', []))
+		? get(data, 'data.content', [])
 		: [];
 
 	return (
