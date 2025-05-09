@@ -8,6 +8,7 @@ import CatalogPage from '../modules/catalog/pages/CatalogPage.jsx';
 import ProductPages from '../modules/product/pages/ProductPages';
 import UserPage from './../modules/user/pages/UserPage.jsx';
 import PrivateRoute from './PrivateRoute.jsx';
+import AdminPanel from '../../admin/admin-panel.jsx';
 
 export const AppRouter = () => {
 	return (
@@ -26,6 +27,7 @@ export const AppRouter = () => {
 				<Route path='add-item' element={<AddItem />} />
 				<Route path='user/:id' element={<UserPage />} />
 			</Route>
+			<Route path='/admin-panel' element={<AdminPanel />} />
 
 			<Route path='/auth' element={<AuthLayout />}>
 				<Route path='login' element={<Login />} />
