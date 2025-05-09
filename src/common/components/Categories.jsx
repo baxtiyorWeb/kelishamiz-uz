@@ -1,40 +1,59 @@
-import { get, isArray } from 'lodash';
-import { Link } from 'react-router-dom';
-import KEYS from './../../export/keys';
-import URLS from './../../export/urls';
-import useGetAllQuery from './../../hooks/api/useGetAllQuery';
+import { get, isArray } from "lodash"
+import { Link } from "react-router-dom"
+import KEYS from "../../export/keys"
+import URLS from "../../export/urls"
+import useGetAllQuery from "../../hooks/api/useGetAllQuery"
+
 const Categories = () => {
-	const { data } = useGetAllQuery({
-		key: KEYS.categories,
-		url: URLS.categories,
-	});
+  const { data, isLoading } = useGetAllQuery({
+    key: KEYS.categories,
+    url: URLS.categories,
+  })
 
-	const items = isArray(get(data, 'data.content', []))
-		? get(data, 'data.content', [])
-		: [];
+  const items = isArray(get(data, "data.content", [])) ? get(data, "data.content", []) : []
 
-	return (
-		<div className='flex  justify-between items-center px-10'>
-			{items.map((item, index) => (
-				<div key={index} className='relative mb-10'>
-					<Link
-						key={get(item, 'id')}
-						to={`/catalog/${get(item, 'id')}`}
-						className='group flex   flex-col  items-center justify-center rounded-full   text-center text-sm '
-					>
-						<img
-							src={`data:image/png;base64,${item?.file?.fileBase64}`}
-							className='xs:p-1 my-2 xl:w-[80px_!important] xl:h-[80px_!important] h-[100px] w-[100px] rounded-full  border border-bgColor object-cover p-[10px]   xs:h-[60px_!important] xs:w-[60px_!important]'
-							alt=''
-						/>
-						<span className='mt-3 text-center font-poppins font-normal  not-italic  leading-[100%] text-textDarkColor group-hover:text-bgColor xs:text-xs absolute -bottom-8'>
-							{get(item, 'name')}
-						</span>
-					</Link>
-				</div>
-			))}
-		</div>
-	);
-};
+  // Placeholder items for loading state
+  const placeholderItems = Array(8).fill(null)
 
-export default Categories;
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6">Top Categories</h2>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
+        {isLoading
+          ? placeholderItems.map((_, index) => (
+              <div key={`placeholder-${index}`} className="flex flex-col items-center">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 animate-pulse"></div>
+                <div className="mt-3 h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ))
+          : items.map((item, index) => (
+              <Link
+                key={get(item, "id", index)}
+                to={`/catalog/${get(item, "id")}`}
+                className="flex flex-col items-center group transition-all duration-300"
+              >
+                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-emerald-100 group-hover:border-emerald-500 transition-all duration-300">
+                  {item?.file?.fileBase64 ? (
+                    <img
+                      src={`data:image/png;base64,${item.file.fileBase64}`}
+                      alt={get(item, "name", "Category")}
+                      className="w-full h-full object-cover p-2 bg-white"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                      <span className="text-xl font-bold">{get(item, "name", "").charAt(0)}</span>
+                    </div>
+                  )}
+                </div>
+                <span className="mt-3 text-center text-sm text-gray-700 group-hover:text-emerald-600 transition-colors duration-300">
+                  {get(item, "name", "Category")}
+                </span>
+              </Link>
+            ))}
+      </div>
+    </div>
+  )
+}
+
+export default Categories

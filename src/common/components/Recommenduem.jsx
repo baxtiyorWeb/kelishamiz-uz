@@ -17,8 +17,8 @@ const Recommenduem = () => {
 				ownProduct: false, // Faqat o'zining mahsulotlari, default false
 				properties: null, // Xususiyatlar, default null
 				page: 1, // Sahifa raqami, default 1
-				size: 10, // Mahsulotlar soni, default 10
-				limit: 5, // Sahifa boshiga keladigan mahsulotlar soni, default 5
+				size: 30, // Mahsulotlar soni, default 10
+				limit: 30, // Sahifa boshiga keladigan mahsulotlar soni, default 5
 				sortBy: null, // Tartiblash bo'yicha, default null
 				sortOrder: null, // Tartiblashning yo'nalishi, default null
 				paymentType: null, // To'lov turi, default null
