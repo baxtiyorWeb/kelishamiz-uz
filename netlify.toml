@@ -1,4 +1,4 @@
 [[redirects]]
-  from = "/api/*"
+  from = "/*"
   to = "https://kelishamiz-backend.vercel.app/:splat"
   status = 200
