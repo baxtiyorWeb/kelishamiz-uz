@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { get, isArray, isNull } from "lodash"
-import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useMemo } from "react";
+import { get, isArray, isNull } from "lodash";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   Heart,
   Phone,
@@ -19,113 +19,123 @@ import {
   Info,
   User,
   Clock,
-} from "lucide-react"
-import useGetOneQuery from "../../../hooks/api/useGetOneQuery"
-import KEYS from "../../../export/keys"
-import URLS from "../../../export/urls"
+} from "lucide-react";
+import useGetOneQuery from "../../../hooks/api/useGetOneQuery";
+import KEYS from "../../../export/keys";
+import URLS from "../../../export/urls";
 
 const ProductDetail = () => {
-  const { id } = useParams()
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-  const [activeTab, setActiveTab] = useState("description")
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [isLiked, setIsLiked] = useState(false)
-  const [isImageLoading, setIsImageLoading] = useState(true)
+  const { id } = useParams();
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState("description");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
+      setIsMobile(window.innerWidth < 768);
+    };
 
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const { data, isLoading } = useGetOneQuery({
     key: `${KEYS.product_detail}/${id}`,
     url: `${URLS.product_detail}/${id}`,
     enabled: !!id,
-  })
+  });
 
-  const item = !isNull(get(data, "data.content")) ? get(data, "data.content", {}) : {}
+  const item = !isNull(get(data, "data.content"))
+    ? get(data, "data.content", {})
+    : {};
 
   const processedImages = useMemo(() => {
-    const images = get(item, "images", [])
+    const images = get(item, "images", []);
     if (!isArray(images) || images.length === 0) {
-      return []
+      return [];
     }
-    return images
-  }, [item])
+    return images;
+  }, [item]);
 
   useEffect(() => {
     if (processedImages.length > 0) {
       const initialIndex =
-        item?.imageIndex !== undefined && item?.imageIndex < processedImages.length ? item.imageIndex : 0
-      setSelectedImageIndex(initialIndex)
+        item?.imageIndex !== undefined &&
+        item?.imageIndex < processedImages.length
+          ? item.imageIndex
+          : 0;
+      setSelectedImageIndex(initialIndex);
     }
-  }, [processedImages, item?.imageIndex])
+  }, [processedImages, item?.imageIndex]);
 
-  const selectedImageUrl = processedImages[selectedImageIndex]?.url || ""
+  const selectedImageUrl = processedImages[selectedImageIndex]?.url || "";
 
-  const defaultImage = "https://via.placeholder.com/600x400?text=No+Image+Available"
+  const defaultImage =
+    "https://via.placeholder.com/600x400?text=No+Image+Available";
 
   const formatDate = (dateString) => {
-    if (!dateString) return ""
-    const date = new Date(dateString)
-    const day = date.getDate()
-    const month = date.toLocaleString("default", { month: "long" })
-    const year = date.getFullYear()
-    const hours = date.getHours()
-    const minutes = date.getMinutes().toString().padStart(2, "0")
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.toLocaleString("default", { month: "long" });
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
 
-    return `${day} ${month}, ${year}. ${hours}:${minutes}`
-  }
+    return `${day} ${month}, ${year}. ${hours}:${minutes}`;
+  };
 
   const getTimeAgo = (dateString) => {
-    if (!dateString) return ""
-    const now = new Date()
-    const date = new Date(dateString)
-    const diffMs = now - date
-    const diffSec = Math.floor(diffMs / 1000)
-    const diffMin = Math.floor(diffSec / 60)
-    const diffHour = Math.floor(diffMin / 60)
-    const diffDay = Math.floor(diffHour / 24)
-    const diffMonth = Math.floor(diffDay / 30)
+    if (!dateString) return "";
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+    const diffMonth = Math.floor(diffDay / 30);
 
-    if (diffMonth > 0) return `${diffMonth} oy oldin`
-    if (diffDay > 0) return `${diffDay} kun oldin`
-    if (diffHour > 0) return `${diffHour} soat oldin`
-    if (diffMin > 0) return `${diffMin} daqiqa oldin`
-    return "Hozirgina"
-  }
+    if (diffMonth > 0) return `${diffMonth} oy oldin`;
+    if (diffDay > 0) return `${diffDay} kun oldin`;
+    if (diffHour > 0) return `${diffHour} soat oldin`;
+    if (diffMin > 0) return `${diffMin} daqiqa oldin`;
+    return "Hozirgina";
+  };
 
   // Format price with currency
   const formatPrice = (price) => {
-    if (!price) return ""
-    const numPrice = Number.parseFloat(price)
-    return new Intl.NumberFormat("uz-UZ").format(numPrice)
-  }
+    if (!price) return "";
+    const numPrice = Number.parseFloat(price);
+    return new Intl.NumberFormat("uz-UZ").format(numPrice);
+  };
 
   // Handle like button click
   const handleLikeClick = () => {
-    setIsLiked(!isLiked)
+    setIsLiked(!isLiked);
     // Here you would typically call an API to update the like status
-  }
+  };
 
   // Navigate to previous image
   const prevImage = () => {
-    setSelectedImageIndex((prev) => (prev === 0 ? processedImages.length - 1 : prev - 1))
-  }
+    setSelectedImageIndex((prev) =>
+      prev === 0 ? processedImages.length - 1 : prev - 1
+    );
+  };
 
   // Navigate to next image
   const nextImage = () => {
-    setSelectedImageIndex((prev) => (prev === processedImages.length - 1 ? 0 : prev + 1))
-  }
+    setSelectedImageIndex((prev) =>
+      prev === processedImages.length - 1 ? 0 : prev + 1
+    );
+  };
 
   // Handle image load
   const handleImageLoad = () => {
-    setIsImageLoading(false)
-  }
+    setIsImageLoading(false);
+  };
 
   // Loading skeleton
   if (isLoading) {
@@ -139,7 +149,10 @@ const ProductDetail = () => {
                 <div className="p-4">
                   <div className="flex space-x-3">
                     {[...Array(4)].map((_, i) => (
-                      <div key={i} className="w-16 h-16 md:w-20 md:h-20 bg-gray-200 rounded-lg animate-pulse"></div>
+                      <div
+                        key={i}
+                        className="w-16 h-16 md:w-20 md:h-20 bg-gray-200 rounded-lg animate-pulse"
+                      ></div>
                     ))}
                   </div>
                 </div>
@@ -167,7 +180,7 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -182,13 +195,20 @@ const ProductDetail = () => {
             >
               <ArrowLeft size={20} />
             </button>
-            <h1 className="text-lg font-medium truncate max-w-[200px]">{item?.title}</h1>
+            <h1 className="text-lg font-medium truncate max-w-[200px]">
+              {item?.title}
+            </h1>
             <div className="flex items-center">
               <button
                 className="p-2 relative hover:bg-teal-50 rounded-full transition-colors"
                 onClick={handleLikeClick}
               >
-                <Heart size={20} className={isLiked ? "fill-red-500 text-red-500" : "text-teal-600"} />
+                <Heart
+                  size={20}
+                  className={
+                    isLiked ? "fill-red-500 text-red-500" : "text-teal-600"
+                  }
+                />
                 {item?.likesCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                     {item.likesCount}
@@ -216,13 +236,18 @@ const ProductDetail = () => {
           {item?.categoryId && (
             <>
               <span className="mx-2">/</span>
-              <a href={`/category/${item.categoryId}`} className="hover:text-teal-600 transition-colors">
+              <a
+                href={`/category/${item.categoryId}`}
+                className="hover:text-teal-600 transition-colors"
+              >
                 {item?.category?.name || "Kategoriya"}
               </a>
             </>
           )}
           <span className="mx-2">/</span>
-          <span className="text-gray-700 truncate max-w-[200px]">{item?.title}</span>
+          <span className="text-gray-700 truncate max-w-[200px]">
+            {item?.title}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -242,7 +267,9 @@ const ProductDetail = () => {
                     <img
                       src={selectedImageUrl || defaultImage}
                       alt={item?.title}
-                      className={`h-full w-full object-contain transition-opacity duration-300 ${isImageLoading ? "opacity-0" : "opacity-100"}`}
+                      className={`h-full w-full object-contain transition-opacity duration-300 ${
+                        isImageLoading ? "opacity-0" : "opacity-100"
+                      }`}
                       onLoad={handleImageLoad}
                     />
 
@@ -276,7 +303,12 @@ const ProductDetail = () => {
                   onClick={handleLikeClick}
                   className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors z-10"
                 >
-                  <Heart size={20} className={isLiked ? "fill-red-500 text-red-500" : "text-teal-600"} />
+                  <Heart
+                    size={20}
+                    className={
+                      isLiked ? "fill-red-500 text-red-500" : "text-teal-600"
+                    }
+                  />
                 </button>
 
                 {/* Image Counter - Mobile only */}
@@ -341,7 +373,11 @@ const ProductDetail = () => {
               </div>
 
               {/* Description */}
-              <div className={`space-y-1 ${isMobile && activeTab !== "description" ? "hidden" : ""}`}>
+              <div
+                className={`space-y-1 ${
+                  isMobile && activeTab !== "description" ? "hidden" : ""
+                }`}
+              >
                 <h2 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
                   <Info size={18} className="mr-2 text-teal-500" />
                   Qisqacha ma'lumot
@@ -352,25 +388,36 @@ const ProductDetail = () => {
               </div>
 
               {/* Properties */}
-              <div className={`${isMobile && activeTab !== "properties" ? "hidden" : ""}`}>
+              <div
+                className={`${
+                  isMobile && activeTab !== "properties" ? "hidden" : ""
+                }`}
+              >
                 <h2 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
                   <Tag size={18} className="mr-2 text-teal-500" />
                   Xususiyatlar
                 </h2>
                 <div className="space-y-1">
-                  {isArray(item?.propertyValues) && item?.propertyValues.length > 0 ? (
+                  {isArray(item?.propertyValues) &&
+                  item?.propertyValues.length > 0 ? (
                     item.propertyValues.map((property, index) => (
                       <div
                         key={index}
                         className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0"
                       >
-                        <p className="text-gray-600 font-medium">{property?.value?.key}</p>
+                        <p className="text-gray-600 font-medium">
+                          {property?.value?.key}
+                        </p>
                         <div className="flex-1 mx-4 border-t border-dashed border-gray-200 hidden md:block"></div>
-                        <p className="text-gray-900 font-medium">{property?.value?.value}</p>
+                        <p className="text-gray-900 font-medium">
+                          {property?.value?.value}
+                        </p>
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-500 italic">Xususiyatlar haqida ma'lumot mavjud emas.</p>
+                    <p className="text-gray-500 italic">
+                      Xususiyatlar haqida ma'lumot mavjud emas.
+                    </p>
                   )}
                 </div>
               </div>
@@ -387,7 +434,8 @@ const ProductDetail = () => {
                   <span>
                     {item?.location || (
                       <>
-                        {item?.region?.name} {item?.district?.name && `, ${item?.district?.name}`}
+                        {item?.region?.name}{" "}
+                        {item?.district?.name && `, ${item?.district?.name}`}
                       </>
                     )}
                   </span>
@@ -400,7 +448,9 @@ const ProductDetail = () => {
               </div>
 
               {/* Title - Desktop only */}
-              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">{item?.title}</h1>
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                {item?.title}
+              </h1>
 
               {/* Price */}
               <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-4 rounded-xl">
@@ -433,11 +483,18 @@ const ProductDetail = () => {
                     {item?.profile?.fullName?.charAt(0) || "S"}
                   </div>
                   <div className="ml-3">
-                    <p className="font-medium">{item?.profile?.fullName || "Sotuvchi"}</p>
-                    <p className="text-sm font-medium text-teal-600">
-                      {item?.profile?.phoneNumber || "Telefon raqam ko'rsatilmagan"}
+                    <p className="font-medium">
+                      {item?.profile?.fullName || "Sotuvchi"}
                     </p>
-                    {item?.profile?.location && <p className="text-xs text-gray-500 mt-1">{item.profile.location}</p>}
+                    <p className="text-sm font-medium text-teal-600">
+                      {item?.profile?.phoneNumber ||
+                        "Telefon raqam ko'rsatilmagan"}
+                    </p>
+                    {item?.profile?.location && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {item.profile.location}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 flex space-x-3">
@@ -482,11 +539,15 @@ const ProductDetail = () => {
                     <Calendar size={16} className="mr-2 text-teal-500" />
                     Qo'shilgan sana:
                   </span>
-                  <span className="font-medium">{formatDate(item?.createdAt)}</span>
+                  <span className="font-medium">
+                    {formatDate(item?.createdAt)}
+                  </span>
                 </div>
 
                 {/* Location */}
-                {(item?.location || item?.region?.name || item?.district?.name) && (
+                {(item?.location ||
+                  item?.region?.name ||
+                  item?.district?.name) && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-500 flex items-center">
                       <MapPin size={16} className="mr-2 text-teal-500" />
@@ -495,7 +556,8 @@ const ProductDetail = () => {
                     <span className="font-medium">
                       {item?.location || (
                         <>
-                          {item?.region?.name} {item?.district?.name && `, ${item?.district?.name}`}
+                          {item?.region?.name}{" "}
+                          {item?.district?.name && `, ${item?.district?.name}`}
                         </>
                       )}
                     </span>
@@ -530,7 +592,7 @@ const ProductDetail = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default ProductDetail
+export default ProductDetail;
