@@ -141,7 +141,7 @@ const Header = () => {
         )}
 
         {/* Desktop Header */}
-        <div className="hidden lg:flex items-center justify-between py-4 px-4">
+        <div className="hidden lg:flex items-center justify-between py-2 px-2">
           <div className="flex items-center space-x-4">
             <Link to="/">
               <img
@@ -169,17 +169,19 @@ const Header = () => {
             </button>
           </div>
 
-          <div className="w-full max-w-md mx-4">
+          <div className="w-full max-w-md mx-2">
             <SearchForm />
           </div>
 
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             <Link
-              to="/add-item"
-              className="flex items-center rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 px-4 h-11 text-white hover:from-teal-700 hover:to-teal-800"
+              to={!isAuthenticated ? "/auth/login" : "/add-item"}
+              className="flex text-sm items-center space-x-2 px-2  py-2 h-10 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700"
             >
-              <ShoppingBag size={18} className="mr-2" />
-              <span className="text-sm font-medium">E'lon qo'shish</span>
+              <ShoppingBag size={18} className="mr-1" />
+              <span className="text-sm font-medium">
+                E&apos;lon qo&apos;shish
+              </span>
             </Link>
 
             <Link
@@ -197,7 +199,7 @@ const Header = () => {
               </span>
             </Link>
 
-            <Link
+            {/* <Link
               to={isAuthenticated ? `/user/${get(user, "id")}` : "/auth/login"}
               className="group flex flex-col items-center"
             >
@@ -210,7 +212,7 @@ const Header = () => {
               <span className="text-xs text-gray-600 group-hover:text-teal-600 mt-1">
                 {isAuthenticated ? "Kabinet" : "Login"}
               </span>
-            </Link>
+            </Link> */}
 
             <select className="bg-transparent text-sm text-gray-600 outline-none p-2 rounded-md hover:bg-teal-50">
               <option value="uz">UZ</option>

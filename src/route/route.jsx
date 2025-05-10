@@ -21,13 +21,15 @@ export const AppRouter = () => {
           </PrivateRoute>
         }
       >
-        <Route index element={<HomeContainer />} />
-        <Route path="detail/:id" element={<ProductPages />} />
-        <Route path="catalog/:id" element={<CatalogPage />} />
         <Route path="add-item" element={<AddItem />} />
         <Route path="user/:id" element={<UserPage />} />
       </Route>
       <Route path="/admin-panel" element={<AdminPanel />} />
+      <Route path="/" element={<Layout />}>
+        <Route index element={<HomeContainer />} />
+        <Route path="detail/:id" element={<ProductPages />} />
+        <Route path="catalog/:id" element={<CatalogPage />} />
+      </Route>
 
       <Route path="/auth" element={<AuthLayout />}>
         <Route path="login" element={<Login />} />

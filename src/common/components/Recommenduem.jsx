@@ -21,11 +21,10 @@ const Recommenduem = () => {
         page: 1,
         size: 30,
         limit: 30,
-        sortBy: null,
-        sortOrder: null,
+        sortBy: "createdAt",
+        sortOrder: "ASC",
         paymentType: null,
         currencyType: null,
-        negotiable: true,
         skip: 0,
         regionId: null,
         districtId: null,
@@ -91,9 +90,9 @@ const Recommenduem = () => {
   );
 
   return (
-    <div className="mt-8 md:mt-14 container mx-auto px-4">
+    <div className="mt-8 md:mt-5 container mx-auto px-4">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 relative">
+        <h2 className="text-xl md:text-1xl font-bold text-gray-800 relative">
           <span className="relative z-10">Tavsiya etilgan mahsulotlar</span>
           <span className="absolute bottom-0 left-0 w-1/2 h-3 bg-teal-100 -z-0"></span>
         </h2>
@@ -139,8 +138,8 @@ const Recommenduem = () => {
           }
           style={{ overflow: "visible" }}
         >
-<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
-{items?.map((item, index) => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
+            {items?.map((item, index) => (
               <ItemCard key={item?.id || index} item={item} index={index} />
             ))}
           </div>

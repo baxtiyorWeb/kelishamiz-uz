@@ -284,7 +284,7 @@ const LoginComponent = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-teal-50 to-teal-100 p-4">
+    <div className="flex w-full min-h-screen  items-center justify-center bg-gradient-to-br from-teal-50 to-teal-100 p-4">
       <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-xl">
         <div className="relative overflow-hidden">
           {/* Animated background shapes */}
