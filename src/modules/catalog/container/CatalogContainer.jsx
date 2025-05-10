@@ -1,357 +1,817 @@
-import { get, isArray, isEqual } from 'lodash';
-import { Search } from 'lucide-react';
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import Breadcrumbs from '../../../common/ui/BreadCrumbs';
-import KEYS from '../../../export/keys';
-import URLS from '../../../export/urls';
-import useGetAllQuery from '../../../hooks/api/useGetAllQuery';
-import CatalogComponents from '../components/CatalogComponents';
+"use client";
 
-const CatalogContainer = () => {
-	const { id } = useParams();
-	const [selected, setSelected] = useState(null);
-	const [value, setValue] = useState('');
-	const [selectedFilter, setSelectedFilter] = useState({});
-	const [addFilter, setAddFilter] = useState([]);
-	const [initaliValue, setInitialValue] = useState(null);
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { get, isArray } from "lodash";
+import {
+  Search,
+  SlidersHorizontal,
+  ChevronDown,
+  X,
+  Check,
+  ArrowUpDown,
+  Grid3X3,
+  List,
+  Filter,
+  ChevronRight,
+} from "lucide-react";
+import KEYS from "../../../export/keys";
+import URLS from "../../../export/urls";
+import useGetAllQuery from "../../../hooks/api/useGetAllQuery";
+import useInfiniteScrollQuery from "../../../hooks/api/useInfiniteScrollQuery";
+import ItemCard from "../../../common/components/ItemCard";
+import { Link } from "react-router-dom";
 
-	const handleFilter = item => {
-		setAddFilter(prevFilters => {
-			const existingFilter = prevFilters.find(
-				filter => filter.propertyId === item.propertyId
-			);
+const CatalogPage = () => {
+  const { id } = useParams();
+  const [filters, setFilters] = useState({
+    categoryId: id ? parseInt(id) : null,
+    minPrice: null,
+    maxPrice: null,
+    title: "",
+    ownProduct: false,
+    properties: null,
+    page: 1,
+    size: 30,
+    limit: 30,
+    sortBy: null,
+    sortOrder: null,
+    paymentType: null,
+    currencyType: null,
+    negotiable: true,
+    skip: 0,
+    regionId: null,
+    districtId: null,
+  });
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [selectedProperties, setSelectedProperties] = useState({});
+  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [viewMode, setViewMode] = useState("grid"); // grid or list
+  const [sortOption, setSortOption] = useState({ field: null, order: null });
+  const [searchQuery, setSearchQuery] = useState("");
 
-			if (existingFilter) {
-				return prevFilters.map(filter =>
-					filter.propertyId === item.propertyId
-						? {
-								...filter,
-								filter: item?.filter,
-						  }
-						: filter
-				);
-			} else {
-				return [
-					...prevFilters,
-					{
-						...item,
-						filter: item?.filter,
-					},
-				];
-			}
-		});
+  // Fetch category details
+  const { data: categoryData } = useGetAllQuery({
+    key: `category_${id}`,
+    url: `/category/${id}`,
+    enabled: !!id,
+  });
 
-		setInitialValue(item);
-	};
+  const category = get(categoryData, "data.content", {});
 
-	const { data: categories } = useGetAllQuery({
-		key: KEYS.category_list,
-		url: URLS.category_list,
-		params: {
-			params: {
-				page: 2,
-				size: 10,
-				parentId: null,
-			},
-		},
-	});
-	const { data } = useGetAllQuery({
-		key: `/category/properties/${id}`,
-		url: `/category/properties/${id}`,
-		enabled: !!id,
-	});
+  // Fetch category properties for filtering
+  const { data: propertiesData } = useGetAllQuery({
+    key: `/category/${id}/properties`,
+    url: `/category/${id}/properties`,
+    enabled: !!id,
+  });
 
-	const { data: getFilters } = useGetAllQuery({
-		key: `/product/string-values?categoryId=${id}&propertyId=${get(
-			selected,
-			'id'
-		)}`,
-		url: `/product/string-values?categoryId=${id}&propertyId=${get(
-			selected,
-			'id'
-		)}`,
-		enabled: !!get(selected, 'id'),
-	});
+  const properties = isArray(get(propertiesData, "data.content", []))
+    ? get(propertiesData, "data.content", [])
+    : [];
+  // Fetch products with filters
+  console.log(properties);
 
-	const items = isArray(get(data, 'data.data', []))
-		? get(data, 'data.data')
-		: [];
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useInfiniteScrollQuery({
+    key: `${KEYS.product_filter}_${id}_${JSON.stringify(filters)}`,
+    url: URLS.product_filter,
+    elements: filters,
+  });
 
-	const categories_items = isArray(get(categories, 'data.data.content', []))
-		? get(categories, 'data.data.content', [])
-		: [];
+  const items = isArray(get(data, "pages", []))
+    ? get(data, "pages", []).flat()
+    : [];
 
-	const filters = isArray(get(getFilters, 'data.data', []))
-		? get(getFilters, 'data.data')
-		: [];
+  // Update filters when category ID changes
+  useEffect(() => {
+    if (id) {
+      setFilters((prev) => ({
+        ...prev,
+        categoryId: parseInt(id),
+      }));
+      // Reset other filters when category changes
+      setSelectedProperties({});
+      setPriceRange({ min: "", max: "" });
+      setSortOption({ field: null, order: null });
+    }
+  }, [id]);
 
-	const { data: parentCategory } = useGetAllQuery({
-		key: `${KEYS.category_list}_${id}`,
-		url: `${URLS.category_list}?parentId=${id}`,
-		enabled: !!id,
-	});
+  // Apply filters
+  const applyFilters = () => {
+    const propertyFilters = {};
 
-	const subCategoryList = isArray(get(parentCategory, 'data.data.content', []))
-		? get(parentCategory, 'data.data.content', [])
-		: [];
+    // Convert selected properties to the format expected by the API
+    Object.entries(selectedProperties).forEach(([key, value]) => {
+      if (value) {
+        propertyFilters[key] = value;
+      }
+    });
 
-	const filterTypeChange = (value, id, name, item) => {
-		let minMax = value;
+    const updatedFilters = {
+      ...filters,
+      properties:
+        Object.keys(propertyFilters).length > 0 ? propertyFilters : null,
+      minPrice: priceRange.min ? Number(priceRange.min) : null,
+      maxPrice: priceRange.max ? Number(priceRange.max) : null,
+      title: searchQuery || "",
+      sortBy: sortOption.field,
+      sortOrder: sortOption.order,
+    };
 
-		const max = Number(value.max);
-		const min = Number(value.min);
+    setFilters(updatedFilters);
+    setMobileFiltersOpen(false);
+  };
 
-		if (minMax.max && minMax.min) {
-			minMax = { min, max };
-		} else if (minMax.max) {
-			minMax = { min, max };
-		} else if (minMax.min) {
-			minMax = { min, max };
-		}
+  // Handle property selection
+  const handlePropertyChange = (name, value) => {
+    setSelectedProperties((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-		const isFilterType =
-			get(item, 'valueTypeDto.typeName') === 'DOUBLE' ||
-			get(item, 'valueTypeDto.typeName') === 'INTEGER'
-				? {
-						...minMax,
-				  }
-				: value;
+  // Handle price range changes
+  const handlePriceChange = (type, value) => {
+    setPriceRange((prev) => ({
+      ...prev,
+      [type]: value,
+    }));
+  };
 
-		const filterObj = {
-			propertyId: get(item, 'id'),
-			valueTypeId: get(item, 'valueTypeDto.id'),
-			filter: isFilterType,
-		};
+  // Handle sort option change
+  const handleSortChange = (field) => {
+    setSortOption((prev) => {
+      if (prev.field === field) {
+        // Toggle order if same field
+        return { field, order: prev.order === "ASC" ? "DESC" : "ASC" };
+      }
+      // Default to ASC for new field
+      return { field, order: "ASC" };
+    });
+  };
 
-		if (Object.values(filterObj).every(Boolean)) {
-			setSelectedFilter(filterObj);
-		}
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedProperties({});
+    setPriceRange({ min: "", max: "" });
+    setSortOption({ field: null, order: null });
+    setSearchQuery("");
+    setFilters({
+      categoryId: id ? parseInt(id) : null,
+      minPrice: null,
+      maxPrice: null,
+      title: "",
+      ownProduct: false,
+      properties: null,
+      page: 1,
+      size: 30,
+      limit: 30,
+      sortBy: null,
+      sortOrder: null,
+      paymentType: null,
+      currencyType: null,
+      negotiable: true,
+      skip: 0,
+      regionId: null,
+      districtId: null,
+    });
+  };
 
-		setValue(value);
-		const items = {
-			id,
-			value,
-			name,
-		};
+  // Get active filter count
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (priceRange.min || priceRange.max) count++;
+    if (searchQuery) count++;
+    if (sortOption.field) count++;
+    count += Object.keys(selectedProperties).length;
+    return count;
+  };
 
-		setSelected(items);
-	};
+  return (
+    <div className="bg-gray-50 min-h-screen pb-16">
+      {/* Breadcrumbs */}
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center text-sm text-gray-500">
+          <Link to="/" className="hover:text-teal-600 transition-colors">
+            Bosh sahifa
+          </Link>
+          <ChevronRight className="h-4 w-4 mx-2" />
+          {category?.parent && (
+            <>
+              <Link
+                to={`/catalog/${category.parent.id}`}
+                className="hover:text-teal-600 transition-colors"
+              >
+                {category.parent.name}
+              </Link>
+              <ChevronRight className="h-4 w-4 mx-2" />
+            </>
+          )}
+          <span className="text-gray-700 font-medium">{category?.name}</span>
+        </div>
+      </div>
 
-	const handleFilterSelect = (selectedValue, item) => {
-		setValue(prev => ({
-			...prev,
-			[item.id]: selectedValue, // Har bir filterni o‘z ID bo‘yicha saqlash
-		}));
+      {/* Category Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold text-gray-800">{category?.name}</h1>
 
-		filterTypeChange(selectedValue, get(item, 'id'), get(item, 'name'), item);
-	};
+          {/* Subcategories */}
+          {category?.children && category.children.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {category.children.map((subcat) => (
+                <Link
+                  key={subcat.id}
+                  to={`/catalog/${subcat.id}`}
+                  className="px-4 py-2 bg-gray-100 hover:bg-teal-50 text-gray-700 hover:text-teal-600 rounded-full text-sm font-medium transition-colors"
+                >
+                  {subcat.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
-	const renderFilter = item => {
-		const typeName = item?.valueTypeDto?.typeName;
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Filters - Desktop */}
+          <div className="hidden lg:block w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden sticky top-4">
+              <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                <h2 className="font-semibold text-gray-800 flex items-center">
+                  <Filter className="h-4 w-4 mr-2 text-teal-500" />
+                  Filtrlar
+                </h2>
+                {getActiveFilterCount() > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                  >
+                    Tozalash
+                  </button>
+                )}
+              </div>
 
-		switch (typeName) {
-			case 'STRING':
-				return (
-					<input
-						type='text'
-						defaultValue={value[item?.id] || ''}
-						placeholder={`${get(item, 'name')} ni kiriting`}
-						className='w-full py-2 indent-2 outline-none border-[#FFBE1E] border my-1 rounded-md'
-						onChange={e =>
-							filterTypeChange(
-								e.target.value,
-								get(item, 'id'),
-								get(item, 'name'),
-								item
-							)
-						}
-						onKeyDown={e => {
-							if (e.keyCode === 13) {
-								handleFilter(selectedFilter);
-							}
-						}}
-					/>
-				);
-			case 'INTEGER':
-			case 'DOUBLE':
-				return (
-					<div className='flex space-x-2'>
-						<input
-							type='number'
-							placeholder='Min'
-							className='w-full py-2 indent-2 outline-none border-[#FFBE1E] border my-1 rounded-md'
-							onChange={e =>
-								filterTypeChange(
-									{
-										min: e.target.value,
-										max: initaliValue?.filter?.max || 0,
-									},
-									get(item, 'id'),
-									get(item, 'name'),
-									item
-								)
-							}
-							onKeyDown={e => {
-								if (e.keyCode === 13) {
-									handleFilter(selectedFilter);
-								}
-							}}
-						/>
-						<input
-							type='number'
-							placeholder='Max'
-							className='w-full py-2 indent-2 outline-none border-[#FFBE1E] border my-1 rounded-md'
-							onChange={e =>
-								filterTypeChange(
-									{
-										min: initaliValue?.filter?.min || 0,
-										max: e.target.value,
-									},
-									get(item, 'id'),
-									get(item, 'name'),
-									item
-								)
-							}
-							onKeyDown={e => {
-								if (e.keyCode === 13) {
-									handleFilter(selectedFilter);
-								}
-							}}
-						/>
-					</div>
-				);
-			case 'BOOLEAN':
-				return (
-					<select
-						className='w-full py-2 indent-2 outline-none border-[#FFBE1E] border my-1 rounded-md'
-						onChange={e =>
-							filterTypeChange(
-								e.target.value,
-								get(item, 'id'),
-								get(item, 'name'),
-								item
-							)
-						}
-						onKeyDown={e => {
-							if (e.keyCode === 13) {
-								handleFilter(selectedFilter);
-							}
-						}}
-					>
-						<option value='true'>True</option>
-						<option value='false'>False</option>
-					</select>
-				);
-			default:
-				return (
-					<input
-						type='text'
-						placeholder='Unknown type'
-						className='w-full py-2 indent-2 outline-none border-[#FFBE1E] border my-1 rounded-md'
-						onKeyDown={e => {
-							if (e.keyCode === 13) {
-								handleFilter(selectedFilter);
-							}
-						}}
-					/>
-				);
-		}
-	};
+              {/* Price Range */}
+              <div className="p-4 border-b border-gray-100">
+                <h3 className="font-medium text-gray-700 mb-3">
+                  Narx oralig'i
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={priceRange.min}
+                    onChange={(e) => handlePriceChange("min", e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                  />
+                  <span className="text-gray-400">-</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={priceRange.max}
+                    onChange={(e) => handlePriceChange("max", e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                  />
+                </div>
+              </div>
 
-	const filteredFilters = filters?.filter(filterResult => {
-		if (typeof filterResult !== 'string') return false;
-		const filterName = filterResult.toLowerCase();
-		const searchValue = value.toLowerCase();
-		return filterName.includes(searchValue);
-	});
+              {/* Property Filters */}
+              {properties.map((property) => (
+                <div key={property.id}>
+                  <h3 className="font-medium text-gray-700 mb-3">
+                    {property.name}
+                  </h3>
+                  {property.type === "SELECT" && property.options && (
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                      onChange={(e) =>
+                        handlePropertyChange(property.name, e.target.value)
+                      }
+                      value={selectedProperties[property.name] || ""}
+                    >
+                      <option value="">Tanlang</option>
+                      {property.options.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {property.type === "STRING" && (
+                    <input
+                      type="text"
+                      placeholder={`${property.name} qiymati`}
+                      value={selectedProperties[property.name] || ""}
+                      onChange={(e) =>
+                        handlePropertyChange(property.name, e.target.value)
+                      }
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                    />
+                  )}
+                  {property.type === "INTEGER" && (
+                    <input
+                      type="number"
+                      placeholder={`${property.name} qiymati`}
+                      value={selectedProperties[property.name] || ""}
+                      onChange={(e) =>
+                        handlePropertyChange(property.name, e.target.value)
+                      }
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                    />
+                  )}
+                  {property.type === "DOUBLE" && (
+                    <input
+                      type="number"
+                      placeholder={`${property.name} qiymati`}
+                      value={selectedProperties[property.name] || ""}
+                      onChange={(e) =>
+                        handlePropertyChange(property.name, e.target.value)
+                      }
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                    />
+                  )}
+                  {property.type === "BOOLEAN" && (
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                      onChange={(e) =>
+                        handlePropertyChange(property.name, e.target.value)
+                      }
+                      value={selectedProperties[property.name] || ""}
+                    >
+                      <option value="">Tanlang</option>
+                      <option value="true">Ha</option>
+                      <option value="false">Yo'q</option>
+                    </select>
+                  )}
+                </div>
+              ))}
 
-	return (
-		<>
-			<div className='flex justify-between items-center space-x-2 '>
-				{categories_items.map((item, index) => (
-					<div
-						key={index}
-						className=' relative mb-8 border-b-2 pb-2 border-transparent hover:border-b-btnColor transition-all duration-300'
-					>
-						<Link
-							key={get(item, 'id')}
-							to={`/catalog/${get(item, 'id')}`}
-							className='group flex    flex-col  items-center justify-center rounded-full   text-center text-sm '
-						>
-							<span className='mt-3 text-center font-poppins font-normal  not-italic  leading-[100%] text-textDarkColor group-hover:text-bgColor xs:text-xs  -bottom-8'>
-								{get(item, 'name')}
-							</span>
-						</Link>
-					</div>
-				))}
-			</div>
-			<Breadcrumbs />
-			<div className='grid grid-cols-12  gap-4 mt-2'>
-				<div className='col-span-3  bg-gray-50'>
-					<div className='col-span-1 bg-white rounded-lg shadow-md overflow-hidden'>
-						{subCategoryList?.length !== 0 && (
-							<h2 className='text-lg font-semibold p-4 bg-gray-100'>
-								Sub Categories
-							</h2>
-						)}
-						{subCategoryList?.map(item => (
-							<Link
-								key={get(item, 'id')}
-								to={`/catalog/${get(item, 'id')}`}
-								className='block px-4 py-2 hover:bg-gray-50 transition-colors duration-150 ease-in-out border-b last:border-b-0 text-sm'
-							>
-								{get(item, 'name')}
-							</Link>
-						))}
-					</div>
+              <div className="p-4">
+                <button
+                  onClick={applyFilters}
+                  className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                >
+                  Qo'llash
+                </button>
+              </div>
+            </div>
+          </div>
 
-					<div className='col-span-2 bg-white rounded-lg shadow-md overflow-hidden'>
-						<h2 className='text-lg font-semibold p-2 bg-gray-100'>Saralash</h2>
-						{items?.map(item => (
-							<div
-								key={get(item, 'id')}
-								className='relative p-2 border-b last:border-b-0'
-							>
-								<div className='flex justify-start items-start flex-col'>
-									<h3 className='font-medium text-gray-800 text-sm'>
-										{get(item, 'name', 'item')}
-									</h3>
-									<div className='mt-2 w-full'>{renderFilter(item)}</div>
-								</div>
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Search and Sort Bar */}
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <input
+                    type="text"
+                    placeholder="Qidirish..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                  />
+                </div>
 
-								{item?.valueTypeDto?.typeName === 'STRING' &&
-									filteredFilters?.map((filterResult, index) => {
-										const filterId = get(item, 'id');
+                <div className="flex items-center gap-3">
+                  {/* Sort Dropdown */}
+                  <div className="relative group">
+                    <button className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-md text-sm font-medium text-gray-700 transition-colors">
+                      <ArrowUpDown className="h-4 w-4 mr-1" />
+                      <span>Saralash</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg overflow-hidden z-20 hidden group-hover:block">
+                      <div className="py-1">
+                        <button
+                          onClick={() => handleSortChange("price")}
+                          className={`flex items-center justify-between px-4 py-2 text-sm w-full text-left ${
+                            sortOption.field === "price"
+                              ? "bg-teal-50 text-teal-700"
+                              : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                        >
+                          <span>Narx</span>
+                          {sortOption.field === "price" && (
+                            <span>
+                              {sortOption.order === "ASC" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleSortChange("createdAt")}
+                          className={`flex items-center justify-between px-4 py-2 text-sm w-full text-left ${
+                            sortOption.field === "createdAt"
+                              ? "bg-teal-50 text-teal-700"
+                              : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                        >
+                          <span>Sana</span>
+                          {sortOption.field === "createdAt" && (
+                            <span>
+                              {sortOption.order === "ASC" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleSortChange("viewCount")}
+                          className={`flex items-center justify-between px-4 py-2 text-sm w-full text-left ${
+                            sortOption.field === "viewCount"
+                              ? "bg-teal-50 text-teal-700"
+                              : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                        >
+                          <span>Ko'rishlar soni</span>
+                          {sortOption.field === "viewCount" && (
+                            <span>
+                              {sortOption.order === "ASC" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-										return (
-											!!selected &&
-											value !== '' &&
-											isEqual(get(selected, 'id'), filterId) && (
-												<div
-													key={index}
-													className='absolute left-0 right-0 bottom-0 z-10 bg-white border-t flex items-center px-4 py-2 space-x-3 cursor-pointer hover:bg-gray-50 transition-colors duration-150 ease-in-out'
-													onClick={() => {
-														handleFilterSelect(filterResult, item);
-														handleFilter(selectedFilter);
-													}}
-												>
-													<Search size={18} className='text-gray-500' />
-													<span className='text-gray-700'>{filterResult}</span>
-												</div>
-											)
-										);
-									})}
-							</div>
-						))}
-					</div>
-				</div>
-				<div className='col-span-9 row-span-7 overflow-y-auto'>
-					<CatalogComponents addFilter={addFilter} />
-				</div>
-			</div>
-		</>
-	);
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center bg-gray-100 rounded-md">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`p-2 rounded-l-md ${
+                        viewMode === "grid"
+                          ? "bg-teal-500 text-white"
+                          : "text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      <Grid3X3 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`p-2 rounded-r-md ${
+                        viewMode === "list"
+                          ? "bg-teal-500 text-white"
+                          : "text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Mobile Filter Button */}
+                  <button
+                    onClick={() => setMobileFiltersOpen(true)}
+                    className="lg:hidden flex items-center space-x-1 bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    <SlidersHorizontal className="h-4 w-4 mr-1" />
+                    <span>Filtrlar</span>
+                    {getActiveFilterCount() > 0 && (
+                      <span className="ml-1 bg-white text-teal-600 rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold">
+                        {getActiveFilterCount()}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Active Filters */}
+              {getActiveFilterCount() > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {searchQuery && (
+                    <div className="flex items-center bg-teal-50 text-teal-700 text-xs rounded-full px-3 py-1">
+                      <span>Qidiruv: {searchQuery}</span>
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="ml-1 text-teal-500 hover:text-teal-700"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {(priceRange.min || priceRange.max) && (
+                    <div className="flex items-center bg-teal-50 text-teal-700 text-xs rounded-full px-3 py-1">
+                      <span>
+                        Narx: {priceRange.min || "0"} - {priceRange.max || "∞"}
+                      </span>
+                      <button
+                        onClick={() => setPriceRange({ min: "", max: "" })}
+                        className="ml-1 text-teal-500 hover:text-teal-700"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {sortOption.field && (
+                    <div className="flex items-center bg-teal-50 text-teal-700 text-xs rounded-full px-3 py-1">
+                      <span>
+                        Saralash:{" "}
+                        {sortOption.field === "price"
+                          ? "Narx"
+                          : sortOption.field === "createdAt"
+                          ? "Sana"
+                          : "Ko'rishlar"}
+                        {sortOption.order === "ASC"
+                          ? " (o'sish)"
+                          : " (kamayish)"}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setSortOption({ field: null, order: null })
+                        }
+                        className="ml-1 text-teal-500 hover:text-teal-700"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {Object.entries(selectedProperties).map(([key, value]) => (
+                    <div
+                      key={key}
+                      className="flex items-center bg-teal-50 text-teal-700 text-xs rounded-full px-3 py-1"
+                    >
+                      <span>
+                        {key}:{" "}
+                        {typeof value === "object"
+                          ? `${value.min || "0"} - ${value.max || "∞"}`
+                          : value}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const newProps = { ...selectedProperties };
+                          delete newProps[key];
+                          setSelectedProperties(newProps);
+                        }}
+                        className="ml-1 text-teal-500 hover:text-teal-700"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center bg-gray-200 text-gray-700 text-xs rounded-full px-3 py-1 hover:bg-gray-300 transition-colors"
+                  >
+                    <span>Barcha filtrlarni tozalash</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Products Grid/List */}
+            {isLoading ? (
+              // Loading skeleton
+              <div
+                className={`grid ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4"
+                    : "grid-cols-1"
+                } gap-4`}
+              >
+                {[...Array(8)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-lg shadow-sm overflow-hidden"
+                  >
+                    <div className="h-48 bg-gray-200 animate-pulse"></div>
+                    <div className="p-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-2/3"></div>
+                      <div className="h-6 bg-gray-200 rounded animate-pulse mt-4"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : items.length === 0 ? (
+              // Empty state
+              <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto flex items-center justify-center mb-4">
+                  <Search className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-800 mb-2">
+                  Mahsulotlar topilmadi
+                </h3>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  Ushbu kategoriyada mahsulotlar mavjud emas yoki filtrlar
+                  bo'yicha hech qanday natija topilmadi.
+                </p>
+                {getActiveFilterCount() > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="mt-4 bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                  >
+                    Filtrlarni tozalash
+                  </button>
+                )}
+              </div>
+            ) : (
+              // Products
+              <div
+                className={
+                  viewMode === "grid"
+                    ? `grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 gap-y-6`
+                    : `flex flex-col space-y-4`
+                }
+              >
+                {items.map((item, index) => (
+                  <div
+                    key={item?.id || index}
+                    className={viewMode === "list" ? "w-full" : ""}
+                  >
+                    <ItemCard item={item} index={index} viewMode={viewMode} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {hasNextPage && !isLoading && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  className="bg-white hover:bg-gray-50 text-teal-600 font-medium py-2 px-6 border border-gray-300 rounded-md shadow-sm transition-colors"
+                >
+                  {isFetchingNextPage ? (
+                    <span className="flex items-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-teal-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Yuklanmoqda...
+                    </span>
+                  ) : (
+                    "Ko'proq ko'rsatish"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Filters Sidebar */}
+      {mobileFiltersOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden lg:hidden">
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={() => setMobileFiltersOpen(false)}
+          ></div>
+
+          <div className="absolute inset-y-0 right-0 max-w-full flex">
+            <div className="relative w-screen max-w-md">
+              <div className="h-full flex flex-col bg-white shadow-xl overflow-y-auto">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                  <h2 className="text-lg font-medium text-gray-900 flex items-center">
+                    <Filter className="h-5 w-5 mr-2 text-teal-500" />
+                    Filtrlar
+                  </h2>
+                  <button
+                    onClick={() => setMobileFiltersOpen(false)}
+                    className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
+                  {/* Price Range */}
+                  <div>
+                    <h3 className="font-medium text-gray-700 mb-3">
+                      Narx oralig'i
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={priceRange.min}
+                        onChange={(e) =>
+                          handlePriceChange("min", e.target.value)
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                      />
+                      <span className="text-gray-400">-</span>
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={priceRange.max}
+                        onChange={(e) =>
+                          handlePriceChange("max", e.target.value)
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Property Filters */}
+                  {properties.map((property) => (
+                    <div key={property.id} className="mb-4">
+                      <h3 className="font-medium text-gray-700 mb-2">
+                        {property.name}
+                      </h3>
+
+                      {/* STRING va INT uchun text input */}
+                      {(property.type === "STRING" ||
+                        property.type === "INT") && (
+                        <input
+                          type="text"
+                          placeholder={`${property.name} qiymati`}
+                          value={selectedProperties[property.name] || ""}
+                          onChange={(e) =>
+                            handlePropertyChange(property.name, e.target.value)
+                          }
+                          className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                        />
+                      )}
+
+                      {/* BOOLEAN uchun checkbox */}
+                      {property.type === "BOOLEAN" && (
+                        <label className="inline-flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedProperties[property.name] || false}
+                            onChange={(e) =>
+                              handlePropertyChange(
+                                property.name,
+                                e.target.checked
+                              )
+                            }
+                            className="form-checkbox text-teal-600"
+                          />
+                          <span className="text-sm text-gray-700">Ha</span>
+                        </label>
+                      )}
+
+                      {/* SELECT uchun select box */}
+                      {property.type === "SELECT" && (
+                        <select
+                          className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                          onChange={(e) =>
+                            handlePropertyChange(property.name, e.target.value)
+                          }
+                          value={selectedProperties[property.name] || ""}
+                        >
+                          <option value="">Tanlang</option>
+                          {property.options?.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-gray-200 px-4 py-4 space-y-3">
+                  {getActiveFilterCount() > 0 && (
+                    <button
+                      onClick={clearFilters}
+                      className="w-full bg-gray-100 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors"
+                    >
+                      Filtrlarni tozalash
+                    </button>
+                  )}
+                  <button
+                    onClick={applyFilters}
+                    className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                  >
+                    Qo'llash
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
-export default CatalogContainer;
+export default CatalogPage;
