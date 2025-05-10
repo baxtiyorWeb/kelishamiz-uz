@@ -37,7 +37,7 @@ const ItemCard = React.memo(({ item, index }) => {
 
   return (
     <div
-      className={`group  relative flex-shrink-0 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
+      className={`group   flex-col   relative rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
         index ? "animate-fade-in" : ""
       }`}
     >
@@ -61,9 +61,9 @@ const ItemCard = React.memo(({ item, index }) => {
       </div>
 
       {/* Content container */}
-      <div className="p-4">
+      <div className="px-4 py-2">
         {/* Title and description */}
-        <div className="mb-3">
+        <div className="mb-1">
           <h3 className="text-lg font-medium line-clamp-2 text-gray-800 mb-1">
             {item?.title}
           </h3>
@@ -73,40 +73,42 @@ const ItemCard = React.memo(({ item, index }) => {
         </div>
 
         {/* Price */}
-        <div className="mb-3">
-          <span className="text-lg font-semibold text-emerald-700">
-            {item?.price}{" "}
-            <span className="text-sm font-normal">
-              {item?.currencyType || "so'm"}
+        <div>
+          <div className="mb-1">
+            <span className="text-lg font-semibold text-emerald-700">
+              {item?.price}{" "}
+              <span className="text-sm font-normal">
+                {item?.currencyType || "so'm"}
+              </span>
             </span>
-          </span>
-          {item?.negotiable === true && (
-            <span className="ml-2 text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
-              Kelishiladi
-            </span>
-          )}
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center text-gray-500 text-sm mb-3">
-            <MapPinIcon className="w-4 h-4 mr-2 text-emerald-600" />
-            <span>{item?.location}</span>
+            {item?.negotiable === true && (
+              <span className="ml-2 text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
+                Kelishiladi
+              </span>
+            )}
           </div>
-          {/* Date */}
-          <div className="flex items-center text-gray-500 text-sm mb-3">
-            <Calendar className="w-4 h-4 mr-2 text-emerald-600" />
-            <span>{formattedDate}</span>
-          </div>
-        </div>
-        {/* Footer with views and like button */}
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center text-gray-500 text-sm">
-            <Eye className="w-4 h-4 mr-1 text-emerald-600" />
-            <span>{item?.viewCount || 0}</span>
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center text-gray-500 text-sm mb-1">
+              <MapPinIcon className="w-4 h-4 mr-1 text-emerald-600" />
+              <span>{item?.location}</span>
+            </div>
+            {/* Date */}
+            <div className="flex items-center text-gray-500 text-sm mb-1">
+              <Calendar className="w-4 h-4 mr-1 text-emerald-600" />
+              <span>{formattedDate}</span>
+            </div>
           </div>
 
-          <button className="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-50 hover:bg-emerald-100 transition-colors">
-            <Heart className="w-5 h-5 text-emerald-600" />
-          </button>
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center text-gray-500 text-sm">
+              <Eye className="w-4  mr-1 text-emerald-600" />
+              <span>{item?.viewCount || 0}</span>
+            </div>
+
+            <button className="flex items-center justify-center  rounded-full bg-emerald-50 hover:bg-emerald-100 transition-colors">
+              <Heart className="w-5 h-5 text-emerald-600" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
