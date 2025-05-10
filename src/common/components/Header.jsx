@@ -46,7 +46,7 @@ const Header = () => {
       <input
         type="text"
         placeholder="Qidiruv"
-        className="h-10 flex-1 bg-white pl-4 text-gray-600 text-sm outline-none"
+        className="h-10 flex-1 max-w-lg bg-white pl-4 text-gray-600 text-sm outline-none"
       />
       <button
         type="submit"
@@ -186,9 +186,9 @@ const Header = () => {
 
             <Link
               to="/profile/dashboard/favourites"
-              className="group flex flex-col items-center"
+              className="group flex  space-x-1 items-center"
             >
-              <div className="p-2 rounded-full bg-teal-50 group-hover:bg-teal-100">
+              <div className="p-2  rounded-full bg-teal-50 group-hover:bg-teal-100">
                 <Heart
                   className="text-teal-600 group-hover:text-teal-700"
                   size={20}
@@ -199,9 +199,9 @@ const Header = () => {
               </span>
             </Link>
 
-            {/* <Link
+            <Link
               to={isAuthenticated ? `/user/${get(user, "id")}` : "/auth/login"}
-              className="group flex flex-col items-center"
+              className="group flex space-x-1 items-center"
             >
               <div className="p-2 rounded-full bg-teal-50 group-hover:bg-teal-100">
                 <User
@@ -212,7 +212,7 @@ const Header = () => {
               <span className="text-xs text-gray-600 group-hover:text-teal-600 mt-1">
                 {isAuthenticated ? "Kabinet" : "Login"}
               </span>
-            </Link> */}
+            </Link>
 
             <select className="bg-transparent text-sm text-gray-600 outline-none p-2 rounded-md hover:bg-teal-50">
               <option value="uz">UZ</option>

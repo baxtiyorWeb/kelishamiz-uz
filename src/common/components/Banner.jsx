@@ -99,7 +99,7 @@ const Banner = () => {
   return (
     <div className="grid grid-cols-12 gap-x-2 my-3 md:my-3">
       <div
-        className="relative   w-full col-span-8 overflow-hidden rounded-lg "
+        className="relative    w-full col-span-8 overflow-hidden rounded-xl "
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onTouchStart={onTouchStart}
@@ -107,7 +107,7 @@ const Banner = () => {
         onTouchEnd={onTouchEnd}
       >
         <div
-          className="flex h-[200px] sm:h-[180px] md:h-[200px]  lg:h-[250px] transition-transform duration-500 ease-out"
+          className="flex h-[200px] sm:h-[180px] md:h-[200px]  lg:h-[300px] transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {slides.map((slide, index) => (
@@ -177,7 +177,7 @@ const Banner = () => {
         </div>
       </div>
 
-      <div className="flex border col-span-4 h-[200px] sm:h-[180px] md:h-[200px]  lg:h-[250px] transition-transform duration-500 ease-out"></div>
+      <div className="flex border col-span-4 h-[200px] sm:h-[180px] md:h-[200px]  lg:h-[300px] transition-transform duration-500 ease-out"></div>
     </div>
   );
 };
