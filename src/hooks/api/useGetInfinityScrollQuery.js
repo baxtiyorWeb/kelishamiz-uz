@@ -5,20 +5,16 @@ const useInfiniteScrollQuery = ({
   key = "infinite-query",
   url = "/",
   elements = {},
-  initialPageParam = 1, // Start from page 1 instead of 0
+  initialPageParam = 1,
   showSuccessMsg = false,
   hideErrorMsg = false,
   enabled = true,
   options = {
     onSuccess: (data) => {
-      if (showSuccessMsg) {
-        return data;
-      }
+      if (showSuccessMsg) return data;
     },
     onError: (error) => {
-      if (!hideErrorMsg) {
-        return error;
-      }
+      if (!hideErrorMsg) return error;
     },
   },
 }) => {
@@ -37,23 +33,20 @@ const useInfiniteScrollQuery = ({
     ({ pageParam = initialPageParam }) => {
       const page = pageParam;
       const limit = elements.limit || 10;
-      const skip = (page - 1) * limit; // Ensure skip increments with page
+      const skip = (page - 1) * limit;
 
       return api
-        .post(
-          url,
-          {
-            page, // Pass the current page
-            limit, // Pass the limit
-            skip, // Pass the calculated skip
-            ...elements, // Other parameters
+        .get(url, {
+          params: {
+            page,
+            limit,
+            skip,
+            ...elements,
           },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-            },
-          }
-        )
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        })
         .then((response) => response?.data?.content)
         .catch((error) => {
           console.error("Error fetching data:", error);
@@ -62,7 +55,7 @@ const useInfiniteScrollQuery = ({
     },
     {
       getNextPageParam: (lastPage, allPages) => {
-        // Only increment the page if there are more items to fetch
+        // Only increment page if last page has enough items
         return lastPage?.length === elements.limit
           ? allPages.length + 1
           : undefined;
@@ -72,9 +65,16 @@ const useInfiniteScrollQuery = ({
     }
   );
 
+  // Prevent multiple fetches if data is already being fetched
+  const loadMore = () => {
+    if (!isFetchingNextPage && hasNextPage) {
+      fetchNextPage();
+    }
+  };
+
   return {
     data,
-    fetchNextPage,
+    fetchNextPage: loadMore, // Use the custom loadMore function
     isFetchingNextPage,
     hasNextPage,
     refetch,
@@ -84,4 +84,5 @@ const useInfiniteScrollQuery = ({
     error,
   };
 };
+
 export default useInfiniteScrollQuery;

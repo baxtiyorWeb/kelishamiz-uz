@@ -27,7 +27,7 @@ export const AppRouter = () => {
       <Route path="/admin-panel" element={<AdminPanel />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<HomeContainer />} />
-          <Route path="detail/:id" element={<ProductPages />} />
+        <Route path="detail/:id" element={<ProductPages />} />
         <Route path="catalog/:id" element={<CatalogPage />} />
       </Route>
 

@@ -1,8 +1,8 @@
 /* eslint-disable no-unsafe-optional-chaining */
 import axios from "axios";
-
+// https://kelishamiz-backend.vercel.app
 const api = axios.create({
-  baseURL: "https://kelishamiz-backend.vercel.app",
+  baseURL: "http://localhost:8888",
   headers: {
     "Content-Type": "application/json",
   },
