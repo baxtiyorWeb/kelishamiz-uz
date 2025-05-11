@@ -19,10 +19,14 @@ import {
   Info,
   User,
   Clock,
+  Loader2,
 } from "lucide-react";
 import useGetOneQuery from "../../../hooks/api/useGetOneQuery";
 import KEYS from "../../../export/keys";
 import URLS from "../../../export/urls";
+import InfiniteScroll from "react-infinite-scroll-component";
+import useGetAllQuery from "../../../hooks/api/useGetAllQuery";
+import ItemCard from "../../../common/components/ItemCard";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -50,6 +54,27 @@ const ProductDetail = () => {
   const item = !isNull(get(data, "data.content"))
     ? get(data, "data.content", {})
     : {};
+
+
+  const { data: smartDetailProducts, isLoading: smartLoading } = useGetAllQuery(
+    {
+      key: `/products/search-by-id-and-category/${id}?categoryId=${get(
+        item,
+        "categoryId"
+      )}`,
+      url: `/products/search-by-id-and-category/${id}?categoryId=${get(
+        item,
+        "categoryId"
+      )}`,
+      enabled: !!id && !!get(item, "categoryId"),
+    }
+  );
+
+  
+
+  const smartItems = !isNull(get(smartDetailProducts, "data.content.data"))
+    ? get(smartDetailProducts, "data.content.data", [])
+    : [];
 
   const processedImages = useMemo(() => {
     const images = get(item, "images", []);
@@ -136,7 +161,58 @@ const ProductDetail = () => {
   const handleImageLoad = () => {
     setIsImageLoading(false);
   };
+  const renderEmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <div className="w-24 h-24 bg-teal-50 rounded-full flex items-center justify-center mb-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-12 w-12 text-teal-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+          />
+        </svg>
+      </div>
+      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+        Hech qanday mahsulot topilmadi
+      </h3>
+      <p className="text-gray-500 max-w-md">
+        Hozircha bu toifada mahsulotlar mavjud emas. Iltimos, keyinroq qayta
+        tekshiring yoki boshqa toifani tanlang.
+      </p>
+    </div>
+  );
 
+  // Loading skeleton for initial load
+  const renderSkeletons = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
+      {[...Array(8)].map((_, index) => (
+        <div
+          key={index}
+          className="rounded-lg shadow-sm overflow-hidden bg-white"
+        >
+          <div className="w-full h-48 bg-gray-200 animate-pulse"></div>
+          <div className="p-4">
+            <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-2/3"></div>
+            <div className="h-4 bg-gray-200 rounded animate-pulse mb-4 w-1/4"></div>
+            <div className="h-6 bg-gray-200 rounded animate-pulse mb-4"></div>
+            <div className="flex justify-between">
+              <div className="h-8 bg-gray-200 rounded animate-pulse w-1/4"></div>
+              <div className="h-8 bg-gray-200 rounded-full animate-pulse w-8"></div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
   // Loading skeleton
   if (isLoading) {
     return (
@@ -577,7 +653,19 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
-
+      <div className="max-w-10xl border w-">
+        {smartLoading ? (
+          renderSkeletons()
+        ) : smartItems?.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
+            {smartItems?.map((item, index) => (
+              <ItemCard key={item?.id || index} item={item} index={index} />
+            ))}
+          </div>
+        )}
+      </div>
       {/* Sticky Footer - Mobile only */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.1)] p-1 flex space-x-3 z-20">
