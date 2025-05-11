@@ -45,6 +45,10 @@ const ProductDetail = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    window.scroll({ top: 0, behavior: "smooth" });
+  }, [id]);
+
   const { data, isLoading } = useGetOneQuery({
     key: `${KEYS.product_detail}/${id}`,
     url: `${URLS.product_detail}/${id}`,
@@ -55,25 +59,19 @@ const ProductDetail = () => {
     ? get(data, "data.content", {})
     : {};
 
+  const encodedTitle = encodeURIComponent(get(item, "title"));
+  const categoryId = get(item, "categoryId");
 
   const { data: smartDetailProducts, isLoading: smartLoading } = useGetAllQuery(
     {
-      key: `/products/search-by-id-and-category/${id}?categoryId=${get(
-        item,
-        "categoryId"
-      )}`,
-      url: `/products/search-by-id-and-category/${id}?categoryId=${get(
-        item,
-        "categoryId"
-      )}`,
-      enabled: !!id && !!get(item, "categoryId"),
+      key: `/products/search-by-id-and-category/${encodedTitle}?categoryId=${categoryId}`,
+      url: `/products/search-by-id-and-category/${encodedTitle}?categoryId=${categoryId}`,
+      enabled: !!encodedTitle && !!categoryId,
     }
   );
 
-  
-
-  const smartItems = !isNull(get(smartDetailProducts, "data.content.data"))
-    ? get(smartDetailProducts, "data.content.data", [])
+  const smartItems = !isNull(get(smartDetailProducts, "data.content"))
+    ? get(smartDetailProducts, "data.content", [])
     : [];
 
   const processedImages = useMemo(() => {
