@@ -761,20 +761,19 @@ const AddItemContainer = () => {
                     </div>
                   </div>
 
-                  {/* Subcategory - Show only if subcategories exist */}
                   {subcategories.length > 0 && (
                     <div>
                       <label
-                        htmlFor="subcategoryId"
+                        htmlFor="categoryId"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
                         Subkategoriya
                       </label>
                       <div className="relative">
                         <StyledSelect
-                          id="subcategoryId"
-                          name="subcategoryId"
-                          value={formData.subcategoryId || ""}
+                          id="categoryId"
+                          name="categoryId"
+                          value={formData.categoryId || ""}
                           onChange={handleChange}
                           disabled={isLoadingSubcategories}
                         >
@@ -813,24 +812,20 @@ const AddItemContainer = () => {
                           {property.name}
                         </label>
 
-                        {property.type === "STRING" ||
-                          (property.type === "STRING" && property.options && (
-                            <StyledInput
-                              id={`property-${property.id}`}
-                              value={
-                                formData.properties.find(
-                                  (p) => p.propertyId === property.id
-                                )?.value.value || ""
-                              }
-                              onChange={(e) =>
-                                handlePropertyChange(
-                                  property.id,
-                                  e.target.value
-                                )
-                              }
-                              placeholder={`${property.name} kiriting`}
-                            />
-                          ))}
+                        {property.type === "STRING" && !property.options && (
+                          <StyledInput
+                            id={`property-${property.id}`}
+                            value={
+                              formData.properties.find(
+                                (p) => p.propertyId === property.id
+                              )?.value.value || ""
+                            }
+                            onChange={(e) =>
+                              handlePropertyChange(property.id, e.target.value)
+                            }
+                            placeholder={`${property.name} kiriting`}
+                          />
+                        )}
 
                         {(property.type === "SELECT" ||
                           (property.type === "STRING" && property.options)) && (
