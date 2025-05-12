@@ -1,7 +1,7 @@
-import CatalogContainer from '../container/CatalogContainer';
+import CatalogContainer from "../container/CatalogContainer";
 
 const CatalogPage = () => {
-	return <CatalogContainer />;
+  return <CatalogContainer />;
 };
 
 export default CatalogPage;

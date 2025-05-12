@@ -593,7 +593,7 @@ const CatalogPage = () => {
                   </div>
                 ))}
               </div>
-            ) : items.length === 0 ? (
+            ) : items[0]?.data?.length === 0 ? (
               // Empty state
               <div className="bg-white rounded-lg shadow-sm p-8 text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto flex items-center justify-center mb-4">
@@ -616,7 +616,6 @@ const CatalogPage = () => {
                 )}
               </div>
             ) : (
-              // Products
               <div
                 className={
                   viewMode === "grid"
@@ -624,7 +623,7 @@ const CatalogPage = () => {
                     : `flex flex-col space-y-4`
                 }
               >
-                {items.map((item, index) => (
+                {items[0]?.data?.map((item, index) => (
                   <div
                     key={item?.id || index}
                     className={viewMode === "list" ? "w-full" : ""}

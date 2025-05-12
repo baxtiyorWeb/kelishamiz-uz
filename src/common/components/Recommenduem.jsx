@@ -119,11 +119,11 @@ const Recommenduem = () => {
 
       {isLoading ? (
         renderSkeletons()
-      ) : items.length === 0 ? (
+      ) : items[0]?.length === 0 ? (
         renderEmptyState()
       ) : (
         <InfiniteScroll
-          dataLength={items?.length || 0}
+          dataLength={items[0]?.length || 0}
           next={fetchNextPage}
           hasMore={hasNextPage}
           loader={
@@ -139,7 +139,7 @@ const Recommenduem = () => {
           style={{ overflow: "visible" }}
         >
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
-            {items?.map((item, index) => (
+            {items[0]?.data?.map((item, index) => (
               <ItemCard key={item?.id || index} item={item} index={index} />
             ))}
           </div>
