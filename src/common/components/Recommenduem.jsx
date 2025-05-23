@@ -3,36 +3,20 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { Loader2 } from "lucide-react";
 import KEYS from "../../export/keys";
 import URLS from "../../export/urls";
-import useInfiniteScrollQuery from "../../hooks/api/useInfiniteScrollQuery";
+import useGetInfinityScrollQuery from "../../hooks/api/useGetInfinityScrollQuery";
 import ItemCard from "./ItemCard";
 
 const Recommenduem = () => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteScrollQuery({
-      key: KEYS.product_filter,
-      url: URLS.product_filter,
-      elements: {
-        categoryId: null,
-        minPrice: null,
-        maxPrice: null,
-        title: "",
-        ownProduct: false,
-        properties: null,
-        page: 1,
-        size: 30,
-        limit: 30,
-        sortBy: "createdAt",
-        sortOrder: "ASC",
-        paymentType: null,
-        currencyType: null,
-        skip: 0,
-        regionId: null,
-        districtId: null,
-      },
+    useGetInfinityScrollQuery({
+      key: KEYS.products,
+      url: URLS.products,
+      initialPageParam: 1,
     });
 
+  // Har bir sahifadagi 'data' massivini birlashtiramiz
   const items = isArray(get(data, "pages", []))
-    ? get(data, "pages", []).flat()
+    ? data?.pages.flatMap((page) => get(page, "content.data", []))
     : [];
 
   // Empty state when no items are found
@@ -119,37 +103,27 @@ const Recommenduem = () => {
 
       {isLoading ? (
         renderSkeletons()
-      ) : items[0]?.length === 0 ? (
+      ) : items?.length === 0 ? (
         renderEmptyState()
       ) : (
         <InfiniteScroll
-          dataLength={items[0]?.length || 0}
+          dataLength={items?.length || 0}
           next={fetchNextPage}
           hasMore={hasNextPage}
-          loader={
-            <div className="flex justify-center py-6">
-              <Loader2 className="h-8 w-8 text-teal-500 animate-spin" />
-            </div>
-          }
+          scrollThreshold={0.9} // optional: 90% scrollda trigger bo‘ladi
+          loader={renderSkeletons()}
           endMessage={
             <div className="text-center py-6 text-gray-500">
               Barcha mahsulotlar yuklandi
             </div>
           }
-          style={{ overflow: "visible" }}
         >
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
-            {items[0]?.data?.map((item, index) => (
+            {items?.map((item, index) => (
               <ItemCard key={item?.id || index} item={item} index={index} />
             ))}
           </div>
         </InfiniteScroll>
-      )}
-
-      {isFetchingNextPage && (
-        <div className="flex justify-center py-6">
-          <Loader2 className="h-8 w-8 text-teal-500 animate-spin" />
-        </div>
       )}
     </div>
   );

@@ -32,22 +32,21 @@ const useInfiniteScrollQuery = ({
     key,
     ({ pageParam = initialPageParam }) => {
       const page = pageParam;
-      const limit = elements.limit || 10;
+      const limit = elements.limit || 8;
       const skip = (page - 1) * limit;
 
       return api
         .get(url, {
           params: {
             page,
-            limit,
-            skip,
+            pageSize: limit,
             ...elements,
           },
           headers: {
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         })
-        .then((response) => response?.data?.content)
+        .then((response) => response?.data) // Endi butun response.data ni qaytaramiz
         .catch((error) => {
           console.error("Error fetching data:", error);
           throw error;
@@ -55,10 +54,11 @@ const useInfiniteScrollQuery = ({
     },
     {
       getNextPageParam: (lastPage, allPages) => {
-        // Only increment page if last page has enough items
-        return lastPage?.length === elements.limit
-          ? allPages.length + 1
-          : undefined;
+        const totalItems = lastPage?.content?.total || 0;
+        const itemsFetched = allPages.flatMap(
+          (p) => p?.content?.data || []
+        ).length;
+        return itemsFetched < totalItems ? allPages.length + 1 : undefined;
       },
       enabled,
       ...options,

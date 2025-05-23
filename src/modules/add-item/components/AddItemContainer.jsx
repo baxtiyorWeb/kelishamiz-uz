@@ -176,6 +176,7 @@ const AddItemContainer = () => {
   // Data states
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [selectedSubcategoryId, setSelectedCategoryId] = useState(0);
   const [regions, setRegions] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [categoryProperties, setCategoryProperties] = useState([]);
@@ -191,7 +192,7 @@ const AddItemContainer = () => {
     setIsLoadingCategories(true);
     try {
       const response = await api.get("/category?parentId=null");
-      if (response.data.success) {
+      if (response?.data?.success) {
         setCategories(response.data.content);
         console.log(response.data.content);
       }
@@ -202,6 +203,8 @@ const AddItemContainer = () => {
       setIsLoadingCategories(false);
     }
   };
+
+  console.log(selectedSubcategoryId);
 
   // Fetch subcategories when category changes
   useEffect(() => {
@@ -774,7 +777,9 @@ const AddItemContainer = () => {
                           id="categoryId"
                           name="categoryId"
                           value={formData.categoryId || ""}
-                          onChange={handleChange}
+                          onChange={(e) =>
+                            setSelectedCategoryId(e.target.value)
+                          }
                           disabled={isLoadingSubcategories}
                         >
                           <option value="">Subkategoriyani tanlang</option>

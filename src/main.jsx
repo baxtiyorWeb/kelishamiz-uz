@@ -7,12 +7,12 @@ import "./index.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-      retry: false,
-      staleTime: 5000,
-      retryDelay: 1000,
+      queries: {
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        retry: false,
+        staleTime: 5000,
+        retryDelay: 1000,
     },
   },
 });

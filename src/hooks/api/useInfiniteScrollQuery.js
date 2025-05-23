@@ -5,7 +5,7 @@ const useInfiniteScrollQuery = ({
   key = "infinite-query",
   url = "/",
   elements = {},
-  initialPageParam = 1, // Start from page 1 instead of 0
+  initialPageParam = 1,
   showSuccessMsg = false,
   hideErrorMsg = false,
   enabled = true,
@@ -37,16 +37,15 @@ const useInfiniteScrollQuery = ({
     ({ pageParam = initialPageParam }) => {
       const page = pageParam;
       const limit = elements.limit || 10;
-      const skip = (page - 1) * limit; // Ensure skip increments with page
-
+      const skip = (page - 1) * limit;
       return api
         .post(
           url,
           {
-            page, // Pass the current page
-            limit, // Pass the limit
-            skip, // Pass the calculated skip
-            ...elements, // Other parameters
+            page,
+            limit,
+            skip,
+            ...elements,
           },
           {
             headers: {
@@ -54,7 +53,7 @@ const useInfiniteScrollQuery = ({
             },
           }
         )
-        .then((response) => response?.data?.content)
+        .then((response) => response?.data) // <-- SHU YERNI TO‘G‘RILADIK
         .catch((error) => {
           console.error("Error fetching data:", error);
           throw error;
@@ -62,10 +61,11 @@ const useInfiniteScrollQuery = ({
     },
     {
       getNextPageParam: (lastPage, allPages) => {
-        // Only increment the page if there are more items to fetch
-        return lastPage?.length === elements.limit
-          ? allPages.length + 1
-          : undefined;
+        const totalItems = lastPage?.content?.total || 0;
+        const itemsFetched = allPages.flatMap(
+          (p) => p?.content?.data || []
+        ).length;
+        return itemsFetched < totalItems ? allPages.length + 1 : undefined;
       },
       enabled,
       ...options,
