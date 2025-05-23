@@ -21,6 +21,7 @@ import useGetAllQuery from "../../../hooks/api/useGetAllQuery";
 import useInfiniteScrollQuery from "../../../hooks/api/useInfiniteScrollQuery";
 import ItemCard from "../../../common/components/ItemCard";
 import { Link } from "react-router-dom";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 const CatalogPage = () => {
   const { id } = useParams();
@@ -31,15 +32,12 @@ const CatalogPage = () => {
     title: "",
     ownProduct: false,
     properties: null,
-    page: 1,
-    size: 30,
-    limit: 30,
-    sortBy: null,
-    sortOrder: null,
+
+    sortBy: "DESC",
+    sortOrder: "DESC",
     paymentType: null,
     currencyType: null,
     negotiable: true,
-    skip: 0,
     regionId: null,
     districtId: null,
   });
@@ -70,23 +68,18 @@ const CatalogPage = () => {
     ? get(propertiesData, "data.content", [])
     : [];
   // Fetch products with filters
-  console.log(properties);
+  // console.log(properties);
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    refetch,
-  } = useInfiniteScrollQuery({
-    key: `${KEYS.product_filter}_${id}_${JSON.stringify(filters)}`,
-    url: URLS.product_filter,
-    elements: filters,
-  });
+  const { data, fetchNextPage, hasNextPage, isLoading } =
+    useInfiniteScrollQuery({
+      key: `${KEYS.product_filter}_${id}_${JSON.stringify(filters)}`,
+      url: URLS.product_filter,
+      elements: filters,
+      initialPageParam: 1,
+    });
 
   const items = isArray(get(data, "pages", []))
-    ? get(data, "pages", []).flat()
+    ? data?.pages.flatMap((page) => page?.content?.data || []).flat()
     : [];
 
   // Update filters when category ID changes
@@ -170,19 +163,69 @@ const CatalogPage = () => {
       title: "",
       ownProduct: false,
       properties: null,
-      page: 1,
-      size: 30,
-      limit: 30,
-      sortBy: null,
-      sortOrder: null,
+      sortBy: "DESC",
+      sortOrder: "DESC",
       paymentType: null,
       currencyType: null,
       negotiable: true,
-      skip: 0,
       regionId: null,
       districtId: null,
     });
   };
+
+  // Empty state when no items are found
+  const renderEmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <div className="w-24 h-24 bg-teal-50 rounded-full flex items-center justify-center mb-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-12 w-12 text-teal-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+          />
+        </svg>
+      </div>
+      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+        Hech qanday mahsulot topilmadi
+      </h3>
+      <p className="text-gray-500 max-w-md">
+        Hozircha bu toifada mahsulotlar mavjud emas. Iltimos, keyinroq qayta
+        tekshiring yoki boshqa toifani tanlang.
+      </p>
+    </div>
+  );
+
+  // Loading skeleton for initial load
+  const renderSkeletons = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 gap-y-6">
+      {[...Array(8)].map((_, index) => (
+        <div
+          key={index}
+          className="rounded-lg shadow-sm overflow-hidden bg-white"
+        >
+          <div className="w-full h-48 bg-gray-200 animate-pulse"></div>
+          <div className="p-4">
+            <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-2/3"></div>
+            <div className="h-4 bg-gray-200 rounded animate-pulse mb-4 w-1/4"></div>
+            <div className="h-6 bg-gray-200 rounded animate-pulse mb-4"></div>
+            <div className="flex justify-between">
+              <div className="h-8 bg-gray-200 rounded animate-pulse w-1/4"></div>
+              <div className="h-8 bg-gray-200 rounded-full animate-pulse w-8"></div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   // Get active filter count
   const getActiveFilterCount = () => {
@@ -593,7 +636,7 @@ const CatalogPage = () => {
                   </div>
                 ))}
               </div>
-            ) : items[0]?.data?.length === 0 ? (
+            ) : items?.length === 0 ? (
               // Empty state
               <div className="bg-white rounded-lg shadow-sm p-8 text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto flex items-center justify-center mb-4">
@@ -615,61 +658,40 @@ const CatalogPage = () => {
                   </button>
                 )}
               </div>
+            ) : isLoading ? (
+              renderSkeletons()
+            ) : items?.length === 0 ? (
+              renderEmptyState()
             ) : (
-              <div
-                className={
-                  viewMode === "grid"
-                    ? `grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-6`
-                    : `flex flex-col space-y-4`
+              <InfiniteScroll
+                dataLength={items?.length || 0}
+                next={fetchNextPage}
+                hasMore={hasNextPage}
+                scrollThreshold={0.9} // optional: 90% scrollda trigger bo‘ladi
+                loader={renderSkeletons()}
+                endMessage={
+                  <div className="text-center py-6 text-gray-500">
+                    Barcha mahsulotlar yuklandi
+                  </div>
                 }
               >
-                {items[0]?.data?.map((item, index) => (
-                  <div
-                    key={item?.id || index}
-                    className={viewMode === "list" ? "w-full" : ""}
-                  >
-                    <ItemCard item={item} index={index} viewMode={viewMode} />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {hasNextPage && !isLoading && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                  className="bg-white hover:bg-gray-50 text-teal-600 font-medium py-2 px-6 border border-gray-300 rounded-md shadow-sm transition-colors"
+                <div
+                  className={
+                    viewMode === "grid"
+                      ? `grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-6`
+                      : `flex flex-col space-y-4`
+                  }
                 >
-                  {isFetchingNextPage ? (
-                    <span className="flex items-center">
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-teal-600"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Yuklanmoqda...
-                    </span>
-                  ) : (
-                    "Ko'proq ko'rsatish"
-                  )}
-                </button>
-              </div>
+                  {items?.map((item, index) => (
+                    <div
+                      key={item?.id || index}
+                      className={viewMode === "list" ? "w-full" : ""}
+                    >
+                      <ItemCard item={item} index={index} viewMode={viewMode} />
+                    </div>
+                  ))}
+                </div>
+              </InfiniteScroll>
             )}
           </div>
         </div>

@@ -194,6 +194,8 @@ const LoginComponent = () => {
         phone: `+${phoneDigits}`,
         username,
         location,
+        regionId: 1,
+        districtId: 2,
       });
 
       localStorage.setItem("accessToken", res.data?.accessToken);

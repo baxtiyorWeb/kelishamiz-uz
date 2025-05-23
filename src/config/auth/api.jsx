@@ -1,15 +1,15 @@
 /* eslint-disable no-unsafe-optional-chaining */
 import axios from "axios";
-// https://kelishamiz-backend.vercel.app
+// https://kelixshamiz-backend.vercel.app
 // http://localhost:8888
 const api = axios.create({
-  baseURL: "https://kelishamiz-backend.vercel.app",
+  baseURL: "http://localhost:3030",
   headers: {
     "Content-Type": "application/json",
   },
   withCredentials: true,
 });
-//  
+
 export const getAccessToken = () => localStorage.getItem("accessToken");
 export const getRefreshToken = () => localStorage.getItem("refreshToken");
 
