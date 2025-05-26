@@ -40,10 +40,10 @@ const Categories = () => {
                 className="flex flex-col items-center group transition-all duration-300"
               >
                 <div className="relative w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-emerald-100 group-hover:border-emerald-500 transition-all duration-300">
-                  {item?.file?.fileBase64 ? (
+                  {item?.imageUrl ? (
                     <img
-                      src={`data:image/png;base64,${item.file.fileBase64}`}
-                      alt={get(item, "name", "Category")}
+                      src={get(item, "imageUrl")}
+                      alt={get(item, "imageUrl", "Category")}
                       className="w-full h-full object-cover p-2 bg-white"
                     />
                   ) : (

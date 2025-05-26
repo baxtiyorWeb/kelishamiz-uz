@@ -3,7 +3,7 @@ import axios from "axios";
 // https://kelixshamiz-backend.vercel.app
 // http://localhost:8888
 const api = axios.create({
-  baseURL: "http://localhost:3030",
+  baseURL: "https://kelishamiz-backend.vercel.app",
   headers: {
     "Content-Type": "application/json",
   },
