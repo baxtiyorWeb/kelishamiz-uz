@@ -203,7 +203,7 @@ const Header = () => {
 
             {/* User/Kabinet */}
             <Link
-              to={isAuthenticated ? `/user/${get(user, "id")}` : "/auth/login"}
+              to={isAuthenticated ? `/user` : "/auth/login"}
               className="group flex space-x-1 items-center"
             >
               <div className="p-2 rounded-full bg-teal-50 group-hover:bg-teal-100">

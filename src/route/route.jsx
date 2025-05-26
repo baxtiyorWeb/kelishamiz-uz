@@ -22,7 +22,7 @@ export const AppRouter = () => {
         }
       >
         <Route path="add-item" element={<AddItem />} />
-        <Route path="user/:id" element={<UserPage />} />
+        <Route path="user" element={<UserPage />} />
       </Route>
       <Route path="/admin-panel" element={<AdminPanel />} />
       <Route path="/" element={<Layout />}>
