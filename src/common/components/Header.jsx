@@ -41,7 +41,7 @@ const Header = () => {
   const SearchForm = () => (
     <form
       onSubmit={(e) => e.preventDefault()}
-      className="flex items-center w-full rounded-full overflow-hidden border-2 border-teal-500 focus-within:ring-2 focus-within:ring-teal-300 transition-all shadow-sm"
+      className="flex items-center w-full rounded-full overflow-hidden border-2 border-teal-500 focus-within:ring-2 focus-within:ring-teal-300 transition-all shadow-sm min-w-[200px] max-w-full"
     >
       <input
         type="text"
@@ -59,7 +59,7 @@ const Header = () => {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full transition-all duration-300  ${
         isScrolled
           ? "bg-white shadow-md"
           : "bg-gradient-to-r from-teal-50 via-white to-teal-50"
@@ -127,7 +127,7 @@ const Header = () => {
               className="flex text-sm h-9 w-full items-center justify-center rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 px-2 text-white shadow-md hover:from-teal-700 hover:to-teal-800"
             >
               <ShoppingBag size={18} className="mr-1" />
-              <span className="text-sm font-medium">E'lon qo'shish</span>
+              <span className="text-sm  font-medium">E'lon qo'shish</span>
             </Link>
 
             <div className="flex justify-between pt-3 border-t border-gray-100">
@@ -173,22 +173,24 @@ const Header = () => {
             <SearchForm />
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-3 sm:gap-4 md:gap-5 ">
+            {/* Add Item Button */}
             <Link
               to={!isAuthenticated ? "/auth/login" : "/add-item"}
-              className="flex text-sm items-center space-x-2 px-2  py-2 h-10 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700"
+              className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4 py-2 h-10 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 whitespace-nowrap"
             >
-              <ShoppingBag size={18} className="mr-1" />
-              <span className="text-sm font-medium">
+              <ShoppingBag size={18} className="shrink-0" />
+              <span className="text-[10px] sm:text-xs md:text-sm lg:text-base  font-medium truncate">
                 E&apos;lon qo&apos;shish
               </span>
             </Link>
 
+            {/* Favourites */}
             <Link
               to="/profile/dashboard/favourites"
-              className="group flex  space-x-1 items-center"
+              className="group flex space-x-1 items-center"
             >
-              <div className="p-2  rounded-full bg-teal-50 group-hover:bg-teal-100">
+              <div className="p-2 rounded-full bg-teal-50 group-hover:bg-teal-100">
                 <Heart
                   className="text-teal-600 group-hover:text-teal-700"
                   size={20}
@@ -199,6 +201,7 @@ const Header = () => {
               </span>
             </Link>
 
+            {/* User/Kabinet */}
             <Link
               to={isAuthenticated ? `/user/${get(user, "id")}` : "/auth/login"}
               className="group flex space-x-1 items-center"
@@ -214,7 +217,8 @@ const Header = () => {
               </span>
             </Link>
 
-            <select className="bg-transparent text-sm text-gray-600 outline-none p-2 rounded-md hover:bg-teal-50">
+            {/* Language Selector */}
+            <select className="bg-transparent text-sm text-gray-600 outline-none  rounded-md hover:bg-teal-50">
               <option value="uz">UZ</option>
               <option value="en">EN</option>
               <option value="ru">RU</option>
