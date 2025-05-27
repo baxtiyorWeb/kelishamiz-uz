@@ -64,7 +64,6 @@ export default function ChatPage() {
     };
   };
 
-  // Socket connection
   useEffect(() => {
     const socketInstance = io("https://kelishamiz-backend.onrender.com", {
       transports: ["websocket", "polling"],
@@ -135,7 +134,7 @@ export default function ChatPage() {
     };
   }, []);
 
-  // Chat xonasi yaratish yoki topish
+  // Chat xonasi yaratish yoki
   const createOrGetChatRoom = async (productId, otherUserId) => {
     try {
       const response = await api.post(
@@ -144,7 +143,7 @@ export default function ChatPage() {
           productId: parseInt(productId),
           participantIds: [
             parseInt(otherUserId),
-            parseInt(await getCurrentUserId()),
+            parseInt(currentUserIdRef.current),
           ],
         }),
         {
@@ -154,7 +153,7 @@ export default function ChatPage() {
         }
       );
       // /
-      if (!response.ok) {
+      if (!response.data) {
         throw new Error("Chat xonasi yaratishda xatolik");
       }
 
@@ -225,7 +224,7 @@ export default function ChatPage() {
     const optimisticMessage = {
       id: Date.now(),
       content: content,
-      senderId: parseInt(await getCurrentUserId()),
+      senderId: parseInt(currentUserIdRef.current),
       senderUsername: CURRENT_USER.username,
       createdAt: new Date().toISOString(),
       status: "sending",
@@ -236,7 +235,7 @@ export default function ChatPage() {
 
     socket.emit("sendMessage", {
       chatRoomId: selectedChatRoom.id,
-      senderId: parseInt(await getCurrentUserId()),
+      senderId: parseInt(currentUserIdRef.current),
       message: content,
     });
   };
