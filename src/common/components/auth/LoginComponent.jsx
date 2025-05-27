@@ -15,18 +15,53 @@ import {
 } from "lucide-react";
 import api from "../../../config/auth/api";
 
+// API configuration - siz o'zingizning API base URL ingizni kiriting
+
 const LoginComponent = () => {
   const [phone, setPhone] = useState("");
   const [step, setStep] = useState("phone"); // phone | otp | register
   const [code, setCode] = useState("");
   const [username, setUsername] = useState("");
-  const [location, setLocation] = useState("");
+  const [regionId, setRegionId] = useState("");
+  const [districtId, setDistrictId] = useState("");
+  const [regions, setRegions] = useState([]);
+  const [districts, setDistricts] = useState([]);
   const [error, setError] = useState("");
   const [isNewUser, setIsNewUser] = useState(false);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [success, setSuccess] = useState("");
   const [responseCode, setResponseCode] = useState("");
+
+  // Fetch regions when step becomes register
+  useEffect(() => {
+    if (step === "register") {
+      fetchRegionsData();
+    }
+  }, [step]);
+
+  const fetchRegionsData = async () => {
+    try {
+      const response = await api.get("/location/regions");
+      const data = await response.data;
+      if (data?.content) {
+        setRegions(data.content);
+      }
+    } catch (err) {
+      setError("Viloyatlarni yuklashda xatolik yuz berdi");
+    }
+  };
+
+  const handleRegionChange = (e) => {
+    const selectedRegionId = e.target.value;
+    setRegionId(selectedRegionId);
+    setDistrictId(""); // Reset district when region changes
+
+    const selectedRegion = regions.find(
+      (r) => r.id === parseInt(selectedRegionId)
+    );
+    setDistricts(selectedRegion ? selectedRegion.districts : []);
+  };
 
   const formatPhoneNumber = (value) => {
     const cleaned = value.replace(/\D/g, "");
@@ -99,6 +134,13 @@ const LoginComponent = () => {
         setCountdown(120); // 2 minutes countdown
         setSuccess("Tasdiqlash kodi yuborildi");
         setResponseCode(response.data.code);
+
+        // OTP ni auto kiritish
+        if (response.data.code) {
+          setTimeout(() => {
+            setCode(response.data.code);
+          }, 1000);
+        }
       } catch (otpError) {
         if (otpError?.response?.status === 409) {
           setStep("otp");
@@ -182,8 +224,14 @@ const LoginComponent = () => {
       return;
     }
 
-    if (!location.trim()) {
-      setError("Iltimos, manzilingizni kiriting");
+    if (!regionId) {
+      setError("Iltimos, viloyatni tanlang");
+      setLoading(false);
+      return;
+    }
+
+    if (!districtId) {
+      setError("Iltimos, tumanni tanlang");
       setLoading(false);
       return;
     }
@@ -193,9 +241,8 @@ const LoginComponent = () => {
       const res = await api.post("/auth/create-account", {
         phone: `+${phoneDigits}`,
         username,
-        location,
-        regionId: 1,
-        districtId: 2,
+        regionId: parseInt(regionId),
+        districtId: parseInt(districtId),
       });
 
       localStorage.setItem("accessToken", res.data?.accessToken);
@@ -286,7 +333,7 @@ const LoginComponent = () => {
   };
 
   return (
-    <div className="flex w-full min-h-screen  items-center justify-center bg-gradient-to-br from-teal-50 to-teal-100 p-4">
+    <div className="flex w-full min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-teal-100 p-4">
       <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-xl">
         <div className="relative overflow-hidden">
           {/* Animated background shapes */}
@@ -404,268 +451,243 @@ const LoginComponent = () => {
               )}
             </AnimatePresence>
 
-            {/* Form steps */}
+            {/* Form Content */}
             <AnimatePresence mode="wait">
-              {/* Phone step */}
-              {step === "phone" && (
-                <motion.div
-                  className="space-y-4"
-                  key="phone-step"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  <motion.div className="relative" variants={itemVariants}>
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <Phone className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={handleChange}
-                      placeholder="+998 __ ___ __ __"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                    />
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
-                    <button
-                      onClick={handleSendPhone}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
-                    >
-                      {loading ? (
-                        <svg
-                          className="h-5 w-5 animate-spin text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      ) : (
-                        <>
-                          Davom etish <ArrowRight className="ml-2 h-5 w-5" />
-                        </>
-                      )}
-                    </button>
-                  </motion.div>
-                  <motion.p
-                    className="mt-4 text-center text-sm text-gray-500"
-                    variants={itemVariants}
-                  >
-                    Davom etish orqali siz{" "}
-                    <a href="#" className="text-teal-600 hover:underline">
-                      Foydalanish shartlari
-                    </a>{" "}
-                    va{" "}
-                    <a href="#" className="text-teal-600 hover:underline">
-                      Maxfiylik siyosati
-                    </a>
-                    ga rozilik bildirasiz
-                  </motion.p>
-                </motion.div>
-              )}
+              <motion.div
+                key={step}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-6"
+              >
+                {/* Phone Step */}
+                {step === "phone" && (
+                  <>
+                    <motion.div variants={itemVariants}>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                          <Phone className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="tel"
+                          value={phone}
+                          onChange={handleChange}
+                          placeholder="+998 90 123 45 67"
+                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 py-3 text-sm placeholder-gray-500 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                          disabled={loading}
+                        />
+                      </div>
+                    </motion.div>
 
-              {/* OTP step */}
-              {step === "otp" && (
-                <motion.div
-                  className="space-y-4"
-                  key="otp-step"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  <motion.div
-                    className="mb-4 text-center"
-                    variants={itemVariants}
-                  >
-                    <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full bg-teal-100">
-                      <Shield className="h-8 w-8 text-teal-600" />
-                    </div>
-                    <p className="text-sm text-gray-600">Kod yuborildi</p>
-                    <p className="font-medium text-gray-800">{phone}</p>
-                  </motion.div>
+                    <motion.div variants={itemVariants}>
+                      <button
+                        onClick={handleSendPhone}
+                        disabled={loading || !phone}
+                        className="group relative w-full overflow-hidden rounded-lg bg-teal-500 px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <span className="relative flex items-center justify-center">
+                          {loading ? (
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          ) : (
+                            <>
+                              Davom etish
+                              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </>
+                          )}
+                        </span>
+                      </button>
+                    </motion.div>
+                  </>
+                )}
 
-                  {responseCode ? (
-                    <motion.div
-                      className="mb-4 rounded-lg border border-teal-200 bg-teal-50 p-4"
-                      variants={itemVariants}
-                    >
-                      <div className="flex items-start">
-                        <CheckCircle className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-teal-500" />
-                        <div>
-                          <p className="text-sm font-medium text-teal-700">
-                            Tasdiqlash kodi avtomatik kiritildi
-                          </p>
-                          <p className="mt-1 text-lg font-bold text-teal-600">
-                            {responseCode}
+                {/* OTP Step */}
+                {step === "otp" && (
+                  <>
+                    <motion.div variants={itemVariants}>
+                      <div className="text-center">
+                        <div className="mb-2">
+                          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+                            <Shield className="h-6 w-6 text-teal-600" />
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">{phone}</span>{" "}
+                            raqamiga tasdiqlash kodi yuborildi
                           </p>
                         </div>
                       </div>
                     </motion.div>
-                  ) : (
-                    <motion.div className="relative" variants={itemVariants}>
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <Lock className="h-5 w-5 text-gray-400" />
+
+                    <motion.div variants={itemVariants}>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                          <Lock className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="text"
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                          placeholder="Tasdiqlash kodini kiriting"
+                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 py-3 text-sm placeholder-gray-500 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                          disabled={loading}
+                          maxLength={6}
+                        />
                       </div>
-                      <input
-                        type="text"
-                        value={code}
-                        onChange={(e) =>
-                          setCode(
-                            e.target.value.replace(/\D/g, "").substring(0, 6)
-                          )
-                        }
-                        placeholder="Tasdiqlash kodi"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all text-center font-medium text-lg tracking-widest"
-                        maxLength={6}
-                      />
                     </motion.div>
-                  )}
 
-                  <motion.div variants={itemVariants}>
-                    <button
-                      onClick={handleVerifyOtp}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
-                    >
-                      {loading ? (
-                        <svg
-                          className="h-5 w-5 animate-spin text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
+                    <motion.div variants={itemVariants}>
+                      <button
+                        onClick={handleVerifyOtp}
+                        disabled={loading || (!code && !responseCode)}
+                        className="group relative w-full overflow-hidden rounded-lg bg-teal-500 px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <span className="relative flex items-center justify-center">
+                          {loading ? (
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          ) : (
+                            <>
+                              Tasdiqlash
+                              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </>
+                          )}
+                        </span>
+                      </button>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <div className="text-center">
+                        {countdown > 0 ? (
+                          <p className="text-sm text-gray-500">
+                            Qayta yuborish: {formatTime(countdown)}
+                          </p>
+                        ) : (
+                          <button
+                            onClick={handleResendOtp}
+                            disabled={loading}
+                            className="text-sm text-teal-500 hover:text-teal-600 hover:underline focus:outline-none disabled:opacity-50"
+                          >
+                            Kodni qayta yuborish
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+
+                {/* Register Step */}
+                {step === "register" && (
+                  <>
+                    <motion.div variants={itemVariants}>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                          <User className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="text"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="Foydalanuvchi nomi"
+                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 py-3 text-sm placeholder-gray-500 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                          disabled={loading}
+                        />
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none z-10">
+                          <MapPin className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <select
+                          value={regionId}
+                          onChange={handleRegionChange}
+                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-8 py-3 text-sm text-gray-700 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 appearance-none"
+                          disabled={loading}
                         >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
+                          <option value="">Viloyatni tanlang</option>
+                          {regions.map((region) => (
+                            <option key={region.id} value={region.id}>
+                              {region.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg
+                            className="h-4 w-4 text-gray-400"
+                            fill="none"
                             stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      ) : (
-                        "Tasdiqlash"
-                      )}
-                    </button>
-                  </motion.div>
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </motion.div>
 
-                  <motion.div
-                    className="mt-4 text-center"
-                    variants={itemVariants}
-                  >
-                    <p className="mb-1 text-sm text-gray-600">
-                      Kodni olmadingizmi?
-                    </p>
-                    <button
-                      onClick={handleResendOtp}
-                      disabled={countdown > 0}
-                      className={`text-sm font-medium ${
-                        countdown > 0
-                          ? "text-gray-400"
-                          : "text-teal-600 hover:text-teal-800"
-                      }`}
-                    >
-                      {countdown > 0
-                        ? `Qayta yuborish (${formatTime(countdown)})`
-                        : "Qayta yuborish"}
-                    </button>
-                  </motion.div>
-                </motion.div>
-              )}
-
-              {/* Register step */}
-              {step === "register" && (
-                <motion.div
-                  className="space-y-4"
-                  key="register-step"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  <motion.div className="relative" variants={itemVariants}>
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <User className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Foydalanuvchi nomi"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                      required
-                    />
-                  </motion.div>
-
-                  <motion.div className="relative" variants={itemVariants}>
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <MapPin className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="Manzil"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                      required
-                    />
-                  </motion.div>
-
-                  <motion.div variants={itemVariants}>
-                    <button
-                      onClick={handleCreateAccount}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
-                    >
-                      {loading ? (
-                        <svg
-                          className="h-5 w-5 animate-spin text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
+                    <motion.div variants={itemVariants}>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none z-10">
+                          <MapPin className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <select
+                          value={districtId}
+                          onChange={(e) => setDistrictId(e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-8 py-3 text-sm text-gray-700 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 appearance-none"
+                          disabled={loading || !regionId}
                         >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
+                          <option value="">Tumanni tanlang</option>
+                          {districts.map((district) => (
+                            <option key={district.id} value={district.id}>
+                              {district.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg
+                            className="h-4 w-4 text-gray-400"
+                            fill="none"
                             stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      ) : (
-                        "Ro'yxatdan o'tish"
-                      )}
-                    </button>
-                  </motion.div>
-                </motion.div>
-              )}
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <button
+                        onClick={handleCreateAccount}
+                        disabled={
+                          loading || !username || !regionId || !districtId
+                        }
+                        className="group relative w-full overflow-hidden rounded-lg bg-teal-500 px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <span className="relative flex items-center justify-center">
+                          {loading ? (
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          ) : (
+                            <>
+                              Hisobni yaratish
+                              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </>
+                          )}
+                        </span>
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </motion.div>
             </AnimatePresence>
           </div>
         </div>
