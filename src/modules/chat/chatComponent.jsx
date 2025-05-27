@@ -67,6 +67,7 @@ export default function ChatPage() {
   useEffect(() => {
     const socketInstance = io("https://kelishamiz-backend.onrender.com", {
       transports: ["websocket", "polling"],
+      withCredentials: true,
     });
 
     setSocket(socketInstance);
