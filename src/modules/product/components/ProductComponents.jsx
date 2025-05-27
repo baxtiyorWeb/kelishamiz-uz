@@ -27,6 +27,7 @@ import URLS from "../../../export/urls";
 import InfiniteScroll from "react-infinite-scroll-component";
 import useGetAllQuery from "../../../hooks/api/useGetAllQuery";
 import ItemCard from "../../../common/components/ItemCard";
+import useGetUser from "../../../hooks/services/useGetUser";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -35,6 +36,7 @@ const ProductDetail = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isLiked, setIsLiked] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const user = useGetUser();
 
   useEffect(() => {
     const handleResize = () => {
@@ -159,6 +161,21 @@ const ProductDetail = () => {
   const handleImageLoad = () => {
     setIsImageLoading(false);
   };
+
+  async function getCurrentUserId() {
+    return new Promise((resolve) => {
+      if (user?.sub !== undefined) {
+        return resolve(user?.sub);
+      }
+
+      const interval = setInterval(() => {
+        if (user?.sub !== undefined) {
+          clearInterval(interval);
+          resolve(user?.sub);
+        }
+      }, 100); 
+    });
+  }
   const renderEmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <div className="w-24 h-24 bg-teal-50 rounded-full flex items-center justify-center mb-4">
@@ -576,7 +593,15 @@ const ProductDetail = () => {
                     <Phone size={16} className="mr-1" />
                     Qo'ng'iroq qilish
                   </button>
-                  <button className="flex-1 text-sm bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 text-teal-700 font-medium p-1 rounded-xl transition-colors flex items-center justify-center border border-teal-200">
+                  <button
+                    onClick={async () => {
+                      const currentUserId = await getCurrentUserId();
+                      if (currentUserId !== item?.profile?.user?.id) {
+                        window.location.href = `/chat?userId=${item?.profile?.user?.id}&productId=${item?.id}`;
+                      }
+                    }}
+                    className="flex-1 text-sm bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 text-teal-700 font-medium p-1 rounded-xl transition-colors flex items-center justify-center border border-teal-200"
+                  >
                     <MessageCircle size={16} className="mr-1" />
                     Xabar yozish
                   </button>
