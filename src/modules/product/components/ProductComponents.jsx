@@ -173,7 +173,7 @@ const ProductDetail = () => {
           clearInterval(interval);
           resolve(user?.sub);
         }
-      }, 100); 
+      }, 100);
     });
   }
   const renderEmptyState = () => (
@@ -696,7 +696,15 @@ const ProductDetail = () => {
             <Phone size={16} className="mr-2" />
             Qo'ng'iroq qilish
           </button>
-          <button className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium py-2.5 px-4 rounded-xl flex items-center justify-center shadow-sm">
+          <button
+            onClick={async () => {
+              const currentUserId = await getCurrentUserId();
+              if (currentUserId !== item?.profile?.user?.id) {
+                window.location.href = `/chat?userId=${item?.profile?.user?.id}&productId=${item?.id}`;
+              }
+            }}
+            className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium py-2.5 px-4 rounded-xl flex items-center justify-center shadow-sm"
+          >
             <MessageCircle size={16} className="mr-2" />
             Xabar yozish
           </button>
