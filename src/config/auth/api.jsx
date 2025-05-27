@@ -4,7 +4,7 @@ import axios from "axios";
 // https://kelishamiz-backend.onrender.com
 // http://localhost:8888
 const api = axios.create({
-  baseURL: "https://kelishamiz-backend.vercel.app",
+  baseURL: "https://kelishamiz-backend.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },
