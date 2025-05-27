@@ -5,7 +5,7 @@ import axios from "axios";
 // http://localhost:8888
 // 123123123
 const api = axios.create({
-  baseURL: "http://localhost:3030",
+  baseURL: "https://kelishamiz-backend.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },
