@@ -72,7 +72,7 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    const socketInstance = io("http://localhost:3030", {
+    const socketInstance = io("https://kelishamiz-backend.onrender.com", {
       transports: ["websocket", "polling"],
       withCredentials: true,
     });
@@ -365,6 +365,12 @@ export default function ChatPage() {
     });
   };
 
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const formatChatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -596,10 +602,10 @@ export default function ChatPage() {
                     }`}
                   >
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                      className={`bg-gradient-to-r   rounded-2xl  px-4 py-2 max-w-sm shadow-md ${
                         isOwn
-                          ? "bg-teal-500 text-white"
-                          : "bg-gray-200 text-gray-900"
+                          ? "from-teal-500 to-teal-600 text-white rounded-tr-md"
+                          : "bg-gray-200 text-gray-900 rounded-tl-md"
                       }`}
                     >
                       <p className="text-sm">{message.content}</p>
