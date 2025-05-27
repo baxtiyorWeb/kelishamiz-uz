@@ -571,7 +571,7 @@ export default function ChatPage() {
                       return (
                         <div
                           key={message.id}
-                          className="flex justify-end w-full border-b border-gray-200 pb-2"
+                          className="flex justify-end w-full  pb-2"
                         >
                           <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-2xl rounded-tr-md px-4 py-2 max-w-sm shadow-md">
                             <p className="text-sm">{message.content}</p>
