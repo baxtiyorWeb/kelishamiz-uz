@@ -245,8 +245,8 @@ const LoginComponent = () => {
         districtId: parseInt(districtId),
       });
 
-      localStorage.setItem("accessToken", res.data?.accessToken);
-      localStorage.setItem("refreshToken", res.data?.refreshToken);
+      localStorage.setItem("accessToken", res.data?.content?.accessToken);
+      localStorage.setItem("refreshToken", res.data?.content?.refreshToken);
 
       setSuccess("Hisobingiz muvaffaqiyatli yaratildi! Yo'naltirilmoqda...");
 
