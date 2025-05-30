@@ -72,7 +72,7 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    const socketInstance = io("https://kelishamiz-backend.onrender.com", {
+    const socketInstance = io("http://185.191.141.159", {
       transports: ["websocket", "polling"],
       withCredentials: true,
     });

@@ -3,9 +3,10 @@ import axios from "axios";
 // https://kelishamiz-backend.vercel.app
 // https://kelishamiz-backend.onrender.com
 // http://localhost:3030
+// http://185.191.141.159
 // 123123123
 const api = axios.create({
-  baseURL: "https://kelishamiz-backend.onrender.com",
+  baseURL: "http://185.191.141.159",
   headers: {
     "Content-Type": "application/json",
   },
