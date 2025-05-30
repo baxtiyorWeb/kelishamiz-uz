@@ -55,7 +55,7 @@ const LoginComponent = () => {
   const handleRegionChange = (e) => {
     const selectedRegionId = e.target.value;
     setRegionId(selectedRegionId);
-    setDistrictId(""); // Reset district when region changes
+    setDistrictId(""); 
 
     const selectedRegion = regions.find(
       (r) => r.id === parseInt(selectedRegionId)
