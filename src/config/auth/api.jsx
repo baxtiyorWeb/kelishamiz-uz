@@ -4,9 +4,10 @@ import axios from "axios";
 // https://kelishamiz-backend.onrender.com
 // http://localhost:3030
 // http://185.191.141.159
+// https://api.kelishamiz.uz/api/docs
 // 123123123
 const api = axios.create({
-  baseURL: "http://185.191.141.159",
+  baseURL: "https://api.kelishamiz.uz",
   headers: {
     "Content-Type": "application/json",
   },
