@@ -218,7 +218,6 @@ export default function ChatPage() {
     if (value.length > 0 && !isTyping) {
       startTyping();
 
-      // 2 soniyadan keyin typing ni to'xtatish
       if (typingTimeout) {
         clearTimeout(typingTimeout);
       }
