@@ -1,7 +1,7 @@
-import AddItemContainer from '../components/AddItemContainer';
+import AddItemContainer from "../components/AddItemContainer";
 
 const AddItem = () => {
-	return <AddItemContainer />;
+  return <AddItemContainer />;
 };
 
 export default AddItem;
