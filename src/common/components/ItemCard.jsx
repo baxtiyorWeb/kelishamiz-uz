@@ -1,19 +1,12 @@
 "use client";
 
 import { format } from "date-fns";
-import {
-  Calendar,
-  Eye,
-  Heart,
-  LocateIcon,
-  MapIcon,
-  MapPinIcon,
-} from "lucide-react";
+import { Calendar, Eye, Heart, MapPinIcon } from "lucide-react";
 import PropTypes from "prop-types";
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 
-const ItemCard = React.memo(({ item, index }) => {
+const ItemCard = React.memo(({ item, index, onLike, isLiked }) => {
   const formattedDate = useMemo(() => {
     if (item?.createdAt) {
       return format(new Date(item.createdAt), "dd MMM");
@@ -35,15 +28,23 @@ const ItemCard = React.memo(({ item, index }) => {
     return item?.mainImage || "https://via.placeholder.com/150";
   }, [item?.images, item?.mainImage]);
 
+  const handleLikeClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onLike) {
+      onLike(item?.id);
+    }
+  };
+
   return (
     <div
-      className={`group   flex-col   relative rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
+      className={`group bg-white flex-col relative rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
         index ? "animate-fade-in" : ""
       }`}
     >
       {/* TOP badge */}
       {item?.isTop && (
-        <span className="absolute left-3 top-3 z-10 bg-gradient-to-r from-emerald-600 to-emerald-700 px-2 py-0.5 text-xs font-medium text-white rounded">
+        <span className="absolute left-3 top-3 z-10 bg-gradient-to-r from-teal-500 to-teal-600 px-2 py-0.5 text-xs font-medium text-white rounded">
           TOP
         </span>
       )}
@@ -61,9 +62,9 @@ const ItemCard = React.memo(({ item, index }) => {
       </div>
 
       {/* Content container */}
-      <div className="px-4 py-2">
+      <div className="px-4 py-3">
         {/* Title and description */}
-        <div className="mb-1">
+        <div className="mb-2">
           <h3 className="text-lg font-medium line-clamp-2 text-gray-800 mb-1">
             {item?.title}
           </h3>
@@ -74,39 +75,47 @@ const ItemCard = React.memo(({ item, index }) => {
 
         {/* Price */}
         <div>
-          <div className="mb-1">
-            <span className="text-lg font-semibold text-emerald-700">
+          <div className="mb-2">
+            <span className="text-xl font-bold text-teal-600">
               {item?.price}{" "}
               <span className="text-sm font-normal">
                 {item?.currencyType || "so'm"}
               </span>
             </span>
             {item?.negotiable === true && (
-              <span className="ml-2 text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
+              <span className="ml-2 text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full">
                 Kelishiladi
               </span>
             )}
           </div>
-          <div className="flex items-center justify-between mt-1">
-            <div className="flex items-center text-gray-500 text-sm mb-1">
-              <MapPinIcon className="w-4 h-4 mr-1 text-emerald-600" />
+
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center text-gray-500 text-sm">
+              <MapPinIcon className="w-4 h-4 mr-1 text-teal-600" />
               <span>{item?.location}</span>
             </div>
             {/* Date */}
-            <div className="flex items-center text-gray-500 text-sm mb-1">
-              <Calendar className="w-4 h-4 mr-1 text-emerald-600" />
+            <div className="flex items-center text-gray-500 text-sm">
+              <Calendar className="w-4 h-4 mr-1 text-teal-600" />
               <span>{formattedDate}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center justify-between">
             <div className="flex items-center text-gray-500 text-sm">
-              <Eye className="w-4  mr-1 text-emerald-600" />
+              <Eye className="w-4 h-4 mr-1 text-teal-600" />
               <span>{item?.viewCount || 0}</span>
             </div>
 
-            <button className="flex items-center justify-center  rounded-full bg-emerald-50 hover:bg-emerald-100 transition-colors">
-              <Heart className="w-5 h-5 text-emerald-600" />
+            <button
+              onClick={handleLikeClick}
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                isLiked
+                  ? "bg-teal-100 text-teal-600"
+                  : "bg-gray-100 hover:bg-teal-50 hover:text-teal-600"
+              }`}
+            >
+              <Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
             </button>
           </div>
         </div>
@@ -135,9 +144,12 @@ ItemCard.propTypes = {
     price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     currencyType: PropTypes.string,
     negotiable: PropTypes.bool,
+    location: PropTypes.string,
     viewCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }),
   index: PropTypes.number,
+  onLike: PropTypes.func,
+  isLiked: PropTypes.bool,
 };
 
 export default ItemCard;
