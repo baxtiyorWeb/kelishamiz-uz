@@ -166,7 +166,7 @@ const ItemCard = React.memo(({ item, index, authToken, refresh }) => {
       <div className="relative w-full h-48 overflow-hidden">
         <Link to={detailLink} className="block w-full h-full">
           <img
-            src={item?.images[item?.imageIndex].url || "/placeholder.svg"}
+            src={item?.images[item?.imageIndex]?.url || "/placeholder.svg"}
             alt={item?.title || "Product image"}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
