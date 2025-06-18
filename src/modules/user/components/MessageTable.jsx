@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import ItemCard from "../../../common/components/ItemCard";
 import api from "../../../config/auth/api";
-api;
+import { useQuery } from "react-query";
+import { isArray } from "lodash";
 
 const MessageTable = () => {
   const [activeTab, setActiveTab] = useState("elonlar");
   const [searchQuery, setSearchQuery] = useState("");
   const [data, setData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [likedProducts, setLikedProducts] = useState([]);
 
@@ -18,67 +18,7 @@ const MessageTable = () => {
     setLikedProducts(stored);
   }, []);
 
-   // Updated handleLike function
-   const handleLike = async (productId) => {
-    console.log("handleLike called with productId:", productId); // Debug
-    const token = localStorage.getItem("accessToken");
-    console.log("Token exists:", !!token); // Debug
-
-    if (!token) {
-      console.log("Guest user - using localStorage"); // Debug
-      // Guest user - save to localStorage
-      const currentLiked = JSON.parse(
-        localStorage.getItem("likedProducts") || "[]"
-      );
-      console.log("Current liked products:", currentLiked); // Debug
-
-      if (currentLiked.includes(productId)) {
-        // Remove from likes
-        const updatedLikes = currentLiked.filter((id) => id !== productId);
-        localStorage.setItem("likedProducts", JSON.stringify(updatedLikes));
-        setLikedProducts(updatedLikes);
-        console.log("Removed from likes:", updatedLikes); // Debug
-      } else {
-        // Add to likes
-        const updatedLikes = [...currentLiked, productId];
-        localStorage.setItem("likedProducts", JSON.stringify(updatedLikes));
-        setLikedProducts(updatedLikes);
-        console.log("Added to likes:", updatedLikes); // Debug
-      }
-    } else {
-      console.log("Logged in user - using API"); // Debug
-      // Logged in user - use POST API to toggle like
-      try {
-        console.log("Making API request to:", `products/${productId}/like`); // Debug
-
-        const response = await api.post(
-          `products/${productId}/like`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        console.log("API response:", response.data?.content); // Debug
-
-        // Refresh data to get updated like status
-        fetchData();
-      } catch (err) {
-        console.error("Like toggle error:", err);
-        console.error("Error response:", err.response?.data); // Debug
-
-        if (err.response?.status === 401) {
-          console.log("Token expired, switching to guest mode"); // Debug
-          // Token expired or invalid, handle as guest user
-          localStorage.removeItem("accessToken");
-          handleLike(productId); // Retry as guest
-        }
-      }
-    }
-  };
+  // Updated handleLike function
 
   const isProductLiked = (productId) => {
     const token = localStorage.getItem("accessToken");
@@ -135,26 +75,62 @@ const MessageTable = () => {
   }, []);
 
   const fetchData = async () => {
-    setIsLoading(true);
-    setError(null);
+    const response = await api.get(
+      `/profiles/me/dashboard?filter=${activeTab}`
+    );
 
-    try {
-      const response = await api.get(
-        `/profiles/me/dashboard?filter=${activeTab}`
-      );
-
-      setData(response.data?.content);
-    } catch (err) {
-      setError(err.response?.data?.message || "Xatolik yuz berdi");
-      console.error("API Error:", err);
-    } finally {
-      setIsLoading(false);
-    }
+    return response.data;
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
+  const {
+    data: me_product_items,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["me_products", activeTab],
+    queryFn: async () => await fetchData(),
+  });
+
+  const handleLike = async (productId) => {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      // Guest user - store in localStorage
+      const currentLikes = JSON.parse(
+        localStorage.getItem("likedProducts") || "[]"
+      );
+      const isCurrentlyLiked = currentLikes.includes(productId);
+
+      if (isCurrentlyLiked) {
+        const updatedLikes = currentLikes.filter((id) => id !== productId);
+        localStorage.setItem("likedProducts", JSON.stringify(updatedLikes));
+        setLikedProducts(updatedLikes);
+      } else {
+        const updatedLikes = [...currentLikes, productId];
+        localStorage.setItem("likedProducts", JSON.stringify(updatedLikes));
+        setLikedProducts(updatedLikes);
+      }
+    } else {
+      // Logged in user - make API call
+      try {
+        await api.post(
+          `/products/${productId}/like`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        // Refresh data to get updated like status
+        fetchData();
+      } catch (err) {
+        console.error("Like error:", err);
+      }
+    }
+  };
 
   const formatDate = (date) => {
     const dateObj = new Date(date);
@@ -167,8 +143,6 @@ const MessageTable = () => {
       minute: "2-digit",
     });
   };
-
- 
 
   const SearchCard = ({ search }) => (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-4">
@@ -392,21 +366,23 @@ const MessageTable = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {data?.data?.content?.data?.map((product, index) => (
-                    <ItemCard
-                      key={product.id}
-                      item={product}
-                      index={index}
-                      onLike={() => {
-                        console.log(
-                          "onLike prop called for product:",
-                          product.id
-                        ); // Debug
-                        handleLike(product.id);
-                      }}
-                      isLiked={isProductLiked(product.id)}
-                    />
-                  ))}
+                  {me_product_items?.content?.products?.map(
+                    (product, index) => (
+                      <ItemCard
+                        key={product.id}
+                        item={product}
+                        index={index}
+                        onLike={() => {
+                          console.log(
+                            "onLike prop called for product:",
+                            product.id
+                          ); // Debug
+                          handleLike(product.id);
+                        }}
+                        isLiked={isProductLiked(product.id)}
+                      />
+                    )
+                  )}
                 </div>
               )}
             </div>
@@ -435,21 +411,23 @@ const MessageTable = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {data?.data?.map((product, index) => (
-                    <ItemCard
-                      key={product.id}
-                      item={product}
-                      index={index}
-                      onLike={() => {
-                        console.log(
-                          "onLike prop called for product:",
-                          product.id
-                        ); // Debug
-                        handleLike(product.id);
-                      }}
-                      isLiked={isProductLiked(product.id)}
-                    />
-                  ))}
+                  {me_product_items?.content?.products?.map(
+                    (product, index) => (
+                      <ItemCard
+                        key={product.id}
+                        item={product}
+                        index={index}
+                        onLike={() => {
+                          console.log(
+                            "onLike prop called for product:",
+                            product.id
+                          ); // Debug
+                          handleLike(product.id);
+                        }}
+                        isLiked={isProductLiked(product.id)}
+                      />
+                    )
+                  )}
                 </div>
               )}
             </div>
