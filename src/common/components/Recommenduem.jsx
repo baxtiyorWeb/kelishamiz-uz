@@ -30,67 +30,6 @@ const Recommenduem = () => {
     setLikedProducts(stored);
   }, []);
 
-  // Updated handleLike function
-  const handleLike = async (productId) => {
-    console.log("handleLike called with productId:", productId); // Debug
-    const token = localStorage.getItem("accessToken");
-    console.log("Token exists:", !!token); // Debug
-
-    if (!token) {
-      console.log("Guest user - using localStorage"); // Debug
-      // Guest user - save to localStorage
-      const currentLiked = JSON.parse(
-        localStorage.getItem("likedProducts") || "[]"
-      );
-      console.log("Current liked products:", currentLiked); // Debug
-
-      if (currentLiked.includes(productId)) {
-        // Remove from likes
-        const updatedLikes = currentLiked.filter((id) => id !== productId);
-        localStorage.setItem("likedProducts", JSON.stringify(updatedLikes));
-        setLikedProducts(updatedLikes);
-        console.log("Removed from likes:", updatedLikes); // Debug
-      } else {
-        // Add to likes
-        const updatedLikes = [...currentLiked, productId];
-        localStorage.setItem("likedProducts", JSON.stringify(updatedLikes));
-        setLikedProducts(updatedLikes);
-        console.log("Added to likes:", updatedLikes); // Debug
-      }
-    } else {
-      console.log("Logged in user - using API"); // Debug
-      // Logged in user - use POST API to toggle like
-      try {
-        console.log("Making API request to:", `products/${productId}/like`); // Debug
-
-        const response = await api.post(
-          `products/${productId}/like`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        console.log("API response:", response.data?.content); // Debug
-        refetch();
-        // Refresh data to get updated like status
-      } catch (err) {
-        console.error("Like toggle error:", err);
-        console.error("Error response:", err.response?.data); // Debug
-
-        if (err.response?.status === 401) {
-          console.log("Token expired, switching to guest mode"); // Debug
-          // Token expired or invalid, handle as guest user
-          localStorage.removeItem("accessToken");
-          handleLike(productId); // Retry as guest
-        }
-      }
-    }
-  };
-
   const isProductLiked = (productId) => {
     const token = localStorage.getItem("accessToken");
 
@@ -105,45 +44,6 @@ const Recommenduem = () => {
       );
     }
   };
-
-  // Sync likes when user logs in
-  useEffect(() => {
-    const syncLikesOnMount = async () => {
-      const token = localStorage.getItem("accessToken");
-      const storedLikes = JSON.parse(
-        localStorage.getItem("likedProducts") || "[]"
-      );
-
-      if (token && storedLikes.length > 0) {
-        try {
-          // Sync each liked product
-          for (const productId of storedLikes) {
-            await api.post(
-              `/products/${productId}/like`,
-              {},
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
-              }
-            );
-          }
-
-          // Clear localStorage after syncing
-          localStorage.removeItem("likedProducts");
-          setLikedProducts([]);
-
-          // Refresh data
-          refetch();
-        } catch (err) {
-          console.error("Initial like sync error:", err);
-        }
-      }
-    };
-
-    syncLikesOnMount();
-  }, []);
 
   // Har bir sahifadagi 'data' massivini birlashtiramiz
   const items = isArray(get(data, "pages", []))
@@ -254,11 +154,8 @@ const Recommenduem = () => {
               <ItemCard
                 item={(item?.id, item)}
                 index={index}
-                onLike={() => {
-                  console.log("onLike prop called for product:", item.id); // Debug
-                  handleLike(item.id);
-                }}
                 isLiked={isProductLiked(item.id)}
+                refresh={refetch}
               />
             ))}
           </div>
