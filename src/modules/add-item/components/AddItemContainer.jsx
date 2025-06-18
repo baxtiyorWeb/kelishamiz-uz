@@ -161,6 +161,10 @@ const AddItemContainer = () => {
     imageIndex: 0, // Index of the main image
   });
 
+  // Add these new state variables after the existing ones
+  const [mainCategoryId, setMainCategoryId] = useState("");
+  const [subcategoryId, setSubcategoryId] = useState("");
+
   // Store actual file objects with their order
   const [imageFiles, setImageFiles] = useState([]);
 
@@ -176,7 +180,6 @@ const AddItemContainer = () => {
   // Data states
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-  const [selectedSubcategoryId, setSelectedCategoryId] = useState(0);
   const [regions, setRegions] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [categoryProperties, setCategoryProperties] = useState([]);
@@ -201,66 +204,6 @@ const AddItemContainer = () => {
       toast.error("Kategoriyalarni yuklashda xatolik yuz berdi");
     } finally {
       setIsLoadingCategories(false);
-    }
-  };
-
-  console.log(selectedSubcategoryId);
-
-  // Fetch subcategories when category changes
-  useEffect(() => {
-    if (formData.categoryId) {
-      fetchSubcategories(formData.categoryId);
-      fetchCategoryProperties(formData.categoryId);
-    }
-  }, [formData.categoryId]);
-
-  // Fetch subcategories
-  const fetchSubcategories = async (categoryId) => {
-    setIsLoadingSubcategories(true);
-    try {
-      const response = await api.get(`/category/${categoryId}/children`);
-      if (response.data.success) {
-        setSubcategories(response.data.content);
-      }
-    } catch (error) {
-      console.error("Error fetching subcategories:", error);
-      toast.error("Subkategoriyalarni yuklashda xatolik yuz berdi");
-    } finally {
-      setIsLoadingSubcategories(false);
-    }
-  };
-
-  // Fetch category properties
-  const fetchCategoryProperties = async (categoryId) => {
-    setIsLoadingProperties(true);
-    try {
-      const response = await api.get(`/category/${categoryId}`);
-      if (response.data.success) {
-        setCategoryProperties(response.data.content.properties || []);
-        console.log(response.data);
-
-        // Initialize properties array with empty values
-        const initialProperties = (response.data.content.properties || []).map(
-          (prop) => ({
-            propertyId: prop.id,
-            type: prop.type,
-            value: {
-              key: prop.name,
-              value: "",
-            },
-          })
-        );
-
-        setFormData((prev) => ({
-          ...prev,
-          properties: initialProperties,
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching category properties:", error);
-      toast.error("Kategoriya xususiyatlarini yuklashda xatolik yuz berdi");
-    } finally {
-      setIsLoadingProperties(false);
     }
   };
 
@@ -303,6 +246,56 @@ const AddItemContainer = () => {
       toast.error("Tumanlarni yuklashda xatolik yuz berdi");
     } finally {
       setIsLoadingDistricts(false);
+    }
+  };
+
+  // Fetch subcategories
+  const fetchSubcategories = async (mainCategoryId) => {
+    setIsLoadingSubcategories(true);
+    try {
+      const response = await api.get(`/category?parentId=${mainCategoryId}`);
+      if (response.data.success) {
+        setSubcategories(response.data.content);
+      }
+    } catch (error) {
+      console.error("Error fetching subcategories:", error);
+      toast.error("Subkategoriyalarni yuklashda xatolik yuz berdi");
+    } finally {
+      setIsLoadingSubcategories(false);
+    }
+  };
+
+  // Fetch category details and properties
+  const fetchCategoryDetails = async (categoryId) => {
+    setIsLoadingProperties(true);
+    try {
+      const response = await api.get(`/category/${categoryId}`);
+      if (response.data.success) {
+        const categoryData = response.data.content;
+        setCategoryProperties(categoryData.properties || []);
+
+        // Initialize properties array with empty values
+        const initialProperties = (categoryData.properties || []).map(
+          (prop) => ({
+            propertyId: prop.id,
+            type: prop.type,
+            value: {
+              key: prop.name,
+              value: "",
+            },
+          })
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          properties: initialProperties,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching category details:", error);
+      toast.error("Kategoriya xususiyatlarini yuklashda xatolik yuz berdi");
+    } finally {
+      setIsLoadingProperties(false);
     }
   };
 
@@ -534,6 +527,9 @@ const AddItemContainer = () => {
         setSubcategories([]);
         setCategoryProperties([]);
         setDistricts([]);
+        // In the form reset section, add these lines:
+        setMainCategoryId("");
+        setSubcategoryId("");
       } else {
         toast.error(
           response.data?.message || "E'lonni qo'shishda xatolik yuz berdi"
@@ -673,17 +669,36 @@ const AddItemContainer = () => {
                   {/* Main Category */}
                   <div>
                     <label
-                      htmlFor="categoryId"
+                      htmlFor="mainCategoryId"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
                       Asosiy kategoriya <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <StyledSelect
-                        id="categoryId"
-                        name="categoryId"
-                        value={formData.categoryId}
-                        onChange={handleChange}
+                        id="mainCategoryId"
+                        name="mainCategoryId"
+                        value={mainCategoryId}
+                        onChange={(e) => {
+                          const selectedMainCategoryId = e.target.value;
+                          setMainCategoryId(selectedMainCategoryId);
+
+                          // Clear subcategory when main category changes
+                          setSubcategoryId("");
+                          setSubcategories([]);
+
+                          // Update formData.categoryId with main category ID
+                          setFormData((prev) => ({
+                            ...prev,
+                            categoryId: selectedMainCategoryId,
+                          }));
+
+                          // Fetch subcategories and properties for the main category
+                          if (selectedMainCategoryId) {
+                            fetchSubcategories(selectedMainCategoryId);
+                            fetchCategoryDetails(selectedMainCategoryId);
+                          }
+                        }}
                         required
                         disabled={isLoadingCategories}
                       >
@@ -701,7 +716,6 @@ const AddItemContainer = () => {
                       )}
                     </div>
                   </div>
-
                   {subcategories.length > 0 && (
                     <div>
                       <label
@@ -713,14 +727,25 @@ const AddItemContainer = () => {
                       <div className="relative">
                         <StyledSelect
                           id="subcategoryId"
-                          name="categoryId"
-                          value={selectedSubcategoryId || ""}
+                          name="subcategoryId"
+                          value={subcategoryId}
                           onChange={(e) => {
-                            setSelectedCategoryId(e.target.value);
+                            const selectedSubcategoryId = e.target.value;
+                            setSubcategoryId(selectedSubcategoryId);
+
+                            // Update formData.categoryId with subcategory ID if selected, otherwise use main category ID
                             setFormData((prev) => ({
                               ...prev,
-                              categoryId: e.target.value,
+                              categoryId:
+                                selectedSubcategoryId || mainCategoryId,
                             }));
+
+                            // Fetch properties for the selected subcategory
+                            if (selectedSubcategoryId) {
+                              fetchCategoryDetails(selectedSubcategoryId);
+                            } else if (mainCategoryId) {
+                              fetchCategoryDetails(mainCategoryId);
+                            }
                           }}
                           disabled={isLoadingSubcategories}
                         >
@@ -1035,7 +1060,7 @@ const AddItemContainer = () => {
                               >
                                 <path
                                   fillRule="evenodd"
-                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414z"
                                   clipRule="evenodd"
                                 />
                               </svg>
