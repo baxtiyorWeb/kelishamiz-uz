@@ -158,10 +158,10 @@ const AddItemContainer = () => {
     negotiable: false,
     regionId: "",
     districtId: "",
-    images: [],
+    imageIndex: 0, // Index of the main image
   });
 
-  // Store actual file objects separately
+  // Store actual file objects with their order
   const [imageFiles, setImageFiles] = useState([]);
 
   // Loading states
@@ -327,215 +327,104 @@ const AddItemContainer = () => {
     }));
   };
 
-  // Handle main image drop
-  const onMainImageDrop = useCallback(
+  // Handle image drop (unified for all images)
+  const onImageDrop = useCallback(
     async (acceptedFiles) => {
       if (acceptedFiles.length === 0) return;
 
-      const file = acceptedFiles[0];
-
-      // Add to uploading state
-      const uploadId = Date.now().toString();
-      setUploadingImages((prev) => [
-        ...prev,
-        { id: uploadId, name: file.name, progress: 0 },
-      ]);
-
-      try {
-        // Create a preview URL for the image
-        const previewUrl = URL.createObjectURL(file);
-
-        // Set all existing images as not main
-        const updatedImages = formData.images.map((img) => ({
-          ...img,
-          isMainImage: false,
-        }));
-
-        // Add the new image metadata to the formData
-        setFormData((prev) => ({
+      // Process each file sequentially
+      for (const file of acceptedFiles) {
+        // Add to uploading state
+        const uploadId =
+          Date.now().toString() + Math.random().toString(36).substring(2, 9);
+        setUploadingImages((prev) => [
           ...prev,
-          images: [...updatedImages, { file: previewUrl, isMainImage: true }],
-        }));
-
-        // Add the file to our files array
-        setImageFiles((prev) => [
-          ...prev.map((f) => ({ ...f, isMainImage: false })),
-          { file, isMainImage: true, previewUrl },
+          { id: uploadId, name: file.name, progress: 0 },
         ]);
 
-        // Update progress
-        setUploadingImages((prev) =>
-          prev.map((img) =>
-            img.id === uploadId ? { ...img, progress: 100 } : img
-          )
-        );
+        try {
+          // Create a preview URL for the image
+          const previewUrl = URL.createObjectURL(file);
 
-        // Remove from uploading state after a delay
-        setTimeout(() => {
-          setUploadingImages((prev) =>
-            prev.filter((img) => img.id !== uploadId)
-          );
-        }, 1000);
-      } catch (error) {
-        console.error("Error processing image:", error);
-        // Update uploading state to show error
-        setUploadingImages((prev) =>
-          prev.map((img) =>
-            img.id === uploadId ? { ...img, error: true } : img
-          )
-        );
+          // Add the file to our files array
+          setImageFiles((prev) => [
+            ...prev,
+            { file, previewUrl, id: uploadId },
+          ]);
 
-        // Remove from uploading state after a delay
-        setTimeout(() => {
+          // If this is the first image, set it as main (imageIndex = 0)
+          if (imageFiles.length === 0) {
+            setFormData((prev) => ({
+              ...prev,
+              imageIndex: 0,
+            }));
+          }
+
+          // Update progress
           setUploadingImages((prev) =>
-            prev.filter((img) => img.id !== uploadId)
+            prev.map((img) =>
+              img.id === uploadId ? { ...img, progress: 100 } : img
+            )
           );
-        }, 3000);
+
+          // Remove from uploading state after a delay
+          setTimeout(() => {
+            setUploadingImages((prev) =>
+              prev.filter((img) => img.id !== uploadId)
+            );
+          }, 1000);
+        } catch (error) {
+          console.error("Error processing image:", error);
+          // Update uploading state to show error
+          setUploadingImages((prev) =>
+            prev.map((img) =>
+              img.id === uploadId ? { ...img, error: true } : img
+            )
+          );
+
+          // Remove from uploading state after a delay
+          setTimeout(() => {
+            setUploadingImages((prev) =>
+              prev.filter((img) => img.id !== uploadId)
+            );
+          }, 3000);
+        }
+
+        // Add a small delay between uploads
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     },
-    [formData.images]
+    [imageFiles.length]
   );
-
-  // Handle additional images drop
-  const onAdditionalImagesDrop = useCallback(async (acceptedFiles) => {
-    if (acceptedFiles.length === 0) return;
-
-    // Process each file sequentially
-    for (const file of acceptedFiles) {
-      // Add to uploading state
-      const uploadId =
-        Date.now().toString() + Math.random().toString(36).substring(2, 9);
-      setUploadingImages((prev) => [
-        ...prev,
-        { id: uploadId, name: file.name, progress: 0 },
-      ]);
-
-      try {
-        // Create a preview URL for the image
-        const previewUrl = URL.createObjectURL(file);
-
-        // Add the new image metadata to the formData
-        setFormData((prev) => ({
-          ...prev,
-          images: [...prev.images, { file: previewUrl, isMainImage: false }],
-        }));
-
-        // Add the file to our files array
-        setImageFiles((prev) => [
-          ...prev,
-          { file, isMainImage: false, previewUrl },
-        ]);
-
-        // Update progress
-        setUploadingImages((prev) =>
-          prev.map((img) =>
-            img.id === uploadId ? { ...img, progress: 100 } : img
-          )
-        );
-
-        // Remove from uploading state after a delay
-        setTimeout(() => {
-          setUploadingImages((prev) =>
-            prev.filter((img) => img.id !== uploadId)
-          );
-        }, 1000);
-      } catch (error) {
-        console.error("Error processing image:", error);
-        // Update uploading state to show error
-        setUploadingImages((prev) =>
-          prev.map((img) =>
-            img.id === uploadId ? { ...img, error: true } : img
-          )
-        );
-
-        // Remove from uploading state after a delay
-        setTimeout(() => {
-          setUploadingImages((prev) =>
-            prev.filter((img) => img.id !== uploadId)
-          );
-        }, 3000);
-      }
-
-      // Add a small delay between uploads
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
-  }, []);
 
   // Remove an image
   const removeImage = (index) => {
-    // Get the preview URL of the image to be removed
-    const imageToRemove = formData.images[index];
-
-    // Remove from formData
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-
     // Remove from imageFiles
-    setImageFiles((prev) =>
-      prev.filter((img) => img.previewUrl !== imageToRemove.file)
-    );
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
 
-    // If we removed a main image and have other images, set the first one as main
-    if (imageToRemove.isMainImage && formData.images.length > 1) {
-      const newMainIndex = index === 0 ? 0 : 0;
-
-      setFormData((prev) => ({
-        ...prev,
-        images: prev.images.map((img, i) =>
-          i === newMainIndex ? { ...img, isMainImage: true } : img
-        ),
-      }));
-
-      setImageFiles((prev) => {
-        const firstNonRemovedIndex = prev.findIndex(
-          (img) => img.previewUrl !== imageToRemove.file
-        );
-        if (firstNonRemovedIndex >= 0) {
-          return prev.map((img, i) =>
-            i === firstNonRemovedIndex ? { ...img, isMainImage: true } : img
-          );
-        }
-        return prev;
-      });
-    }
-  };
-
-  // Set an image as main
-  const setAsMainImage = (index) => {
-    // Get the image to be set as main
-    const imageToSetAsMain = formData.images[index];
-
-    // Update formData
+    // Adjust imageIndex if necessary
     setFormData((prev) => ({
       ...prev,
-      images: prev.images.map((img, i) => ({
-        ...img,
-        isMainImage: i === index,
-      })),
+      imageIndex:
+        prev.imageIndex >= index && prev.imageIndex > 0
+          ? prev.imageIndex - 1
+          : prev.imageIndex >= imageFiles.length - 1
+          ? Math.max(0, imageFiles.length - 2)
+          : prev.imageIndex,
     }));
-
-    // Update imageFiles
-    setImageFiles((prev) =>
-      prev.map((img) => ({
-        ...img,
-        isMainImage: img.previewUrl === imageToSetAsMain.file,
-      }))
-    );
   };
 
-  // Dropzone hooks
-  const mainImageDropzone = useDropzone({
-    onDrop: onMainImageDrop,
-    accept: {
-      "image/*": [".jpeg", ".jpg", ".png", ".webp"],
-    },
-    maxFiles: 1,
-  });
+  // Set an image as main by updating imageIndex
+  const setAsMainImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      imageIndex: index,
+    }));
+  };
 
-  const additionalImagesDropzone = useDropzone({
-    onDrop: onAdditionalImagesDrop,
+  // Dropzone hook
+  const imageDropzone = useDropzone({
+    onDrop: onImageDrop,
     accept: {
       "image/*": [".jpeg", ".jpg", ".png", ".webp"],
     },
@@ -546,26 +435,62 @@ const AddItemContainer = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ... (validation logic remains the same) ...
+    // Validation
+    if (!formData.title.trim()) {
+      toast.error("Sarlavha kiritilishi shart");
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      toast.error("Tavsif kiritilishi shart");
+      return;
+    }
+
+    if (!formData.price || Number.parseFloat(formData.price) <= 0) {
+      toast.error("To'g'ri narx kiritilishi shart");
+      return;
+    }
+
+    if (!formData.categoryId) {
+      toast.error("Kategoriya tanlanishi shart");
+      return;
+    }
+
+    if (!formData.regionId) {
+      toast.error("Viloyat tanlanishi shart");
+      return;
+    }
+
+    if (!formData.districtId) {
+      toast.error("Tuman tanlanishi shart");
+      return;
+    }
+
+    if (imageFiles.length === 0) {
+      toast.error("Kamida bitta rasm yuklash shart");
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
       const submitFormData = new FormData();
 
-      // 1. Text maydonlar
+      // 1. Text fields
       submitFormData.append("title", formData.title);
       submitFormData.append("description", formData.description);
       submitFormData.append("price", formData.price);
       submitFormData.append("categoryId", formData.categoryId);
-      submitFormData.append("location", formData.location || "");
       submitFormData.append("paymentType", formData.paymentType);
       submitFormData.append("currencyType", formData.currencyType);
       submitFormData.append("negotiable", formData.negotiable);
       submitFormData.append("regionId", formData.regionId);
       submitFormData.append("districtId", formData.districtId);
 
-      // 2. Properties (agar bo'lsa)
+      // 2. Image index (which image should be main)
+      submitFormData.append("imageIndex", formData.imageIndex.toString());
+
+      // 3. Properties (if any)
       if (formData.properties && formData.properties.length > 0) {
         submitFormData.append(
           "properties",
@@ -573,19 +498,13 @@ const AddItemContainer = () => {
         );
       }
 
-      // 3. Add image files to FormData
+      // 4. Add image files to FormData in the correct order
       imageFiles.forEach((imgFile) => {
-        submitFormData.append("files", imgFile.file); // Use the same key "files" for all image files
+        submitFormData.append("files", imgFile.file);
       });
 
-      // 4. Add image metadata as a JSON string
-      const imagesMeta = imageFiles.map((img) => ({
-        isMainImage: img.isMainImage,
-      }));
-      submitFormData.append("filesMeta", JSON.stringify(imagesMeta)); // Use a different key for metadata
-
       console.log("Files being sent:", imageFiles);
-      console.log("Metadata being sent:", imagesMeta);
+      console.log("Main image index:", formData.imageIndex);
 
       const response = await api.post("/products", submitFormData, {
         headers: {
@@ -595,7 +514,26 @@ const AddItemContainer = () => {
 
       if (response.data.success) {
         toast.success("E'lon muvaffaqiyatli qo'shildi");
-        // ... (reset form if needed) ...
+
+        // Reset form
+        setFormData({
+          title: "",
+          description: "",
+          price: "",
+          categoryId: "",
+          location: "",
+          properties: [],
+          paymentType: "Pullik",
+          currencyType: "UZS",
+          negotiable: false,
+          regionId: "",
+          districtId: "",
+          imageIndex: 0,
+        });
+        setImageFiles([]);
+        setSubcategories([]);
+        setCategoryProperties([]);
+        setDistricts([]);
       } else {
         toast.error(
           response.data?.message || "E'lonni qo'shishda xatolik yuz berdi"
@@ -767,19 +705,23 @@ const AddItemContainer = () => {
                   {subcategories.length > 0 && (
                     <div>
                       <label
-                        htmlFor="categoryId"
+                        htmlFor="subcategoryId"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
                         Subkategoriya
                       </label>
                       <div className="relative">
                         <StyledSelect
-                          id="categoryId"
+                          id="subcategoryId"
                           name="categoryId"
-                          value={formData.categoryId || ""}
-                          onChange={(e) =>
-                            setSelectedCategoryId(e.target.value)
-                          }
+                          value={selectedSubcategoryId || ""}
+                          onChange={(e) => {
+                            setSelectedCategoryId(e.target.value);
+                            setFormData((prev) => ({
+                              ...prev,
+                              categoryId: e.target.value,
+                            }));
+                          }}
                           disabled={isLoadingSubcategories}
                         >
                           <option value="">Subkategoriyani tanlang</option>
@@ -991,101 +933,21 @@ const AddItemContainer = () => {
               <h2 className="text-lg font-semibold mb-4">Rasmlar</h2>
 
               <div className="space-y-6">
-                {/* Main Image */}
+                {/* Image Upload Area */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Asosiy rasm <span className="text-red-500">*</span>
+                    Rasmlar <span className="text-red-500">*</span>
                   </label>
 
                   <div
-                    {...mainImageDropzone.getRootProps()}
+                    {...imageDropzone.getRootProps()}
                     className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                      mainImageDropzone.isDragActive
+                      imageDropzone.isDragActive
                         ? "border-emerald-400 bg-emerald-50"
                         : "border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
                     }`}
                   >
-                    <input {...mainImageDropzone.getInputProps()} />
-
-                    {formData.images.some((img) => img.isMainImage) ? (
-                      <div className="relative">
-                        <img
-                          src={
-                            formData.images.find((img) => img.isMainImage)
-                              ?.file || "/placeholder.svg"
-                          }
-                          alt="Main product"
-                          className="h-48 mx-auto object-contain"
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const mainImageIndex = formData.images.findIndex(
-                              (img) => img.isMainImage
-                            );
-                            if (mainImageIndex !== -1) {
-                              removeImage(mainImageIndex);
-                            }
-                          }}
-                          className="absolute top-0 right-0 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full p-1 shadow-md hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="mx-auto h-12 w-12 text-emerald-500"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                          />
-                        </svg>
-                        <p className="mt-2 text-sm text-gray-500">
-                          Rasmni yuklash uchun bosing yoki shu yerga tashlang
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          PNG, JPG, WEBP (max: 5MB)
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Additional Images */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Qo'shimcha rasmlar
-                  </label>
-
-                  <div
-                    {...additionalImagesDropzone.getRootProps()}
-                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                      additionalImagesDropzone.isDragActive
-                        ? "border-emerald-400 bg-emerald-50"
-                        : "border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
-                    }`}
-                  >
-                    <input {...additionalImagesDropzone.getInputProps()} />
+                    <input {...imageDropzone.getInputProps()} />
 
                     <div>
                       <svg
@@ -1099,34 +961,36 @@ const AddItemContainer = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                         />
                       </svg>
                       <p className="mt-2 text-sm text-gray-500">
                         Rasmlarni yuklash uchun bosing yoki shu yerga tashlang
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        PNG, JPG, WEBP (max: 5MB)
+                        PNG, JPG, WEBP (max: 5MB har biri)
                       </p>
                     </div>
                   </div>
 
                   {/* Display all images */}
-                  {formData.images.length > 0 && (
+                  {imageFiles.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {formData.images.map((image, index) => (
-                        <div key={index} className="relative group">
+                      {imageFiles.map((image, index) => (
+                        <div key={image.id} className="relative group">
                           <div
                             className={`relative border rounded-md overflow-hidden ${
-                              image.isMainImage ? "ring-2 ring-emerald-500" : ""
+                              formData.imageIndex === index
+                                ? "ring-2 ring-emerald-500"
+                                : ""
                             }`}
                           >
                             <img
-                              src={image.file || "/placeholder.svg"}
+                              src={image.previewUrl || "/placeholder.svg"}
                               alt={`Product ${index + 1}`}
                               className="h-24 w-full object-cover"
                             />
-                            {image.isMainImage && (
+                            {formData.imageIndex === index && (
                               <div className="absolute top-1 left-1 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-xs px-2 py-1 rounded-md">
                                 Asosiy
                               </div>
@@ -1134,7 +998,7 @@ const AddItemContainer = () => {
                           </div>
 
                           <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            {!image.isMainImage && (
+                            {formData.imageIndex !== index && (
                               <button
                                 type="button"
                                 onClick={() => setAsMainImage(index)}
@@ -1179,6 +1043,14 @@ const AddItemContainer = () => {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Current main image indicator */}
+                  {imageFiles.length > 0 && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      Asosiy rasm: {formData.imageIndex + 1}-rasm (
+                      {imageFiles.length} ta rasmdan)
                     </div>
                   )}
                 </div>

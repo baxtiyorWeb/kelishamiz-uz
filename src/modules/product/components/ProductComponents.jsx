@@ -19,12 +19,10 @@ import {
   Info,
   User,
   Clock,
-  Loader2,
 } from "lucide-react";
 import useGetOneQuery from "../../../hooks/api/useGetOneQuery";
 import KEYS from "../../../export/keys";
 import URLS from "../../../export/urls";
-import InfiniteScroll from "react-infinite-scroll-component";
 import useGetAllQuery from "../../../hooks/api/useGetAllQuery";
 import ItemCard from "../../../common/components/ItemCard";
 import useGetUser from "../../../hooks/services/useGetUser";
@@ -81,13 +79,16 @@ const ProductDetail = () => {
     if (!isArray(images) || images.length === 0) {
       return [];
     }
-    return images;
+    // Sort images by order field
+    return images.sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [item]);
 
   useEffect(() => {
     if (processedImages.length > 0) {
+      // Use imageIndex from API response, fallback to 0 if invalid
       const initialIndex =
         item?.imageIndex !== undefined &&
+        item?.imageIndex >= 0 &&
         item?.imageIndex < processedImages.length
           ? item.imageIndex
           : 0;
