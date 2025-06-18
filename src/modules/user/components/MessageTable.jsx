@@ -82,11 +82,7 @@ const MessageTable = () => {
     return response.data;
   };
 
-  const {
-    data: me_product_items,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data: me_product_items, isLoading } = useQuery({
     queryKey: ["me_products", activeTab],
     queryFn: async () => await fetchData(),
   });
