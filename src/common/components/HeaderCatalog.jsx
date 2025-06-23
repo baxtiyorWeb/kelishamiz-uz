@@ -124,7 +124,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
     // Here you would typically navigate to the category page
     setisOpen(false);
     // Example: navigate to category page
-    // window.location.href = `/category/${categoryId}`
+    // window.location.href = `/catalog/${categoryId}`
   };
 
   // Debug the data structure
@@ -231,7 +231,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                   <h1 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center">
                     {get(selected, "name")}
                     <Link
-                      to={`/category/${get(selected, "id")}`}
+                      to={`/catalog/${get(selected, "id")}`}
                       className="ml-2 text-sm text-teal-600 hover:text-teal-700 flex items-center"
                       onClick={() => setisOpen(false)}
                     >
@@ -252,7 +252,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                       <div key={get(category, "id")} className="mb-4">
                         {get(category, "name") && (
                           <Link
-                            to={`/category/${get(category, "id")}`}
+                            to={`/catalog/${get(category, "id")}`}
                             className="flex items-center group"
                             onClick={() => setisOpen(false)}
                           >
@@ -303,7 +303,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                 {parents.slice(0, 4).map((category, i) => (
                   <Link
                     key={get(category, "id") || i}
-                    to={`/category/${get(category, "id")}`}
+                    to={`/catalog/${get(category, "id")}`}
                     className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => setisOpen(false)}
                   >
