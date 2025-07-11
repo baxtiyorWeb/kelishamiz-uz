@@ -7,7 +7,7 @@ import axios from "axios";
 // https://api.kelishamiz.uz/api/docs
 // 123123123
 const api = axios.create({
-  baseURL: "https://api.kelishamiz.uz",
+  baseURL: "https://kelishamiz-backend.vercel.app",
   headers: {
     "Content-Type": "application/json",
   },
