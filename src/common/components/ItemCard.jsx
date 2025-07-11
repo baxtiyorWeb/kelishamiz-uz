@@ -205,9 +205,9 @@ const ItemCard = React.memo(({ item, index, authToken, refresh }) => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center text-gray-500 text-sm">
               <MapPinIcon className="w-4 h-4 mr-1 text-teal-600" />
-              <span>{item?.location}</span>
+              <span>{item?.region?.name}</span>
             </div>
-            {/* Date */}
+
             <div className="flex items-center text-gray-500 text-sm">
               <Calendar className="w-4 h-4 mr-1 text-teal-600" />
               <span>{formattedDate}</span>
