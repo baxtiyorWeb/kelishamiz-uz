@@ -10,6 +10,9 @@ const fetchBanners = async () => {
   if (response.status !== 200 || !response.data) {
     throw new Error("Bannerlarni yuklashda xatolik yuz berdi.");
   }
+
+  console.log(response.data);
+
   // Agar API bevosita massiv qaytarsa, shunday bo'ladi:
   return response.data?.content; // <--- ?.content ni olib tashlang
 };
