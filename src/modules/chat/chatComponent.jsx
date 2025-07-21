@@ -71,8 +71,10 @@ export default function ChatPage() {
     };
   };
 
+  // http://localhost:3030
+  // https://api.kelishamiz.uz
   useEffect(() => {
-    const socketInstance = io("https://api.kelishamiz.uz", {
+    const socketInstance = io("http://localhost:3030", {
       transports: ["websocket", "polling"],
       withCredentials: true,
     });
