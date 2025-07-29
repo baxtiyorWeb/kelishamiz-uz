@@ -131,20 +131,16 @@ const ProductDetail = () => {
     return "Hozirgina";
   };
 
-  // Format price with currency
   const formatPrice = (price) => {
     if (!price) return "";
     const numPrice = Number.parseFloat(price);
     return new Intl.NumberFormat("uz-UZ").format(numPrice);
   };
 
-  // Handle like button click
   const handleLikeClick = () => {
     setIsLiked(!isLiked);
-    // Here you would typically call an API to update the like status
   };
 
-  // Navigate to previous image
   const prevImage = () => {
     setSelectedImageIndex((prev) =>
       prev === 0 ? processedImages.length - 1 : prev - 1
@@ -205,7 +201,6 @@ const ProductDetail = () => {
     </div>
   );
 
-  // Loading skeleton for initial load
   const renderSkeletons = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
       {[...Array(8)].map((_, index) => (
@@ -676,8 +671,7 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
-      </div>
-      <div className="max-w-10xl border w-">
+      <div className="max-w-10xl  w-full  mt-[30px]">
         {smartLoading ? (
           renderSkeletons()
         ) : smartItems?.length === 0 ? (
@@ -690,7 +684,7 @@ const ProductDetail = () => {
           </div>
         )}
       </div>
-      {/* Sticky Footer - Mobile only */}
+      </div>
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.1)] p-1 flex space-x-3 z-20">
           <button className="flex-1 bg-gradient-to-r from-teal-50 to-teal-100 border border-teal-200 text-teal-700 font-medium py-2.5 px-4 rounded-xl flex items-center justify-center">

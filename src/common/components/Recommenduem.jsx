@@ -9,22 +9,13 @@ import { useEffect, useState } from "react";
 import api from "../../config/auth/api";
 
 const Recommenduem = () => {
-  const [activeTab, setActiveTab] = useState("elonlar");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [error, setError] = useState(null);
   const [likedProducts, setLikedProducts] = useState([]);
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    refetch,
-    isFetchingNextPage,
-    isLoading,
-  } = useGetInfinityScrollQuery({
-    key: KEYS.products,
-    url: URLS.products,
-    initialPageParam: 1,
-  });
+  const { data, fetchNextPage, hasNextPage, refetch, isLoading } =
+    useGetInfinityScrollQuery({
+      key: KEYS.products,
+      url: URLS.products,
+      initialPageParam: 1,
+    });
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("likedProducts") || "[]");
     setLikedProducts(stored);
@@ -34,10 +25,8 @@ const Recommenduem = () => {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
-      // Guest user - check localStorage
       return likedProducts.includes(productId);
     } else {
-      // Logged in user - check from API data (assuming the API returns liked status)
       return (
         data?.data?.some?.((item) => item.id === productId && item.isLiked) ||
         false
@@ -45,12 +34,10 @@ const Recommenduem = () => {
     }
   };
 
-  // Har bir sahifadagi 'data' massivini birlashtiramiz
   const items = isArray(get(data, "pages", []))
     ? data?.pages.flatMap((page) => get(page, "content.data", []))
     : [];
 
-  // Empty state when no items are found
   const renderEmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <div className="w-24 h-24 bg-teal-50 rounded-full flex items-center justify-center mb-4">
@@ -79,7 +66,6 @@ const Recommenduem = () => {
     </div>
   );
 
-  // Loading skeleton for initial load
   const renderSkeletons = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
       {[...Array(8)].map((_, index) => (
@@ -141,7 +127,7 @@ const Recommenduem = () => {
           dataLength={items?.length || 0}
           next={fetchNextPage}
           hasMore={hasNextPage}
-          scrollThreshold={0.9} // optional: 90% scrollda trigger bo‘ladi
+          scrollThreshold={0.9}
           loader={renderSkeletons()}
           endMessage={
             <div className="text-center py-6 text-gray-500">
