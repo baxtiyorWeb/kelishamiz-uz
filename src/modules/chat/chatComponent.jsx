@@ -75,15 +75,13 @@ export default function ChatPage() {
   // https://api.kelishamiz.uz
   useEffect(() => {
     const socketInstance = io("https://api.kelishamiz.uz", {
-      path: "/socket.io/", // shu bo'lishi shart
       transports: ["websocket", "polling"],
       withCredentials: true,
     });
 
-    console.log("Socket instance created:", socketInstance);
-
     setSocket(socketInstance);
-
+    console.log(socketInstance?.connected, "Socket connected status");
+    
     socketInstance.on("connect", () => {
       setConnectionStatus("connected");
       fetchChatRooms();
