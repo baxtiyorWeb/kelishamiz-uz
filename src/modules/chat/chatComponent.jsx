@@ -77,7 +77,7 @@ export default function ChatPage() {
     const socketInstance = io("https://api.kelishamiz.uz", {
       transports: ["websocket", "polling"],
       withCredentials: true,
-      path: "/socket.io",
+      path: "/socket.io/",
     });
 
     setSocket(socketInstance);
