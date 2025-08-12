@@ -75,6 +75,7 @@ export default function ChatPage() {
   // https://api.kelishamiz.uz
   useEffect(() => {
     const socketInstance = io("https://api.kelishamiz.uz", {
+      path: "/socket.io/",
       transports: ["websocket", "polling"],
       withCredentials: true,
     });
