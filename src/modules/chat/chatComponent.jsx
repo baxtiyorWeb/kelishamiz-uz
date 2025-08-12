@@ -81,7 +81,6 @@ export default function ChatPage() {
 
     setSocket(socketInstance);
     console.log(socketInstance?.connected, "Socket connected status");
-    
     socketInstance.on("connect", () => {
       setConnectionStatus("connected");
       fetchChatRooms();
