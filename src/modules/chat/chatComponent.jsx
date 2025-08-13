@@ -76,12 +76,10 @@ export default function ChatPage() {
   useEffect(() => {
     const socketInstance = io("https://api.kelishamiz.uz", {
       transports: ["websocket", "polling"],
-      withCredentials: true,
-      path: "/socket.io/",
+      withCredentials: true, // backend CORS bilan mos
     });
 
     setSocket(socketInstance);
-    console.log(socketInstance?.connected, "Socket connected status");
     socketInstance.on("connect", () => {
       setConnectionStatus("connected");
       fetchChatRooms();
