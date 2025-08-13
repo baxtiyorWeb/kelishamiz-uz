@@ -19,6 +19,7 @@ import {
   Info,
   User,
   Clock,
+  X,
 } from "lucide-react";
 import useGetOneQuery from "../../../hooks/api/useGetOneQuery";
 import KEYS from "../../../export/keys";
@@ -34,6 +35,8 @@ const ProductDetail = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isLiked, setIsLiked] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
   const user = useGetUser();
 
   useEffect(() => {
@@ -154,6 +157,29 @@ const ProductDetail = () => {
     );
   };
 
+  const prevModalImage = (e) => {
+    e.stopPropagation();
+    setModalImageIndex((prev) =>
+      prev === 0 ? processedImages.length - 1 : prev - 1
+    );
+  };
+
+  const nextModalImage = (e) => {
+    e.stopPropagation();
+    setModalImageIndex((prev) =>
+      prev === processedImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const openModal = (index) => {
+    setModalImageIndex(index);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
   // Handle image load
   const handleImageLoad = () => {
     setIsImageLoading(false);
@@ -187,7 +213,7 @@ const ProductDetail = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+            d="M20 13V6a2 2 0 00-2-2H8a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
           />
         </svg>
       </div>
@@ -342,7 +368,10 @@ const ProductDetail = () => {
           <div className="md:col-span-1 lg:col-span-3 space-y-6">
             {/* Main Image */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="relative h-[300px] md:h-[450px] w-full bg-gray-100 flex items-center justify-center">
+              <div
+                className="relative h-[300px] md:h-[450px] w-full bg-gray-100 flex items-center justify-center cursor-pointer"
+                onClick={() => openModal(selectedImageIndex)}
+              >
                 {isImageLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
@@ -364,13 +393,19 @@ const ProductDetail = () => {
                     {processedImages.length > 1 && (
                       <>
                         <button
-                          onClick={prevImage}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            prevImage();
+                          }}
                           className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-teal-600 p-2 rounded-full shadow-md transition-all hover:scale-110"
                         >
                           <ChevronLeft size={20} />
                         </button>
                         <button
-                          onClick={nextImage}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            nextImage();
+                          }}
                           className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-teal-600 p-2 rounded-full shadow-md transition-all hover:scale-110"
                         >
                           <ChevronRight size={20} />
@@ -387,7 +422,10 @@ const ProductDetail = () => {
 
                 {/* Like Button - Overlay */}
                 <button
-                  onClick={handleLikeClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLikeClick();
+                  }}
                   className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors z-10"
                 >
                   <Heart
@@ -563,12 +601,20 @@ const ProductDetail = () => {
               <div className="bg-white p-1 rounded-xl border border-gray-200">
                 <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
                   <User size={18} className="mr-2 text-teal-500" />
-                  Sotuvchi bilan bog'lanish
+                  Sotuvchi bilan bog&apos;lanish
                 </h3>
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm">
-                    {item?.profile?.fullName?.charAt(0) || "S"}
-                  </div>
+                  {(item?.profile?.avatar !== null && (
+                    <img
+                      className="w-12 h-12 rounded-full"
+                      src={item?.profile?.avatar}
+                      alt="undefined"
+                    />
+                  )) || (
+                    <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm">
+                      {item?.profile?.fullName?.charAt(0) || "S"}
+                    </div>
+                  )}
                   <div className="ml-3">
                     <p className="font-medium">
                       {item?.profile?.fullName || "Sotuvchi"}
@@ -607,12 +653,12 @@ const ProductDetail = () => {
               {/* Social Stats with Like Button */}
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={handleLikeClick}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors ${
                     isLiked
                       ? "bg-red-50 text-red-500 border border-red-200"
                       : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200"
                   }`}
+                  onClick={handleLikeClick}
                 >
                   <Heart size={18} className={isLiked ? "fill-red-500" : ""} />
                   <span>{item?.likesCount || 0}</span>
@@ -671,19 +717,19 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
-      <div className="max-w-10xl  w-full  mt-[30px]">
-        {smartLoading ? (
-          renderSkeletons()
-        ) : smartItems?.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
-            {smartItems?.map((item, index) => (
-              <ItemCard key={item?.id || index} item={item} index={index} />
-            ))}
-          </div>
-        )}
-      </div>
+        <div className="max-w-10xl  w-full  mt-[30px]">
+          {smartLoading ? (
+            renderSkeletons()
+          ) : smartItems?.length === 0 ? (
+            renderEmptyState()
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
+              {smartItems?.map((item, index) => (
+                <ItemCard key={item?.id || index} item={item} index={index} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.1)] p-1 flex space-x-3 z-20">
@@ -703,6 +749,54 @@ const ProductDetail = () => {
             <MessageCircle size={16} className="mr-2" />
             Xabar yozish
           </button>
+        </div>
+      )}
+      {/* Image Modal */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center transition-opacity duration-300"
+          onClick={closeModal}
+        >
+          <div
+            className="relative max-w-7xl w-full h-full flex items-center justify-center p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={processedImages[modalImageIndex]?.url || defaultImage}
+              alt={item?.title}
+              className="max-h-[90vh] w-auto object-contain rounded-lg shadow-2xl"
+            />
+            {/* Close Button */}
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 bg-white/80 hover:bg-white text-teal-600 p-2 rounded-full shadow-md transition-all"
+            >
+              <X size={24} />
+            </button>
+            {/* Navigation Buttons */}
+            {processedImages.length > 1 && (
+              <>
+                <button
+                  onClick={prevModalImage}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-teal-600 p-3 rounded-full shadow-md transition-all hover:scale-110"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={nextModalImage}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-teal-600 p-3 rounded-full shadow-md transition-all hover:scale-110"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )}
+            {/* Image Counter */}
+            {processedImages.length > 1 && (
+              <div className="absolute bottom-4 bg-black/60 text-white text-sm px-3 py-1 rounded-full">
+                {modalImageIndex + 1} / {processedImages.length}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

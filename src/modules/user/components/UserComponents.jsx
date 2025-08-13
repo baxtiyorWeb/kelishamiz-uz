@@ -1,9 +1,8 @@
-import MessagesTable from "./MessageTable";
-
+import MessageTable from "./MessageTable";
 const UserComponents = () => {
   return (
     <div className="w-full ">
-      <MessagesTable />
+      <MessageTable />
     </div>
   );
 };
