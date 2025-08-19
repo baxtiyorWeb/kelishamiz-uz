@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import api from "../../config/auth/api";
@@ -7,10 +9,25 @@ import KEYS from "../../export/keys";
 import URLS from "../../export/urls";
 import { get, isNull } from "lodash";
 
+// TypingUser class equivalent
+const TypingUser = {
+  create: (userId, username) => ({ userId, username }),
+};
+
 // Icon component for reusability
 const ChatIcon = () => (
-  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+  <svg
+    className="w-8 h-8 text-gray-400"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+    />
   </svg>
 );
 
@@ -24,17 +41,16 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState({});
   const [isTyping, setIsTyping] = useState(false);
-  const [typingTimeout, setTypingTimeout] = useState(null);
-
+  const typingTimeoutRef = useRef({});
   const messagesEndRef = useRef(null);
   const urlParams = new URLSearchParams(window.location.search);
   const CURRENT_USER = useGetUser();
   const currentUserIdRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
 
-  const { data, isLoading: productLoading } = useGetOneQuery({
+  const { data } = useGetOneQuery({
     key: `${KEYS.product_detail}/${urlParams.get("productId")}`,
     url: `${URLS.product_detail}/${urlParams.get("productId")}`,
     enabled: !!urlParams.get("productId"),
@@ -81,36 +97,51 @@ export default function ChatPage() {
       return;
     }
 
-    const socketInstance = io("https://api.kelishamiz.uz/chat", {
+    const socketInstance = io("http://localhost:3030/chat", {
       transports: ["websocket", "polling"],
       withCredentials: true,
       query: { userId: currentUserIdRef.current },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     setSocket(socketInstance);
 
     socketInstance.on("connect", () => {
       setConnectionStatus("connected");
+      console.log("Connected to server with ID:", currentUserIdRef.current);
+      socketInstance.emit("setOnlineStatus", currentUserIdRef.current);
       fetchChatRooms();
       const { userId, productId } = getUrlParams();
       if (userId && productId) {
-        setTimeout(() => createOrGetChatRoom(productId, userId), 500);
+        createOrGetChatRoom(productId, userId).then((chatRoom) => {
+          if (chatRoom) console.log("Joined room:", chatRoom.id);
+        });
       }
     });
 
-    socketInstance.on("disconnect", () => setConnectionStatus("disconnected"));
+    socketInstance.on("disconnect", (reason) => {
+      setConnectionStatus("disconnected");
+      console.error("Socket disconnected:", reason);
+      if (reason !== "io client disconnect") {
+        socketInstance.connect();
+      }
+    });
+
     socketInstance.on("connect_error", (error) => {
       setConnectionStatus("error");
-      console.error("Socket connection error:", error);
+      console.error("Socket connection error:", error.message);
     });
 
     socketInstance.on("newMessage", (socketMessage) => {
+      console.log("Received new message:", socketMessage);
       const message = {
-        id: socketMessage.id,
-        content: socketMessage.content,
-        createdAt: socketMessage.createdAt,
+        id: socketMessage.id || Date.now(),
+        content: socketMessage.message || socketMessage.content,
+        createdAt: socketMessage.createdAt || new Date().toISOString(),
         senderId: socketMessage.senderId,
-        senderUsername: socketMessage.senderUsername,
+        senderUsername: socketMessage.senderUsername || "Unknown",
         status: "sent",
       };
       setMessages((prev) => {
@@ -122,17 +153,27 @@ export default function ChatPage() {
               m.senderId === message.senderId
             )
         );
-        return [...filtered, message];
+        return [message, ...filtered];
       });
+      if (Notification.permission === "granted") {
+        new Notification(`New message from ${socketMessage.senderUsername}`, {
+          body: socketMessage.message || socketMessage.content,
+        });
+      }
     });
 
     socketInstance.on("messageSent", (response) => {
+      console.log("Message acknowledgment:", response);
       if (response.status === "success") {
         setMessages((prev) => {
           const newMessages = [...prev];
           for (let i = newMessages.length - 1; i >= 0; i--) {
             if (newMessages[i].status === "sending") {
-              newMessages[i] = { ...newMessages[i], status: "sent", id: response.messageId || newMessages[i].id };
+              newMessages[i] = {
+                ...newMessages[i],
+                status: "sent",
+                id: response.messageId || newMessages[i].id,
+              };
               break;
             }
           }
@@ -153,41 +194,83 @@ export default function ChatPage() {
     });
 
     socketInstance.on("userStatusChange", (data) => {
-      if (data.isOnline) {
-        setOnlineUsers((prev) =>
-          prev.includes(data.userId) ? prev : [...prev, data.userId]
-        );
-      } else {
-        setOnlineUsers((prev) => prev.filter((id) => id !== data.userId));
-      }
+      const userId = data.userId;
+      const isOnline = data.isOnline;
+      setOnlineUsers((prev) => {
+        if (isOnline) {
+          return { ...prev, [userId]: true };
+        } else {
+          const newUsers = { ...prev };
+          delete newUsers[userId];
+          return newUsers;
+        }
+      });
+      console.log(`User ${userId} is now ${isOnline ? "online" : "offline"}`);
     });
 
     socketInstance.on("onlineUsersList", (userIds) => {
-      setOnlineUsers(userIds);
+      const newOnlineUsers = {};
+      userIds.forEach((id) => {
+        newOnlineUsers[id] = true;
+      });
+      setOnlineUsers(newOnlineUsers);
+      console.log("Full online list updated:", newOnlineUsers);
     });
 
     socketInstance.on("roomOnlineUsers", (users) => {
-      const userIds = users.map((user) => user.userId);
-      setOnlineUsers(userIds);
+      const newOnlineUsers = {};
+      users.forEach((user) => {
+        newOnlineUsers[user.userId] = user.isOnline ?? true;
+      });
+      setOnlineUsers(newOnlineUsers);
+      console.log("Room online users updated:", newOnlineUsers);
     });
 
     socketInstance.on("typingIndicator", (data) => {
-      if (data.isTyping) {
-        setTypingUsers((prev) => {
-          const exists = prev.find((user) => user.userId === data.userId);
-          if (!exists) {
-            return [...prev, { userId: data.userId, username: data.username }];
+      const typingUserId = data.userId;
+      const isTyping = data.isTyping ?? false;
+      const username = data.username ?? "";
+
+      if (typingUserId !== currentUserIdRef.current) {
+        if (isTyping) {
+          setTypingUsers((prev) => {
+            if (prev.every((u) => u.userId !== typingUserId)) {
+              return [...prev, TypingUser.create(typingUserId, username)];
+            }
+            return prev;
+          });
+          if (typingTimeoutRef.current[typingUserId]) {
+            clearTimeout(typingTimeoutRef.current[typingUserId]);
           }
-          return prev;
-        });
-      } else {
-        setTypingUsers((prev) =>
-          prev.filter((user) => user.userId !== data.userId)
-        );
+          typingTimeoutRef.current[typingUserId] = setTimeout(() => {
+            setTypingUsers((prev) =>
+              prev.filter((u) => u.userId !== typingUserId)
+            );
+            delete typingTimeoutRef.current[typingUserId];
+          }, 3000);
+        } else {
+          setTypingUsers((prev) =>
+            prev.filter((u) => u.userId !== typingUserId)
+          );
+          if (typingTimeoutRef.current[typingUserId]) {
+            clearTimeout(typingTimeoutRef.current[typingUserId]);
+            delete typingTimeoutRef.current[typingUserId];
+          }
+        }
       }
     });
 
-    return () => socketInstance.disconnect();
+    return () => {
+      if (socketInstance) {
+        socketInstance.disconnect();
+      }
+      socketInstance.off("newMessage");
+      socketInstance.off("messageSent");
+      socketInstance.off("userStatusChange");
+      socketInstance.off("onlineUsersList");
+      socketInstance.off("roomOnlineUsers");
+      socketInstance.off("typingIndicator");
+    };
   }, [isReady]);
 
   const startTyping = () => {
@@ -195,7 +278,7 @@ export default function ChatPage() {
       socket.emit("typingStarted", {
         chatRoomId: selectedChatRoom.id,
         userId: currentUserIdRef.current,
-        username: CURRENT_USER.username || "Foydalanuvchi",
+        username: CURRENT_USER?.username || "Foydalanuvchi",
       });
       setIsTyping(true);
     }
@@ -216,18 +299,25 @@ export default function ChatPage() {
     setMessageInput(value);
     if (value.length > 0 && !isTyping) {
       startTyping();
-      if (typingTimeout) clearTimeout(typingTimeout);
-      const timeout = setTimeout(() => stopTyping(), 2000);
-      setTypingTimeout(timeout);
+      if (typingTimeoutRef.current.currentUser) {
+        clearTimeout(typingTimeoutRef.current.currentUser);
+      }
+      typingTimeoutRef.current.currentUser = setTimeout(() => {
+        stopTyping();
+        delete typingTimeoutRef.current.currentUser;
+      }, 5000);
     } else if (value.length === 0 && isTyping) {
       stopTyping();
-      if (typingTimeout) clearTimeout(typingTimeout);
+      if (typingTimeoutRef.current.currentUser) {
+        clearTimeout(typingTimeoutRef.current.currentUser);
+        delete typingTimeoutRef.current.currentUser;
+      }
     }
   };
 
   const createOrGetChatRoom = async (productId, otherUserId) => {
     try {
-      if (!currentUserIdRef?.current) {
+      if (!currentUserIdRef.current) {
         console.error("Current user ID not found");
         return null;
       }
@@ -237,7 +327,7 @@ export default function ChatPage() {
           productId: parseInt(productId),
           participantIds: [
             parseInt(otherUserId),
-            parseInt(currentUserIdRef?.current),
+            parseInt(currentUserIdRef.current),
           ],
         }),
         { headers: { "Content-Type": "application/json" } }
@@ -265,7 +355,7 @@ export default function ChatPage() {
     try {
       const response = await api.get("/chat/my-chats");
       const data = await response.data?.content;
-      setChatRooms(data);
+      setChatRooms(data || []);
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching chat rooms:", error);
@@ -277,26 +367,37 @@ export default function ChatPage() {
     try {
       const response = await api.get(`/chat/${chatRoomId}/messages`);
       const data = await response.data?.content;
-      setMessages(data);
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((msg) => msg.id));
+        const newMessages = (data || []).filter(
+          (msg) => !existingIds.has(msg.id)
+        );
+        return [...newMessages, ...prev];
+      });
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
   };
 
   const selectChatRoom = (chatRoom) => {
+    if (!chatRoom) return;
     if (selectedChatRoom && selectedChatRoom.id !== chatRoom.id) {
       socket?.emit("leaveRoom", selectedChatRoom.id);
     }
     setSelectedChatRoom(chatRoom);
+    console.log("Joining room:", chatRoom.id);
     socket?.emit("joinRoom", chatRoom.id);
     setMessages([]);
     fetchMessages(chatRoom.id);
     setTypingUsers([]);
     setIsTyping(false);
-    if (typingTimeout) clearTimeout(typingTimeout);
+    if (typingTimeoutRef.current.currentUser) {
+      clearTimeout(typingTimeoutRef.current.currentUser);
+      delete typingTimeoutRef.current.currentUser;
+    }
   };
 
-  const sendMessage = async () => {
+  const sendMessage = () => {
     const content = messageInput.trim();
     if (!content || !selectedChatRoom || !socket) return;
     if (isTyping) stopTyping();
@@ -304,24 +405,34 @@ export default function ChatPage() {
       id: Date.now(),
       content,
       senderId: parseInt(currentUserIdRef.current),
-      senderUsername: CURRENT_USER.username,
+      senderUsername: CURRENT_USER?.username || "Men",
       createdAt: new Date().toISOString(),
       status: "sending",
     };
     setMessages((prev) => [...prev, optimisticMessage]);
     setMessageInput("");
-    socket.emit("sendMessage", {
-      chatRoomId: selectedChatRoom.id,
-      senderId: parseInt(currentUserIdRef.current),
-      message: content,
-    });
+    socket.emit(
+      "sendMessage",
+      {
+        chatRoomId: selectedChatRoom.id,
+        senderId: parseInt(currentUserIdRef.current),
+        message: content,
+      },
+      (response) => {
+        console.log("Server response:", response);
+      }
+    );
+  };
+
+  const isUserOnline = (userId) => {
+    return onlineUsers[userId] ?? false;
   };
 
   const filteredChatRooms = chatRooms.filter(
     (room) =>
-      room.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      room.productName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       room.otherParticipant?.username
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchQuery.toLowerCase())
   );
 
@@ -337,7 +448,7 @@ export default function ChatPage() {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, messages.length]);
 
   const formatChatTime = (dateString) => {
     const date = new Date(dateString);
@@ -379,277 +490,248 @@ export default function ChatPage() {
     }
   };
 
+  useEffect(() => {
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   const connectionDisplay = getConnectionStatus();
 
   return (
-    <div className="flex h-[80vh] bg-gray-100 font-sans">
-      {/* Sidebar */}
-      <div className="w-full md:w-80 bg-white shadow-lg flex flex-col rounded-lg overflow-hidden">
-        {/* Header */}
-        <div className="p-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold tracking-tight">Habarlar</h1>
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <div
-                  className={`w-3 h-3 rounded-full ${connectionDisplay.color} ${connectionDisplay.animate}`}
-                ></div>
-                <span className="text-sm font-medium">
-                  {connectionDisplay.text}
-                </span>
-              </div>
-              <button className="p-2 hover:bg-teal-700 rounded-full transition-colors">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
+    <div className="flex h-[80vh] bg-gray-100 font-sans p-6 space-x-4">
+      <div className="flex-1 flex space-x-4">
+        <div className="w-full md:w-80 bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
+          <div className="flex flex-col flex-1 overflow-y-auto">
+            <div className="flex items-center text-sm font-medium border-b border-gray-200">
+              <button className="flex-1 text-center py-3 border-b-2 border-teal-500 text-teal-600">
+                All
+              </button>
+              <button className="flex-1 text-center py-3 text-gray-500 hover:text-gray-800">
+                incoming
+              </button>
+              <button className="flex-1 text-center py-3 text-gray-500 hover:text-gray-800">
+                upcoming
               </button>
             </div>
-          </div>
-          {/* Search */}
-          <div className="mt-3 relative">
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-teal-200 w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Qidirish..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-teal-600/30 border border-teal-400 rounded-lg placeholder-teal-200 text-white focus:outline-none focus:ring-2 focus:ring-teal-300 transition"
-            />
-          </div>
-        </div>
-
-        {/* Chat Rooms List */}
-        <div className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="p-4 space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center space-x-4 p-3 animate-pulse"
-                >
-                  <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredChatRooms.length === 0 ? (
-            <div className="p-6 text-center text-gray-500 text-sm">
-              {searchQuery ? "Hech narsa topilmadi" : "Hali suhbat yo'q"}
-            </div>
-          ) : (
-            filteredChatRooms.map((room) => {
-              const isSelected = selectedChatRoom?.id === room.id;
-              const lastMessageTime =
-                room.lastMessage?.createdAt || room.updatedAt;
-              const isUserOnline = onlineUsers.includes(
-                room.otherParticipant?.id
-              );
-
-              if (!isReady) return null;
-
-              return (
-                <div
-                  key={room.id}
-                  onClick={() => selectChatRoom(room)}
-                  className={`p-4 border-b border-gray-200 cursor-pointer transition-all duration-200 hover:bg-teal-50 ${
-                    isSelected ? "bg-teal-100 border-teal-300" : ""
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="relative">
-                      <div className="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-md">
-                        {room.otherParticipant?.username
-                          ?.charAt(0)
-                          .toUpperCase() || "?"}
-                      </div>
-                      {isUserOnline && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-gray-900 truncate">
-                          {room.otherParticipant?.username || "Noma'lum"}
-                        </h3>
-                        <span className="text-xs text-gray-400">
-                          {formatChatTime(lastMessageTime)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 truncate">
-                        {room.productName}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate mt-1">
-                        {room.lastMessage?.content || "Xabar yo'q"}
-                      </p>
+            {isLoading ? (
+              <div className="p-4 space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center space-x-4 p-3 animate-pulse"
+                  >
+                    <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-white rounded-lg overflow-hidden ml-2">
-        {selectedChatRoom ? (
-          <>
-            {/* Chat Header */}
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
-                    {selectedChatRoom.otherParticipant?.username
-                      ?.charAt(0)
-                      .toUpperCase() || "?"}
-                  </div>
-                  {onlineUsers.includes(
-                    selectedChatRoom.otherParticipant?.id
-                  ) && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {selectedChatRoom.otherParticipant?.username || "Noma'lum"}
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    {selectedChatRoom.productName}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {onlineUsers.includes(selectedChatRoom.otherParticipant?.id)
-                      ? "Onlayn"
-                      : "Offlayn"}
-                  </p>
-                </div>
+                ))}
               </div>
-            </div>
+            ) : filteredChatRooms.length === 0 ? (
+              <div className="p-6 text-center text-gray-500 text-sm">
+                {searchQuery ? "Hech narsa topilmadi" : "Hali suhbat yo'q"}
+              </div>
+            ) : (
+              filteredChatRooms.map((room) => {
+                const isSelected = selectedChatRoom?.id === room.id;
+                const lastMessageTime =
+                  room.lastMessage?.createdAt || room.updatedAt;
+                const isUserOnlineStatus = isUserOnline(
+                  room.otherParticipant?.id
+                );
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-              {messages.map((message) => {
-                const isOwn =
-                  message.senderId === parseInt(currentUserIdRef.current);
+                if (!isReady) return null;
+
                 return (
                   <div
-                    key={message.id}
-                    className={`flex ${
-                      isOwn ? "justify-end" : "justify-start"
+                    key={room.id}
+                    onClick={() => selectChatRoom(room)}
+                    className={`p-4 border-b border-gray-200 cursor-pointer transition-colors duration-200 ${
+                      isSelected ? "bg-gray-100" : "hover:bg-gray-50"
                     }`}
                   >
-                    <div
-                      className={`rounded-2xl px-4 py-2 max-w-md shadow-md transition-all duration-200 ${
-                        isOwn
-                          ? "bg-gradient-to-r from-teal-500 to-teal-600 text-white"
-                          : "bg-gray-200 text-gray-900"
-                      }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      <div className="flex items-center justify-between mt-1 text-xs opacity-80">
-                        <span>{formatTime(message.createdAt)}</span>
-                        {isOwn && (
-                          <span>
-                            {message.status === "sending"
-                              ? "Yuborilmoqda..."
-                              : "✓✓"}
-                          </span>
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <div className="w-12 h-12 rounded-full overflow-hidden">
+                          <img
+                            src={
+                              room?.imageUrl
+                                ? room?.imageUrl
+                                : `https://ui-avatars.com/api/?name=${
+                                    room.otherParticipant?.username || "U"
+                                  }&background=random&color=fff&size=256`
+                            }
+                            alt={room.otherParticipant?.username || "User"}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        {isUserOnlineStatus && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                         )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-gray-900 truncate">
+                            {room.otherParticipant?.username || "Noma'lum"}
+                          </h3>
+                          <span className="text-xs text-gray-400">
+                            {formatChatTime(lastMessageTime)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 truncate mt-1">
+                          {room.lastMessage?.content || "Xabar yo'q"}
+                        </p>
                       </div>
                     </div>
                   </div>
                 );
-              })}
+              })
+            )}
+          </div>
+        </div>
 
-              {/* Typing Indicator */}
-              {typingUsers.length > 0 && (
-                <div className="flex justify-start">
-                  <div className="max-w-xs px-4 py-2 rounded-lg bg-gray-200 shadow-sm">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">
-                        {typingUsers.map((user) => user.username).join(", ")}{" "}
-                        yozmoqda
-                      </span>
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
+        {/* Chat Area (Middle Panel) */}
+        <div className="flex-1 flex flex-col bg-white rounded-lg shadow-md overflow-hidden">
+          {selectedChatRoom ? (
+            <>
+              {/* Chat Header */}
+              <div className="p-4 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full overflow-hidden">
+                      <img
+                        src={`https://ui-avatars.com/api/?name=${
+                          selectedChatRoom.otherParticipant?.imageUrl || "U"
+                        }&background=random&color=fff&size=256`}
+                        alt={
+                          selectedChatRoom.otherParticipant?.username || "User"
+                        }
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    {isUserOnline(selectedChatRoom.otherParticipant?.id) && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {selectedChatRoom.otherParticipant?.username ||
+                        "Noma'lum"}
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      {isUserOnline(selectedChatRoom.otherParticipant?.id)
+                        ? "Onlayn"
+                        : "Offlayn"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {messages.map((message, index) => {
+                  const isOwn =
+                    message.senderId === parseInt(currentUserIdRef.current);
+                  return (
+                    <div
+                      key={message.id || index}
+                      className={`flex ${
+                        isOwn ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`rounded-xl px-4 py-2 max-w-sm shadow-sm ${
+                          isOwn
+                            ? "bg-teal-500 text-white rounded-tr-none"
+                            : "bg-gray-200 text-gray-900 rounded-tl-none"
+                        }`}
+                      >
+                        <p className="text-sm">{message.content}</p>
                         <div
-                          className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.1s" }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.2s" }}
-                        ></div>
+                          className={`mt-1 text-xs opacity-80 ${
+                            isOwn
+                              ? "text-teal-100 text-right"
+                              : "text-gray-500 text-left"
+                          }`}
+                        >
+                          <span>{formatTime(message.createdAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* Typing Indicator */}
+                {typingUsers.length > 0 && (
+                  <div className="flex justify-start">
+                    <div className="max-w-xs px-4 py-2 rounded-xl bg-gray-200 shadow-sm rounded-tl-none">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">
+                          {typingUsers.map((user) => user.username).join(", ")}{" "}
+                          yozmoqda
+                        </span>
+                        <div className="flex space-x-1">
+                          <div
+                            className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.1s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
 
-            {/* Message Input */}
-            <div className="p-4 border-t border-gray-200 bg-white">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="text"
-                  placeholder="Xabar yozing..."
-                  value={messageInput}
-                  onChange={handleMessageInputChange}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") sendMessage();
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!messageInput.trim()}
-                  className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                  Yuborish
-                </button>
+              {/* Message Input */}
+              <div className="p-4 border-t border-gray-200 bg-white">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="text"
+                    placeholder="Xabar yozing..."
+                    value={messageInput}
+                    onChange={handleMessageInputChange}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") sendMessage();
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={!messageInput.trim()}
+                    className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Yuborish
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center shadow-md">
+                  <ChatIcon />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Suhbatni tanlang
+                </h3>
+                <p className="text-gray-600 max-w-sm">
+                  Xabar yuborish uchun chap tomondagi suhbatlardan birini
+                  tanlang
+                </p>
               </div>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center shadow-md">
-                <ChatIcon />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Suhbatni tanlang
-              </h3>
-              <p className="text-gray-600 max-w-sm">
-                Xabar yuborish uchun chap tomondagi suhbatlardan birini tanlang
-              </p>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
