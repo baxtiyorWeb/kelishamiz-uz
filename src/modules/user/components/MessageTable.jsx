@@ -273,7 +273,7 @@ const MessageTable = () => {
                     />
                   </svg>
                 </span>
-                Chat BirBir
+                Chat (kelishamiz.uz)
               </Link>
               <a
                 href="#"
