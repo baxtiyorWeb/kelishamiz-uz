@@ -97,7 +97,7 @@ export default function ChatPage() {
       return;
     }
 
-    const socketInstance = io("http://localhost:3030/chat", {
+    const socketInstance = io("https://api.kelishamiz.uz/chat", {
       transports: ["websocket", "polling"],
       withCredentials: true,
       query: { userId: currentUserIdRef.current },
