@@ -46,7 +46,7 @@ const useInfiniteScrollQuery = ({
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         })
-        .then((response) => response?.data) // Endi butun response.data ni qaytaramiz
+        .then((response) => response?.data)
         .catch((error) => {
           console.error("Error fetching data:", error);
           throw error;
@@ -65,7 +65,6 @@ const useInfiniteScrollQuery = ({
     }
   );
 
-  // Prevent multiple fetches if data is already being fetched
   const loadMore = () => {
     if (!isFetchingNextPage && hasNextPage) {
       fetchNextPage();
@@ -74,7 +73,7 @@ const useInfiniteScrollQuery = ({
 
   return {
     data,
-    fetchNextPage: loadMore, // Use the custom loadMore function
+    fetchNextPage: loadMore,
     isFetchingNextPage,
     hasNextPage,
     refetch,

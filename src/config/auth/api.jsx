@@ -5,7 +5,6 @@ import axios from "axios";
 // http://localhost:3030
 // http://45.92.173.136
 // https://api.kelishamiz.uz/api/docs
-// 123123123
 const api = axios.create({
   baseURL: "https://api.kelishamiz.uz",
   headers: {

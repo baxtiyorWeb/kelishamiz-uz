@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 "use client";
 
 import { get, head, isArray, isEqual, isNil } from "lodash";
@@ -137,7 +138,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
       onClick={() => setisOpen(false)}
     >
       <div
-        className="relative w-11/12 max-w-6xl rounded-xl bg-white shadow-2xl transition-all duration-300 ease-in-out modal-animation"
+        className="relative w-full max-w-6xl h-full md:h-auto md:max-w-6xl md:rounded-xl bg-white shadow-2xl transition-all duration-300 ease-in-out modal-animation overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -149,8 +150,8 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
           <span className="sr-only">Close</span>
         </button>
 
-        <div className="flex flex-col md:flex-row h-[80vh] md:h-[70vh] overflow-hidden rounded-xl">
-          {/* Left sidebar - Parent categories */}
+        <div className="flex flex-col md:flex-row h-full md:h-[70vh] overflow-hidden md:rounded-xl">
+          {/* Left sidebar - Parent categories (accordion on mobile) */}
           <div className="w-full md:w-1/3 lg:w-1/4 bg-gradient-to-b from-teal-600 to-teal-700 p-4 overflow-y-auto">
             {/* Search input */}
             <div className="relative mb-4">
@@ -187,143 +188,178 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                 <p>Hech qanday natija topilmadi</p>
               </div>
             ) : (
-              // Category list
+              // Category list (accordion style on mobile for immediate subcategories)
               <div className="space-y-1">
                 {filteredParents?.map((item, index) => (
-                  <button
-                    className={cn(
-                      "group w-full flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200",
-                      isEqual(get(item, "id"), get(selected, "id"))
-                        ? "bg-white text-teal-800"
-                        : "text-white hover:bg-white/10"
-                    )}
-                    key={get(item, "id")}
-                    onClick={() => handleCategoryClick(item)}
-                  >
-                    <div className="flex items-center">
-                      <span className="mr-2 text-teal-300 group-hover:text-white transition-colors">
-                        {getCategoryIcon(item, index)}
-                      </span>
-                      <span className="truncate">{get(item, "name")}</span>
-                    </div>
-                    <ChevronRight
+                  <div key={get(item, "id")}>
+                    <button
                       className={cn(
-                        "h-4 w-4 transition-transform",
+                        "group w-full flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200",
                         isEqual(get(item, "id"), get(selected, "id"))
-                          ? "text-teal-600"
-                          : "text-teal-300 group-hover:translate-x-1 group-hover:text-white"
+                          ? "bg-white text-teal-800"
+                          : "text-white hover:bg-white/10"
                       )}
-                    />
-                  </button>
+                      onClick={() => handleCategoryClick(item)}
+                    >
+                      <div className="flex items-center">
+                        <span className="mr-2 text-teal-300 group-hover:text-white transition-colors">
+                          {getCategoryIcon(item, index)}
+                        </span>
+                        <span className="truncate">{get(item, "name")}</span>
+                      </div>
+                      <ChevronRight
+                        className={cn(
+                          "h-4 w-4 transition-transform",
+                          isEqual(get(item, "id"), get(selected, "id"))
+                            ? "text-teal-600 rotate-90"
+                            : "text-teal-300 group-hover:translate-x-1 group-hover:text-white"
+                        )}
+                      />
+                    </button>
+                    {isMobile && isEqual(get(item, "id"), get(selected, "id")) && (
+                      <div className="pl-4 py-2 bg-teal-700/30 rounded-b-lg">
+                        {childCategories.map((category) => (
+                          <div key={get(category, "id")} className="mb-2">
+                            <Link
+                              to={`/catalog/${get(category, "id")}`}
+                              className="flex items-center group text-white text-sm"
+                              onClick={() => setisOpen(false)}
+                            >
+                              <div className="w-6 h-6 rounded-full bg-teal-600/50 flex items-center justify-center mr-2 text-teal-300 group-hover:bg-teal-600 group-hover:text-white">
+                                {getCategoryIcon(category, index)}
+                              </div>
+                              <span className="group-hover:text-teal-300">{get(category, "name")}</span>
+                            </Link>
+                            {isArray(get(category, "children")) && get(category, "children").length > 0 && (
+                              <ul className="space-y-1 mt-2 ml-8">
+                                {get(category, "children").map((grandchild) => (
+                                  <li
+                                    key={get(grandchild, "id")}
+                                    onClick={() => handleSubcategoryClick(get(grandchild, "id"))}
+                                    className="cursor-pointer text-xs text-teal-200 hover:text-white py-1 flex items-center"
+                                  >
+                                    <div className="w-1 h-1 bg-teal-300 rounded-full mr-2"></div>
+                                    {get(grandchild, "name")}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Right content - Child categories */}
-          <div
-            id="right-panel"
-            className="w-full md:w-2/3 lg:w-3/4 bg-white p-4 md:p-6 overflow-y-auto"
-          >
-            {selected && (
-              <>
-                <div className="mb-6">
-                  <h1 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center">
-                    {get(selected, "name")}
+          {/* Right content - Child categories (hidden on mobile, since accordion handles it) */}
+          {!isMobile && (
+            <div
+              id="right-panel"
+              className="w-full md:w-2/3 lg:w-3/4 bg-white p-4 md:p-6 overflow-y-auto"
+            >
+              {selected && (
+                <>
+                  <div className="mb-6">
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center">
+                      {get(selected, "name")}
+                      <Link
+                        to={`/catalog/${get(selected, "id")}`}
+                        className="ml-2 text-sm text-teal-600 hover:text-teal-700 flex items-center"
+                        onClick={() => setisOpen(false)}
+                      >
+                        Barchasini ko'rish
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </Link>
+                    </h1>
+                    <div className="mt-2 h-1 w-20 rounded bg-teal-600"></div>
+                  </div>
+
+                  {childCategories.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Bu kategoriyada hech qanday subkategoriya mavjud emas</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
+                      {childCategories?.map((category, index) => (
+                        <div key={get(category, "id")} className="mb-4">
+                          {get(category, "name") && (
+                            <Link
+                              to={`/catalog/${get(category, "id")}`}
+                              className="flex items-center group"
+                              onClick={() => setisOpen(false)}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center mr-2 text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+                                {getCategoryIcon(category, index)}
+                              </div>
+                              <h2 className="font-medium text-teal-700 group-hover:text-teal-800 transition-colors">
+                                {get(category, "name")}
+                              </h2>
+                            </Link>
+                          )}
+
+                          {/* Display grandchildren (third level) */}
+                          {isArray(get(category, "children")) &&
+                            get(category, "children").length > 0 && (
+                              <ul className="space-y-1 mt-3 ml-10">
+                                {get(category, "children").map((grandchild) => (
+                                  <li
+                                    key={get(grandchild, "id")}
+                                    onClick={() =>
+                                      handleSubcategoryClick(
+                                        get(grandchild, "id")
+                                      )
+                                    }
+                                    className="cursor-pointer text-sm text-gray-600 hover:text-teal-600 py-1.5 transition-colors duration-150 flex items-center border-b border-gray-100 last:border-0"
+                                  >
+                                    <div className="w-1.5 h-1.5 bg-teal-200 rounded-full mr-2"></div>
+                                    <span className="hover:translate-x-1 transition-transform">
+                                      {get(grandchild, "name")}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Featured categories or promotions */}
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Mashhur kategoriyalar
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {parents.slice(0, 4).map((category, i) => (
                     <Link
-                      to={`/catalog/${get(selected, "id")}`}
-                      className="ml-2 text-sm text-teal-600 hover:text-teal-700 flex items-center"
+                      key={get(category, "id") || i}
+                      to={`/catalog/${get(category, "id")}`}
+                      className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => setisOpen(false)}
                     >
-                      Barchasini ko'rish
-                      <ArrowRight className="h-4 w-4 ml-1" />
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-teal-600">
+                          {getCategoryIcon(category, i)}
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-teal-500" />
+                      </div>
+                      <h4 className="font-medium text-teal-800">
+                        {get(category, "name") || `Kategoriya ${i + 1}`}
+                      </h4>
+                      <p className="text-xs text-teal-600 mt-1">
+                        {get(category, "children", []).length} subkategoriya
+                      </p>
                     </Link>
-                  </h1>
-                  <div className="mt-2 h-1 w-20 rounded bg-teal-600"></div>
+                  ))}
                 </div>
-
-                {childCategories.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Bu kategoriyada hech qanday subkategoriya mavjud emas</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
-                    {childCategories?.map((category, index) => (
-                      <div key={get(category, "id")} className="mb-4">
-                        {get(category, "name") && (
-                          <Link
-                            to={`/catalog/${get(category, "id")}`}
-                            className="flex items-center group"
-                            onClick={() => setisOpen(false)}
-                          >
-                            <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center mr-2 text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-colors">
-                              {getCategoryIcon(category, index)}
-                            </div>
-                            <h2 className="font-medium text-teal-700 group-hover:text-teal-800 transition-colors">
-                              {get(category, "name")}
-                            </h2>
-                          </Link>
-                        )}
-
-                        {/* Display grandchildren (third level) */}
-                        {isArray(get(category, "children")) &&
-                          get(category, "children").length > 0 && (
-                            <ul className="space-y-1 mt-3 ml-10">
-                              {get(category, "children").map((grandchild) => (
-                                <li
-                                  key={get(grandchild, "id")}
-                                  onClick={() =>
-                                    handleSubcategoryClick(
-                                      get(grandchild, "id")
-                                    )
-                                  }
-                                  className="cursor-pointer text-sm text-gray-600 hover:text-teal-600 py-1.5 transition-colors duration-150 flex items-center border-b border-gray-100 last:border-0"
-                                >
-                                  <div className="w-1.5 h-1.5 bg-teal-200 rounded-full mr-2"></div>
-                                  <span className="hover:translate-x-1 transition-transform">
-                                    {get(grandchild, "name")}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Featured categories or promotions */}
-            <div className="mt-8 pt-6 border-t border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Mashhur kategoriyalar
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {parents.slice(0, 4).map((category, i) => (
-                  <Link
-                    key={get(category, "id") || i}
-                    to={`/catalog/${get(category, "id")}`}
-                    className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => setisOpen(false)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-teal-600">
-                        {getCategoryIcon(category, i)}
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-teal-500" />
-                    </div>
-                    <h4 className="font-medium text-teal-800">
-                      {get(category, "name") || `Kategoriya ${i + 1}`}
-                    </h4>
-                    <p className="text-xs text-teal-600 mt-1">
-                      {get(category, "children", []).length} subkategoriya
-                    </p>
-                  </Link>
-                ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

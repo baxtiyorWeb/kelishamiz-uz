@@ -80,6 +80,8 @@ const ItemCard = React.memo(({ item, index, authToken, refresh }) => {
 
   const detailLink = useMemo(() => `/detail/${item?.id}?infoTab=1`, [item?.id]);
 
+  // NOTE: mainImage is computed but not directly used in the current structure
+  // The image is loaded via item?.images[item?.imageIndex]?.url
   const mainImage = useMemo(() => {
     if (item?.images && item.images.length > 0) {
       const main = item.images.find((img) => img.isMainImage);
@@ -143,108 +145,94 @@ const ItemCard = React.memo(({ item, index, authToken, refresh }) => {
         setCurrentLikesCount(newLikesCount);
       } catch (error) {
         console.error("Error toggling like:", error);
-        // Handle error appropriately
       }
     },
     [item?.id, userId, getAuthToken, currentLikesCount]
   );
 
-  return (
-    <div
-      className={`group bg-white flex-col relative rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
-        index ? "animate-fade-in" : ""
-      }`}
-    >
-      {/* TOP badge */}
-      {item?.isTop && (
-        <span className="absolute left-3 top-3 z-10 bg-gradient-to-r from-teal-500 to-teal-600 px-2 py-0.5 text-xs font-medium text-white rounded">
-          TOP
-        </span>
-      )}
+return (
+  <div
+    className={`group relative bg-white flex-col relative rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
+      index ? "animate-fade-in" : ""
+    }`}
+  >
+    {/* TOP badge */}
+    {item?.isTop && (
+      <span className="absolute left-3 top-3 z-10 bg-gradient-to-r from-teal-500 to-teal-600 px-2 py-0.5 text-[10px] font-medium text-white rounded">
+        TOP
+      </span>
+    )}
 
-      {/* Image container */}
-      <div className="relative w-full h-48 overflow-hidden">
-        <Link to={detailLink} className="block w-full h-full">
-          <img
-            src={item?.images[item?.imageIndex]?.url || "/placeholder.svg"}
-            alt={item?.title || "Product image"}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
-        </Link>
+    {/* Image container */}
+    <div className="relative w-full overflow-hidden aspect-[4/3]">
+      <Link to={detailLink} className="absolute inset-0 block">
+        <img
+          src={item?.images?.[item?.imageIndex]?.url || "/placeholder.svg"}
+          alt={item?.title || "Product image"}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          loading="lazy"
+        />
+      </Link>
+    </div>
+
+    {/* Content */}
+    <div className="p-3">
+      {/* Title */}
+      <h3 className="text-base font-semibold text-gray-800 line-clamp-1 mb-1">
+        {item?.title}
+      </h3>
+
+      {/* Price */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-lg font-bold text-teal-600">
+          {item?.price}
+          <span className="text-xs font-normal ml-1">
+            {item?.currencyType || "so'm"}
+          </span>
+        </span>
+        {item?.negotiable && (
+          <span className="text-[10px] absolute right-1 top-[85px] bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
+            Kelishiladi
+          </span>
+        )}
       </div>
 
-      {/* Content container */}
-      <div className="px-4 py-3">
-        {/* Title and description */}
-        <div className="mb-2">
-          <h3 className="text-lg font-medium line-clamp-2 text-gray-800 mb-1">
-            {item?.title}
-          </h3>
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {item?.description}
-          </p>
+      {/* Location + Date */}
+      <div className="flex items-start justify-center space-y-1 flex-col text-gray-500 text-xs mb-2">
+        <div className="flex items-center">
+          <MapPinIcon className="w-3.5 h-3.5 mr-1 text-teal-600" />
+          <span className="truncate max-w-[70px]">{item?.region?.name}</span>
+        </div>
+        <div className="flex items-center text-[10px]  bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full ">
+          <Calendar className="w-3.5  h-3.5 mr-1 text-teal-600" />
+          <span>{formattedDate}</span>
+        </div>
+      </div>
+
+      {/* Views + Likes */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-gray-500 text-xs">
+          <Eye className="w-4 h-4 mr-1 text-teal-600" />
+          <span>{item?.viewCount || 0}</span>
         </div>
 
-        {/* Price */}
-        <div>
-          <div className="mb-2">
-            <span className="text-xl font-bold text-teal-600">
-              {item?.price}{" "}
-              <span className="text-sm font-normal">
-                {item?.currencyType || "so'm"}
-              </span>
-            </span>
-            {item?.negotiable === true && (
-              <span className="ml-2 text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full">
-                Kelishiladi
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center text-gray-500 text-sm">
-              <MapPinIcon className="w-4 h-4 mr-1 text-teal-600" />
-              <span>{item?.region?.name}</span>
-            </div>
-
-            <div className="flex items-center text-gray-500 text-sm">
-              <Calendar className="w-4 h-4 mr-1 text-teal-600" />
-              <span>{formattedDate}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-gray-500 text-sm">
-              <Eye className="w-4 h-4 mr-1 text-teal-600" />
-              <span>{item?.viewCount || 0}</span>
-            </div>
-
-            <div className="flex items-center">
-              <button
-                onClick={handleLikeClick}
-                className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
-                  currentIsLiked
-                    ? "bg-teal-100 text-teal-600"
-                    : "bg-gray-100 hover:bg-teal-50 hover:text-teal-600"
-                }`}
-              >
-                <Heart
-                  className={`w-5 h-5 ${currentIsLiked ? "fill-current" : ""}`}
-                />
-              </button>
-              {item?.likesCount ||
-                (currentLikesCount !== undefined && (
-                  <span className="ml-1 text-gray-500 text-sm">
-                    {item?.likesCount || currentLikesCount || 0}
-                  </span>
-                ))}
-            </div>
-          </div>
-        </div>
+        <button
+          onClick={handleLikeClick}
+          className={`flex items-center justify-center w-7 h-7 rounded-full transition-colors ${
+            currentIsLiked
+              ? "bg-teal-100 text-teal-600"
+              : "bg-gray-100 hover:bg-teal-50 hover:text-teal-600"
+          }`}
+        >
+          <Heart
+            className={`w-4 h-4 ${currentIsLiked ? "fill-current" : ""}`}
+          />
+        </button>
       </div>
     </div>
-  );
+  </div>
+);
+
 });
 
 ItemCard.displayName = "ItemCard";
@@ -278,6 +266,7 @@ ItemCard.propTypes = {
   }).isRequired,
   index: PropTypes.number,
   authToken: PropTypes.string,
+  refresh: PropTypes.func, // `refresh` prop is used in `handleLikeClick`
 };
 
 export default ItemCard;

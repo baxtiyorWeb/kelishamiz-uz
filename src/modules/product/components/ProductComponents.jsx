@@ -630,8 +630,8 @@ const ProductDetail = () => {
                     )}
                   </div>
                 </div>
-                <div className="mt-4 flex space-x-3">
-                  <button className="text-sm flex-1 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium p-1 rounded-xl transition-colors flex items-center justify-center shadow-sm">
+                <div className="mt-4 flex space-x-2">
+                  <button className="text-[12px] flex-1 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium p-1 rounded-xl transition-colors flex items-center justify-center shadow-sm">
                     <Phone size={16} className="mr-1" />
                     Qo'ng'iroq qilish
                   </button>
@@ -642,7 +642,7 @@ const ProductDetail = () => {
                         window.location.href = `/chat?userId=${item?.profile?.user?.id}&productId=${item?.id}`;
                       }
                     }}
-                    className="flex-1 text-sm bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 text-teal-700 font-medium p-1 rounded-xl transition-colors flex items-center justify-center border border-teal-200"
+                    className="flex-1 text-[12px] bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 text-teal-700 font-medium p-1 rounded-xl transition-colors flex items-center justify-center border border-teal-200"
                   >
                     <MessageCircle size={16} className="mr-1" />
                     Xabar yozish
@@ -651,9 +651,9 @@ const ProductDetail = () => {
               </div>
 
               {/* Social Stats with Like Button */}
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-between space-x-4">
                 <button
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors ${
+                  className={`flex items-center space-x-2 px-4 py-1 rounded-xl transition-colors ${
                     isLiked
                       ? "bg-red-50 text-red-500 border border-red-200"
                       : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200"
@@ -663,11 +663,11 @@ const ProductDetail = () => {
                   <Heart size={18} className={isLiked ? "fill-red-500" : ""} />
                   <span>{item?.likesCount || 0}</span>
                 </button>
-                <div className="flex items-center text-gray-600 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
+                <div className="flex items-center text-gray-600 bg-gray-50 px-4 py-1 rounded-xl border border-gray-200">
                   <Eye size={18} className="mr-2 text-teal-500" />
-                  <span>Ko'rishlar: {item?.viewCount || 0}</span>
+                  <span>{item?.viewCount || 0}</span>
                 </div>
-                <button className="flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors bg-gray-50 text-gray-600 border border-gray-200 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 ml-auto">
+                <button className="flex items-center space-x-2 px-4 py-1 rounded-xl transition-colors bg-gray-50 text-gray-600 border border-gray-200 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 ml-auto">
                   <Share2 size={18} />
                 </button>
               </div>
@@ -732,8 +732,8 @@ const ProductDetail = () => {
         </div>
       </div>
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.1)] p-1 flex space-x-3 z-20">
-          <button className="flex-1 bg-gradient-to-r from-teal-50 to-teal-100 border border-teal-200 text-teal-700 font-medium py-2.5 px-4 rounded-xl flex items-center justify-center">
+        <div className="fixed bottom-14 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.1)] p-1 flex items-center space-x-2 z-20">
+          <button className="flex-1 bg-gradient-to-r from-teal-50 to-teal-100 border border-teal-200 text-teal-700 font-medium py-2 px-3 rounded-xl flex items-center justify-center">
             <Phone size={16} className="mr-2" />
             Qo'ng'iroq qilish
           </button>
@@ -744,7 +744,7 @@ const ProductDetail = () => {
                 window.location.href = `/chat?userId=${item?.profile?.user?.id}&productId=${item?.id}`;
               }
             }}
-            className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium py-2.5 px-4 rounded-xl flex items-center justify-center shadow-sm"
+            className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium py-2 px-3 rounded-xl flex items-center justify-center shadow-sm"
           >
             <MessageCircle size={16} className="mr-2" />
             Xabar yozish
