@@ -22,7 +22,7 @@ const Categories = () => {
         Top Categories
       </h2>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-10 gap-1 md:gap-1">
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-10 gap-1 md:gap-1">
         {isLoading
           ? placeholderItems.map((_, index) => (
               <div
