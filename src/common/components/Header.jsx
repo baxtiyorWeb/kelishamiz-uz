@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   Home as HomeIcon,
   ChevronDown,
+  PlusCircleIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -168,7 +169,7 @@ const Header = () => {
                     size={20}
                   />
                 </div>
-                <span className="text-xs text-gray-600 group-hover:text-teal-600 mt-1">
+                <span className="text-xs  text-gray-600 group-hover:text-teal-600 mt-1">
                   Sevimlilar
                 </span>
               </Link>
@@ -207,7 +208,7 @@ const Header = () => {
         <div className="flex justify-around items-center h-14 px-2">
           <Link to="/" className="flex flex-col items-center text-gray-600 hover:text-teal-600 p-1">
             <HomeIcon size={20} />
-            <span className="text-xs mt-1">Bosh sahifa</span>
+            <span className="text-xs mt-1">Asosiy</span>
           </Link>
 
           <button
@@ -222,8 +223,8 @@ const Header = () => {
             to={!isAuthenticated ? "/auth/login" : "/add-item"}
             className="flex flex-col items-center text-gray-600 hover:text-teal-600 p-1"
           >
-            <ShoppingBag size={20} />
-            <span className="text-xs mt-1">Mahsulot qo'shish</span>
+            <PlusCircleIcon size={20} />
+            <span className="text-xs mt-1">qo&apos;shish</span>
           </Link>
 
           <Link
@@ -231,7 +232,7 @@ const Header = () => {
             className="flex flex-col items-center text-gray-600 hover:text-teal-600 p-1"
           >
             <Heart size={20} />
-            <span className="text-xs mt-1">Like</span>
+            <span className="text-xs mt-1">Sevimlilar</span>
           </Link>
 
           <Link
@@ -239,7 +240,7 @@ const Header = () => {
             className="flex flex-col items-center text-gray-600 hover:text-teal-600 p-1"
           >
             <User size={20} />
-            <span className="text-xs mt-1">Profil</span>
+            <span className="text-xs mt-1">Kabinet</span>
           </Link>
         </div>
       </nav>

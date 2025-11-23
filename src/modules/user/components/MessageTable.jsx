@@ -48,7 +48,7 @@ const ItemCard = ({ item }) => (
 );
 
 const MessageTable = () => {
-  const [activeTab, setActiveTab] = useState("Faollar");
+  const [activeTab, setActiveTab] = useState("elonlar");
   const [searchQuery, setSearchQuery] = useState("");
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -294,7 +294,7 @@ const MessageTable = () => {
                     />
                   </svg>
                 </span>
-                BirBir biznes uchun
+                Kelishamiz biznes uchun
               </a>
               <a
                 href="#"

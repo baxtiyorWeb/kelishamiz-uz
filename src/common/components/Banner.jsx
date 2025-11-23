@@ -3,8 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { useQuery } from "react-query";
-import api from "./../../config/auth/api"; // Adjust the import path as necessary
-// Mock API function for demonstration
+import api from "./../../config/auth/api";
 const fetchBanners = async () => {
   const response = await api.get("/banners/public/active?placement=home_hero");
   if (response.status !== 200 || !response.data) {
@@ -13,8 +12,7 @@ const fetchBanners = async () => {
 
   console.log(response.data);
 
-  // Agar API bevosita massiv qaytarsa, shunday bo'ladi:
-  return response.data?.content; // <--- ?.content ni olib tashlang
+  return response.data?.content;
 };
 
 const Banner = () => {
