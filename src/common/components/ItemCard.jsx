@@ -191,7 +191,7 @@ return (
           </span>
         </span>
         {item?.negotiable && (
-          <span className="text-[10px] absolute right-1 top-[85px] bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] absolute right-1 top-[80px] bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
             Kelishiladi
           </span>
         )}
