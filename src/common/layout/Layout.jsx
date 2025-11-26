@@ -1,13 +1,17 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Container from "../components/Container";
 import Header from "../components/Header";
 
 const Layout = () => {
+  const location = useLocation();
+
+  const hideHeader = location.pathname === "/add-item";
+
   return (
     <div>
-      <Header />
+      {!hideHeader && <Header />}
       <Container>
-        <div className="min-h-auto flex-grow-0 p-1">
+        <div className="min-h-auto flex-grow-0 pb-20">
           <Outlet />
         </div>
       </Container>

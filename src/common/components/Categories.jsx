@@ -19,7 +19,7 @@ const Categories = () => {
   return (
     <div className="container mx-auto px-2 py-2">
       <h2 className="text-xl md:text-xl font-semibold text-gray-800 mb-2">
-        Top Categories
+        Top Kategoriyalar
       </h2>
 
       <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-10 gap-1 md:gap-1">
