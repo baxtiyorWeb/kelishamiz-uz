@@ -8,18 +8,18 @@ import URLS from "../../export/urls.js";
 import usePaginateQuery from "../../hooks/api/usePaginateQuery.js";
 import {
   ChevronRight,
-  ShoppingBag,
   X,
   Search,
   Grid,
   Tag,
   Layers,
   Package,
-  ArrowRight,
   Car,
   Smartphone,
   Home,
   ShoppingCart,
+  ChevronLeft,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "../../lib/utils.jsx";
 import { Link } from "react-router-dom";
@@ -28,6 +28,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
   const [selected, setSelected] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showSubcategories, setShowSubcategories] = useState(false);
 
   const { data: parentList, isLoading } = usePaginateQuery({
     key: KEYS.categories,
@@ -39,7 +40,6 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
     ? get(parentList, "data.content", [])
     : [];
 
-  // Filter parents based on search term
   const filteredParents = searchTerm
     ? parents.filter((item) =>
         get(item, "name", "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -52,12 +52,10 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
     }
   }, [filteredParents, selected]);
 
-  // Get children from the selected category
   const childCategories = get(selected, "children", []);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
-
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -67,38 +65,23 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Get a category-specific icon based on name
   const getCategoryIcon = (category, index) => {
     const name = get(category, "name", "").toLowerCase();
 
-    if (
-      name.includes("auto") ||
-      name.includes("avtomobil") ||
-      name.includes("car")
-    ) {
-      return <Car key="car" size={18} />;
-    } else if (
-      name.includes("electron") ||
-      name.includes("phone") ||
-      name.includes("smart")
-    ) {
-      return <Smartphone key="smartphone" size={18} />;
-    } else if (
-      name.includes("home") ||
-      name.includes("house") ||
-      name.includes("uy")
-    ) {
-      return <Home key="home" size={18} />;
+    if (name.includes("auto") || name.includes("avtomobil") || name.includes("car")) {
+      return <Car size={18} />;
+    } else if (name.includes("electron") || name.includes("phone") || name.includes("smart")) {
+      return <Smartphone size={18} />;
+    } else if (name.includes("home") || name.includes("house") || name.includes("uy")) {
+      return <Home size={18} />;
     } else if (name.includes("shop") || name.includes("market")) {
-      return <ShoppingCart key="cart" size={18} />;
+      return <ShoppingCart size={18} />;
     }
 
-    // Fallback to generic icons
     const icons = [
       <Package key="package" size={18} />,
       <Tag key="tag" size={18} />,
@@ -108,258 +91,286 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
     return icons[index % icons.length];
   };
 
-  // Handle category click
   const handleCategoryClick = (item) => {
-    setSelected(item);
     if (isMobile) {
-      // On mobile, scroll to the top of the right panel
-      const rightPanel = document.getElementById("right-panel");
-      if (rightPanel) {
-        rightPanel.scrollTop = 0;
-      }
+      setSelected(item);
+      setShowSubcategories(true);
+    } else {
+      setSelected(item);
     }
   };
 
-  // Handle subcategory click
-  const handleSubcategoryClick = (categoryId) => {
-    // Here you would typically navigate to the category page
-    setisOpen(false);
-    // Example: navigate to category page
-    // window.location.href = `/catalog/${categoryId}`
+  const handleBackToMain = () => {
+    setShowSubcategories(false);
   };
 
-  // Debug the data structure
-  console.log("Selected category:", selected);
-  console.log("Child categories:", childCategories);
+  const handleClose = () => {
+    setisOpen(false);
+    setShowSubcategories(false);
+  };
 
   return isOpen ? (
     <div
-      className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={() => setisOpen(false)}
+      className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-sm"
+      onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-6xl h-full md:h-auto md:max-w-6xl md:rounded-xl bg-white shadow-2xl transition-all duration-300 ease-in-out modal-animation overflow-hidden"
+        className="absolute inset-0 md:relative md:inset-auto md:mx-auto md:my-8 md:max-w-6xl md:rounded-2xl bg-white shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
-        <button
-          onClick={() => setisOpen(false)}
-          className="absolute right-4 top-4 z-10 rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-        >
-          <X className="h-5 w-5" />
-          <span className="sr-only">Close</span>
-        </button>
+        {/* Mobile Header */}
+        {isMobile && (
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-teal-500 to-teal-600 px-4 py-3 shadow-md">
+            <div className="flex items-center justify-between">
+              {showSubcategories ? (
+                <>
+                  <button
+                    onClick={handleBackToMain}
+                    className="flex items-center text-white active:scale-95 transition-transform"
+                  >
+                    <ChevronLeft size={24} />
+                    <span className="ml-2 font-medium">Orqaga</span>
+                  </button>
+                  <h2 className="text-white font-semibold text-sm truncate mx-4 flex-1 text-center">
+                    {get(selected, "name")}
+                  </h2>
+                </>
+              ) : (
+                <h2 className="text-white font-semibold text-lg">Kategoriyalar</h2>
+              )}
+              <button
+                onClick={handleClose}
+                className="p-1.5 rounded-full hover:bg-white/10 text-white active:scale-95 transition-all"
+              >
+                <X size={24} />
+              </button>
+            </div>
+          </div>
+        )}
 
-        <div className="flex flex-col md:flex-row h-full md:h-[70vh] overflow-hidden md:rounded-xl">
-          {/* Left sidebar - Parent categories (accordion on mobile) */}
-          <div className="w-full md:w-1/3 lg:w-1/4 bg-gradient-to-b from-teal-600 to-teal-700 p-4 overflow-y-auto">
-            {/* Search input */}
-            <div className="relative mb-4">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Search className="h-4 w-4 text-teal-300" />
+        {/* Desktop Close Button */}
+        {!isMobile && (
+          <button
+            onClick={handleClose}
+            className="absolute right-4 top-4 z-10 p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-all active:scale-95"
+          >
+            <X size={24} />
+          </button>
+        )}
+
+        <div className="flex flex-col md:flex-row h-[calc(100vh-60px)] md:h-[70vh]">
+          {/* Main Categories - Left Side */}
+          <div
+            className={cn(
+              "w-full md:w-1/3 bg-gradient-to-b from-teal-50 to-white md:from-teal-500 md:to-teal-600 overflow-y-auto",
+              isMobile && showSubcategories && "hidden"
+            )}
+          >
+            {/* Search Bar */}
+            <div className="p-4 md:p-4 sticky top-0 bg-teal-50 md:bg-transparent z-10">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 md:text-teal-300" size={18} />
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-2.5 md:py-3 bg-white md:bg-teal-700/50 text-gray-700 md:text-white placeholder-gray-400 md:placeholder-teal-300 rounded-xl border-2 border-gray-200 md:border-teal-500/30 focus:outline-none focus:ring-2 focus:ring-teal-500 md:focus:ring-white/30 text-sm transition-all"
+                  placeholder="Kategoriya qidirish..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <input
-                type="text"
-                className="w-full py-2 pl-10 pr-4 bg-teal-700/50 text-white placeholder-teal-300 rounded-lg border border-teal-500/30 focus:outline-none focus:ring-2 focus:ring-white/30"
-                placeholder="Qidirish..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
             </div>
 
-            <div className="mb-4 flex items-center gap-2 px-2 text-white">
-              <ShoppingBag className="h-5 w-5" />
-              <h2 className="text-lg font-bold">Kategoriyalar</h2>
-            </div>
-
-            {isLoading ? (
-              // Loading skeleton
-              <div className="space-y-2">
-                {[...Array(8)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-10 bg-white/10 rounded-lg animate-pulse"
-                  ></div>
-                ))}
-              </div>
-            ) : filteredParents.length === 0 ? (
-              // No results
-              <div className="text-center py-8 text-white/80">
-                <p>Hech qanday natija topilmadi</p>
-              </div>
-            ) : (
-              // Category list (accordion style on mobile for immediate subcategories)
-              <div className="space-y-1">
-                {filteredParents?.map((item, index) => (
-                  <div key={get(item, "id")}>
+            {/* Categories List */}
+            <div className="px-3 pb-4">
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-14 bg-white/20 md:bg-white/10 rounded-xl animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : filteredParents.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 md:text-white/80">
+                  <Grid size={48} className="mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">Hech narsa topilmadi</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {filteredParents.map((item, index) => (
                     <button
+                      key={get(item, "id")}
                       className={cn(
-                        "group w-full flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200",
+                        "w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left transition-all duration-200 active:scale-98",
                         isEqual(get(item, "id"), get(selected, "id"))
-                          ? "bg-white text-teal-800"
-                          : "text-white hover:bg-white/10"
+                          ? "bg-white shadow-md text-teal-700 md:bg-white md:text-teal-800"
+                          : "bg-white/50 md:bg-white/10 text-gray-700 md:text-white hover:bg-white/70 md:hover:bg-white/20"
                       )}
                       onClick={() => handleCategoryClick(item)}
                     >
-                      <div className="flex items-center">
-                        <span className="mr-2 text-teal-300 group-hover:text-white transition-colors">
+                      <div className="flex items-center flex-1 min-w-0">
+                        <div
+                          className={cn(
+                            "flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center mr-3",
+                            isEqual(get(item, "id"), get(selected, "id"))
+                              ? "bg-teal-100 text-teal-600"
+                              : "bg-teal-100/50 md:bg-teal-700/50 text-teal-600 md:text-teal-200"
+                          )}
+                        >
                           {getCategoryIcon(item, index)}
-                        </span>
-                        <span className="truncate">{get(item, "name")}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-sm block truncate">
+                            {get(item, "name")}
+                          </span>
+                          <span className={cn(
+                            "text-xs",
+                            isEqual(get(item, "id"), get(selected, "id"))
+                              ? "text-teal-600"
+                              : "text-gray-500 md:text-teal-200"
+                          )}>
+                            {get(item, "children", []).length} ta
+                          </span>
+                        </div>
                       </div>
                       <ChevronRight
                         className={cn(
-                          "h-4 w-4 transition-transform",
+                          "flex-shrink-0 transition-transform",
                           isEqual(get(item, "id"), get(selected, "id"))
-                            ? "text-teal-600 rotate-90"
-                            : "text-teal-300 group-hover:translate-x-1 group-hover:text-white"
+                            ? "text-teal-600 translate-x-1"
+                            : "text-gray-400 md:text-teal-300"
                         )}
+                        size={20}
                       />
                     </button>
-                    {isMobile && isEqual(get(item, "id"), get(selected, "id")) && (
-                      <div className="pl-4 py-2 bg-teal-700/30 rounded-b-lg">
-                        {childCategories.map((category) => (
-                          <div key={get(category, "id")} className="mb-2">
-                            <Link
-                              to={`/catalog/${get(category, "id")}`}
-                              className="flex items-center group text-white text-sm"
-                              onClick={() => setisOpen(false)}
-                            >
-                              <div className="w-6 h-6 rounded-full bg-teal-600/50 flex items-center justify-center mr-2 text-teal-300 group-hover:bg-teal-600 group-hover:text-white">
-                                {getCategoryIcon(category, index)}
-                              </div>
-                              <span className="group-hover:text-teal-300">{get(category, "name")}</span>
-                            </Link>
-                            {isArray(get(category, "children")) && get(category, "children").length > 0 && (
-                              <ul className="space-y-1 mt-2 ml-8">
-                                {get(category, "children").map((grandchild) => (
-                                  <li
-                                    key={get(grandchild, "id")}
-                                    onClick={() => handleSubcategoryClick(get(grandchild, "id"))}
-                                    className="cursor-pointer text-xs text-teal-200 hover:text-white py-1 flex items-center"
-                                  >
-                                    <div className="w-1 h-1 bg-teal-300 rounded-full mr-2"></div>
-                                    {get(grandchild, "name")}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Subcategories - Right Side */}
+          <div
+            className={cn(
+              "w-full md:w-2/3 bg-white overflow-y-auto",
+              isMobile && !showSubcategories && "hidden"
+            )}
+          >
+            {selected && (
+              <div className="p-4 md:p-6">
+                {/* Desktop Header */}
+                {!isMobile && (
+                  <div className="mb-6 pb-4 border-b-2 border-teal-100">
+                    <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                      {get(selected, "name")}
+                    </h1>
+                    <Link
+                      to={`/catalog/${get(selected, "id")}`}
+                      className="inline-flex items-center text-sm text-teal-600 hover:text-teal-700 font-medium group"
+                      onClick={handleClose}
+                    >
+                      Barchasini ko'rish
+                      <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                    </Link>
                   </div>
-                ))}
+                )}
+
+                {childCategories.length === 0 ? (
+                  <div className="text-center py-16 text-gray-500">
+                    <Package size={64} className="mx-auto mb-4 opacity-30" />
+                    <p className="text-sm">Bu kategoriyada subkategoriya yo'q</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {childCategories.map((category, index) => (
+                      <div key={get(category, "id")} className="group">
+                        <Link
+                          to={`/catalog/${get(category, "id")}`}
+                          className="flex items-center mb-3 group/link"
+                          onClick={handleClose}
+                        >
+                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center mr-3 text-teal-600 group-hover/link:from-teal-500 group-hover/link:to-teal-600 group-hover/link:text-white transition-all shadow-sm">
+                            {getCategoryIcon(category, index)}
+                          </div>
+                          <h3 className="font-semibold text-gray-800 group-hover/link:text-teal-600 transition-colors">
+                            {get(category, "name")}
+                          </h3>
+                        </Link>
+
+                        {/* Grandchildren */}
+                        {isArray(get(category, "children")) &&
+                          get(category, "children").length > 0 && (
+                            <div className="ml-14 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {get(category, "children").map((grandchild) => (
+                                <Link
+                                  key={get(grandchild, "id")}
+                                  to={`/catalog/${get(grandchild, "id")}`}
+                                  className="flex items-center px-3 py-2.5 rounded-lg hover:bg-teal-50 text-sm text-gray-600 hover:text-teal-700 transition-all group/item active:scale-98"
+                                  onClick={handleClose}
+                                >
+                                  <div className="w-1.5 h-1.5 bg-teal-400 rounded-full mr-2 group-hover/item:w-2 group-hover/item:h-2 transition-all" />
+                                  <span className="group-hover/item:translate-x-1 transition-transform truncate">
+                                    {get(grandchild, "name")}
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Popular Categories Section */}
+                {!isMobile && (
+                  <div className="mt-10 pt-6 border-t-2 border-gray-100">
+                    <div className="flex items-center gap-2 mb-4">
+                      <TrendingUp size={20} className="text-teal-600" />
+                      <h3 className="text-lg font-bold text-gray-800">
+                        Mashhur kategoriyalar
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      {parents.slice(0, 4).map((category, i) => (
+                        <Link
+                          key={get(category, "id") || i}
+                          to={`/catalog/${get(category, "id")}`}
+                          className="group relative overflow-hidden bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4 hover:shadow-lg transition-all active:scale-95"
+                          onClick={handleClose}
+                        >
+                          <div className="absolute top-2 right-2 w-8 h-8 bg-white/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ChevronRight size={16} className="text-teal-600" />
+                          </div>
+                          <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-teal-600 mb-3 group-hover:scale-110 transition-transform">
+                            {getCategoryIcon(category, i)}
+                          </div>
+                          <h4 className="font-semibold text-gray-800 text-sm mb-1 truncate">
+                            {get(category, "name")}
+                          </h4>
+                          <p className="text-xs text-teal-600">
+                            {get(category, "children", []).length} subkategoriya
+                          </p>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mobile "View All" Button */}
+                {isMobile && childCategories.length > 0 && (
+                  <Link
+                    to={`/catalog/${get(selected, "id")}`}
+                    className="sticky bottom-4 mt-6 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white py-3.5 rounded-xl font-medium shadow-lg active:scale-98 transition-all"
+                    onClick={handleClose}
+                  >
+                    Barcha mahsulotlarni ko'rish
+                    <ChevronRight size={20} />
+                  </Link>
+                )}
               </div>
             )}
           </div>
-
-          {/* Right content - Child categories (hidden on mobile, since accordion handles it) */}
-          {!isMobile && (
-            <div
-              id="right-panel"
-              className="w-full md:w-2/3 lg:w-3/4 bg-white p-4 md:p-6 overflow-y-auto"
-            >
-              {selected && (
-                <>
-                  <div className="mb-6">
-                    <h1 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center">
-                      {get(selected, "name")}
-                      <Link
-                        to={`/catalog/${get(selected, "id")}`}
-                        className="ml-2 text-sm text-teal-600 hover:text-teal-700 flex items-center"
-                        onClick={() => setisOpen(false)}
-                      >
-                        Barchasini ko'rish
-                        <ArrowRight className="h-4 w-4 ml-1" />
-                      </Link>
-                    </h1>
-                    <div className="mt-2 h-1 w-20 rounded bg-teal-600"></div>
-                  </div>
-
-                  {childCategories.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>Bu kategoriyada hech qanday subkategoriya mavjud emas</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
-                      {childCategories?.map((category, index) => (
-                        <div key={get(category, "id")} className="mb-4">
-                          {get(category, "name") && (
-                            <Link
-                              to={`/catalog/${get(category, "id")}`}
-                              className="flex items-center group"
-                              onClick={() => setisOpen(false)}
-                            >
-                              <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center mr-2 text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-colors">
-                                {getCategoryIcon(category, index)}
-                              </div>
-                              <h2 className="font-medium text-teal-700 group-hover:text-teal-800 transition-colors">
-                                {get(category, "name")}
-                              </h2>
-                            </Link>
-                          )}
-
-                          {/* Display grandchildren (third level) */}
-                          {isArray(get(category, "children")) &&
-                            get(category, "children").length > 0 && (
-                              <ul className="space-y-1 mt-3 ml-10">
-                                {get(category, "children").map((grandchild) => (
-                                  <li
-                                    key={get(grandchild, "id")}
-                                    onClick={() =>
-                                      handleSubcategoryClick(
-                                        get(grandchild, "id")
-                                      )
-                                    }
-                                    className="cursor-pointer text-sm text-gray-600 hover:text-teal-600 py-1.5 transition-colors duration-150 flex items-center border-b border-gray-100 last:border-0"
-                                  >
-                                    <div className="w-1.5 h-1.5 bg-teal-200 rounded-full mr-2"></div>
-                                    <span className="hover:translate-x-1 transition-transform">
-                                      {get(grandchild, "name")}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Featured categories or promotions */}
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Mashhur kategoriyalar
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {parents.slice(0, 4).map((category, i) => (
-                    <Link
-                      key={get(category, "id") || i}
-                      to={`/catalog/${get(category, "id")}`}
-                      className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => setisOpen(false)}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-teal-600">
-                          {getCategoryIcon(category, i)}
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-teal-500" />
-                      </div>
-                      <h4 className="font-medium text-teal-800">
-                        {get(category, "name") || `Kategoriya ${i + 1}`}
-                      </h4>
-                      <p className="text-xs text-teal-600 mt-1">
-                        {get(category, "children", []).length} subkategoriya
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
