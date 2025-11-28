@@ -5,18 +5,28 @@
 @tailwind utilities;
 
 :root {
-  --teal-50: #f0fdfa;
-  --teal-100: #ccfbf1;
-  --teal-200: #99f6e4;
-  --teal-300: #5eead4;
-  --teal-400: #2dd4bf;
-  --teal-500: #14b8a6;
-  --teal-600: #0d9488;
-  --teal-700: #0f766e;
-  --teal-800: #115e59;
-  --teal-900: #134e4a;
-  --teal-950: #042f2e;
+  /* Primary brand colors (Main mobile color) */
+  --primary-50:  #F8E9FF;
+  --primary-100: #F0D4FF;
+  --primary-200: #E0AAFF;
+  --primary-300: #D080FF;
+  --primary-400: #C060F5;
+  --primary-500: #A64AC9;  /* Mobile design main */
+  --primary-600: #8E3EAB;
+  --primary-700: #74338D;
+  --primary-800: #59286E;
+  --primary-900: #3E1C4F;
+  --primary-950: #2A1237;
+
+  /* Extra usage */
+  --primary-soft: rgba(166,74,201,0.15);
+  --primary-light: rgba(166,74,201,0.05);
+
+  /* Mobile color with alpha passed as it is */
+  --primary-mobile-alpha: #FFA64AC9;
 }
+
+
 
 * {
   box-sizing: border-box;

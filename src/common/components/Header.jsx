@@ -24,8 +24,6 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isAuthenticated } = useAuthStore();
 
-  
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -38,7 +36,7 @@ const Header = () => {
   const SearchForm = ({ isMobile = false }) => (
     <form
       onSubmit={(e) => e.preventDefault()}
-      className={`flex items-center w-full rounded-full overflow-hidden border border-gray-300 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-200 transition-all ${
+      className={`flex items-center w-full rounded-full overflow-hidden border border-gray-300 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all ${
         isMobile ? "shadow-sm" : "shadow-sm"
       }`}
     >
@@ -53,7 +51,7 @@ const Header = () => {
         type="submit"
         className={`flex ${
           isMobile ? "h-9 w-10" : "h-10 w-12"
-        } items-center justify-center text-gray-400 hover:text-teal-500 transition-colors`}
+        } items-center justify-center text-gray-400 hover:text-purple-500 transition-colors`}
       >
         <SearchIcon size={isMobile ? 16 : 18} />
       </button>
@@ -66,7 +64,7 @@ const Header = () => {
         className={`sticky top-0 z-50 w-full transition-all duration-300 ${
           isScrolled
             ? "bg-white shadow-md"
-            : "bg-gradient-to-r from-teal-50 via-white to-teal-50"
+            : "bg-gradient-to-r from-purple-50 via-white to-purple-50"
         }`}
       >
         <Container>
@@ -81,14 +79,14 @@ const Header = () => {
                   className="h-7 object-contain"
                 />
               </Link>
-              <button className="px-3 py-1.5 rounded-full bg-gradient-to-r from-teal-500 to-teal-600 text-white text-xs font-medium hover:from-teal-600 hover:to-teal-700 transition-all shadow-sm active:scale-95">
+              <button className="px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-medium hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm active:scale-95">
                 Yuklab olish
               </button>
             </div>
 
             {/* Location Bar */}
-            <div className="flex items-center justify-between px-3 py-1.5 bg-teal-50/50">
-              <button className="flex items-center space-x-1 text-teal-600 hover:text-teal-700 active:scale-95 transition-transform">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-purple-50/50">
+              <button className="flex items-center space-x-1 text-purple-600 hover:text-purple-700 active:scale-95 transition-transform">
                 <MapPin size={14} className="shrink-0" />
                 <span className="text-xs font-medium">Toshkent</span>
                 <ChevronDown size={12} />
@@ -103,9 +101,9 @@ const Header = () => {
               </div>
               <Link
                 to="/cart"
-                className="p-2 rounded-full bg-teal-50 hover:bg-teal-100 active:scale-95 transition-all shrink-0"
+                className="p-2 rounded-full bg-purple-50 hover:bg-purple-100 active:scale-95 transition-all shrink-0"
               >
-                <ShoppingBag size={18} className="text-teal-600" />
+                <ShoppingBag size={18} className="text-purple-600" />
               </Link>
               <Link
                 to="/profile/dashboard/favourites"
@@ -129,7 +127,7 @@ const Header = () => {
 
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all shadow-sm"
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm"
               >
                 <Menu size={18} />
                 <span className="font-medium">Katalog</span>
@@ -139,7 +137,7 @@ const Header = () => {
                 />
               </button>
 
-              <button className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-50 to-teal-100 text-teal-700 hover:from-teal-100 hover:to-teal-200 transition-all">
+              <button className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 hover:from-purple-100 hover:to-purple-200 transition-all">
                 <MapPin size={18} />
                 <span className="font-medium">Joylashuv</span>
               </button>
@@ -153,7 +151,7 @@ const Header = () => {
               {/* Add Item Button */}
               <Link
                 to={!isAuthenticated ? "/auth/login" : "/add-item"}
-                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all shadow-sm whitespace-nowrap"
+                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm whitespace-nowrap"
               >
                 <PlusCircleIcon size={18} className="shrink-0" />
                 <span className="text-sm font-medium">E'lon qo'shish</span>
@@ -164,13 +162,13 @@ const Header = () => {
                 to="/profile/dashboard/favourites"
                 className="group flex flex-col items-center min-w-[70px]"
               >
-                <div className="p-2 rounded-full bg-teal-50 group-hover:bg-teal-100 transition-colors">
+                <div className="p-2 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-colors">
                   <Heart
-                    className="text-teal-600 group-hover:text-teal-700"
+                    className="text-purple-600 group-hover:text-purple-700"
                     size={20}
                   />
                 </div>
-                <span className="text-xs text-gray-600 group-hover:text-teal-600 mt-1">
+                <span className="text-xs text-gray-600 group-hover:text-purple-600 mt-1">
                   Sevimlilar
                 </span>
               </Link>
@@ -180,18 +178,18 @@ const Header = () => {
                 to={isAuthenticated ? `/user` : "/auth/login"}
                 className="group flex flex-col items-center min-w-[70px]"
               >
-                <div className="p-2 rounded-full bg-teal-50 group-hover:bg-teal-100 transition-colors">
+                <div className="p-2 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-colors">
                   <User
-                    className="text-teal-600 group-hover:text-teal-700"
+                    className="text-purple-600 group-hover:text-purple-700"
                     size={20}
                   />
                 </div>
-                <span className="text-xs text-gray-600 group-hover:text-teal-600 mt-1">
+                <span className="text-xs text-gray-600 group-hover:text-purple-600 mt-1">
                   {isAuthenticated ? "Kabinet" : "Kirish"}
                 </span>
               </Link>
 
-              <select className="bg-transparent text-sm text-gray-600 outline-none px-2 py-1 rounded-md hover:bg-teal-50 cursor-pointer transition-colors">
+              <select className="bg-transparent text-sm text-gray-600 outline-none px-2 py-1 rounded-md hover:bg-purple-50 cursor-pointer transition-colors">
                 <option value="uz">UZ</option>
                 <option value="en">EN</option>
                 <option value="ru">RU</option>
@@ -202,9 +200,6 @@ const Header = () => {
 
         {isOpen && <HeaderCatalog setisOpen={setIsOpen} isOpen={isOpen} />}
       </header>
-
-     
-
     </>
   );
 };
