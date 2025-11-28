@@ -6,7 +6,7 @@ import axios from "axios";
 // http://45.92.173.136
 // https://api.kelishamiz.uz/api/docs
 const api = axios.create({
-  baseURL: "http://localhost:3030",
+  baseURL: "https://api.kelishamiz.uz",
   headers: {
     "Content-Type": "application/json",
   },
