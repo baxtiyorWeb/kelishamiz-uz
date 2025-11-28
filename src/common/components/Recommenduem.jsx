@@ -150,13 +150,7 @@ const Recommenduem = () => {
                 index={index}
                 isLiked={isProductLiked(item.id)}
                 refresh={refetch}
-              />  <ItemCard
-                key={item?.id || index}
-                item={item}
-                index={index}
-                isLiked={isProductLiked(item.id)}
-                refresh={refetch}
-              /></>
+              /> </>
             ))}
           </div>
         </InfiniteScroll>
