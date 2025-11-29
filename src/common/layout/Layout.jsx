@@ -37,7 +37,7 @@ const Layout = () => {
           <div className="flex justify-around items-center h-16 px-1">
             <Link
               to="/"
-              className="flex flex-col items-center justify-center text-gray-600 hover:text-teal-600 active:scale-95 transition-all px-2 py-1 min-w-[60px]"
+              className="flex flex-col items-center justify-center text-gray-600 hover:text-purple-500 active:scale-95 transition-all px-2 py-1 min-w-[60px]"
             >
               <HomeIcon size={22} className="mb-0.5" />
               <span className="text-[10px] font-medium">Asosiy</span>
@@ -45,7 +45,7 @@ const Layout = () => {
 
             <button
               onClick={() => setIsOpen(true)}
-              className="flex flex-col items-center justify-center text-gray-600 hover:text-teal-600 active:scale-95 transition-all px-2 py-1 min-w-[60px]"
+              className="flex flex-col items-center justify-center text-gray-600 hover:text-purple-500 active:scale-95 transition-all px-2 py-1 min-w-[60px]"
             >
               <Menu size={22} className="mb-0.5" />
               <span className="text-[10px] font-medium">Katalog</span>
@@ -53,7 +53,7 @@ const Layout = () => {
 
             <Link
               to={!isAuthenticated ? "/auth/login" : "/add-item"}
-              className="flex flex-col items-center justify-center -mt-6 px-3 py-2 bg-gradient-to-r from-teal-500 to-teal-600 rounded-full shadow-lg active:scale-95 transition-all"
+              className="flex flex-col items-center justify-center -mt-6 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-400  rounded-full shadow-lg active:scale-95 transition-all"
             >
               <PlusCircleIcon size={28} className="text-white" />
               <span className="text-[9px] font-medium text-white mt-0.5">
@@ -63,7 +63,7 @@ const Layout = () => {
 
             <Link
               to="/profile/dashboard/favourites"
-              className="flex flex-col items-center justify-center text-gray-600 hover:text-red-500 active:scale-95 transition-all px-2 py-1 min-w-[60px]"
+              className="flex flex-col items-center justify-center text-gray-600 hover:text-purple-500 active:scale-95 transition-all px-2 py-1 min-w-[60px]"
             >
               <Heart size={22} className="mb-0.5" />
               <span className="text-[10px] font-medium">Sevimli</span>
@@ -71,7 +71,7 @@ const Layout = () => {
 
             <Link
               to={isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login"}
-              className="flex flex-col items-center justify-center text-gray-600 hover:text-teal-600 active:scale-95 transition-all px-2 py-1 min-w-[60px]"
+              className="flex flex-col items-center justify-center text-gray-600 hover:text-purple-500 active:scale-95 transition-all px-2 py-1 min-w-[60px]"
             >
               <User size={22} className="mb-0.5" />
               <span className="text-[10px] font-medium">Profil</span>
