@@ -8,16 +8,15 @@ import {
   Shield,
   Phone,
   MessageCircle,
-  Star,
   ChevronLeft,
   ChevronRight,
   Check,
   AlertCircle,
-} from "lucide-react"; // lucide-icons o'rniga lucide-react ishlatilgan bo'lishi mumkin, lekin avvalgisi ishlamasa shuni tekshiring
+} from "lucide-react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom"; // useNavigate qo'shildi
+import { useParams, useNavigate } from "react-router-dom";
 import api from "./../../../config/auth/api";
-import Container from "../../../common/components/Container";
+import Container from "../../../common/components/Container"; // O'zingizning Container komponentingiz
 
 const ProductDetail = () => {
   const [currentImage, setCurrentImage] = useState(0);
@@ -26,7 +25,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { id } = useParams();
-  const navigate = useNavigate(); // useNavigate hook'i qo'shildi
+  const navigate = useNavigate();
 
   // --- Utility Functions ---
 
@@ -47,8 +46,8 @@ const ProductDetail = () => {
     if (isNaN(numPrice)) return "N/A";
 
     if (currency === "UZS") {
-      // O'zbekistonda odatda so'm o'rniga "sum" ishlatilishi mumkin, shunga qarab o'zgartiring
-      return `${numPrice.toLocaleString("uz-UZ")} so'm`;
+      // Eng yaxshi so'm formatini ishlatish
+      return `${numPrice.toLocaleString("uz-UZ", { maximumFractionDigits: 0 })} so'm`;
     }
     // Dollarni to'g'ri formatlash
     return `${numPrice.toLocaleString("en-US", {
@@ -151,16 +150,17 @@ const ProductDetail = () => {
     );
   }
 
-  // --- Component JSX ---
+  // --- Component JSX (RESPONSIVLIK UCHUN OPTIMALLASHTIRILGAN) ---
 
   return (
     <Container>
-      {/* 1. Header (Sticky for mobile/desktop) */}
+      {/* 1. Header (Sticky for mobile/desktop) - max-w-6xl mx-auto sinflarini Container ichiga olib o'tishimiz kerak */}
       <header className="bg-white border-b sticky top-0 z-20">
+        {/* Kontentni markazlashtirish va cheklash */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(-1)} // Or another back navigation logic
+              onClick={() => navigate(-1)} 
               className="p-2 hover:bg-gray-100 rounded-lg text-gray-700"
               aria-label="Go back"
             >
@@ -194,16 +194,19 @@ const ProductDetail = () => {
         </div>
       </header>
 
-      {/* 2. Main Content Layout */}
-      <div className="max-w-[100dvw] sm:px-6 py-6 lg:py-8 border">
+      {/* 2. Main Content Layout - Konteyner ichidagi paddingni berish */}
+      {/* max-w-[100dvw] va w-[100dvw] kabi cheklovchi sinflar O'CHIRILDI */}
+      <div className="px-4 sm:px-6 py-6 lg:py-8">
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Left Column (Main Content) - Mobile first: Full width, then 2/3 on large screens */}
+          {/* Left Column (Main Content) */}
           <div className="lg:col-span-2 space-y-6">
+            
             {/* Image Gallery */}
             <section className="bg-white rounded-xl overflow-hidden shadow-sm">
-              <div className="relative group max-w-[100dvw]">
-                {/* Main Image Container */}
-                <div className="aspect-[4/3] h-[50dvh]  w-full">
+              {/* max-w-[100dvw] olib tashlandi */}
+              <div className="relative group"> 
+                {/* Main Image Container - h-[50dvh] o'rniga max-h ishlatildi */}
+                <div className="aspect-[4/3] w-full h-auto max-h-[500px]"> 
                   {images.length > 0 ? (
                     <img
                       src={images[currentImage]}
@@ -217,7 +220,7 @@ const ProductDetail = () => {
                   )}
                 </div>
 
-                {/* Image Navigation Buttons */}
+                {/* Image Navigation Buttons - Qolgan holati kabi */}
                 {images.length > 1 && (
                   <>
                     <button
@@ -237,14 +240,14 @@ const ProductDetail = () => {
                   </>
                 )}
 
-                {/* Image Counter */}
+                {/* Image Counter - Qolgan holati kabi */}
                 {images.length > 0 && (
                   <div className="absolute bottom-3 right-3 bg-black/60 text-white px-3 py-1 rounded-full text-xs font-medium">
                     {currentImage + 1} / {images.length}
                   </div>
                 )}
 
-                {/* Status Badges */}
+                {/* Status Badges - Qolgan holati kabi */}
                 <div className="absolute top-3 left-3 flex gap-2">
                   {product.isTop && (
                     <span
@@ -263,7 +266,7 @@ const ProductDetail = () => {
               </div>
             </section>
 
-            {/* Thumbnails */}
+            {/* Thumbnails - Qolgan holati kabi */}
             {images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {images.map((img, idx) => (
@@ -290,39 +293,39 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Title & Price (Mobile/Tablet View - as a main block) */}
+            {/* Title & Price (Mobile/Tablet View) - lg:hidden orqali desktopda yashiriladi */}
             <div className="bg-white rounded-xl p-5 shadow-sm lg:hidden">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {product.title}
-              </h1>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span
-                  className="text-3xl font-bold"
-                  style={{ color: "#A64AC9" }}
-                >
-                  {formatPrice(product.price, product.currencyType)}
-                </span>
-                {product.negotiable && (
-                  <span className="text-sm text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
-                    Negotiable
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>
-                    {product.region?.name}, {product.district?.name}
-                  </span>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                    {product.title}
+                </h1>
+                <div className="flex items-baseline gap-2 mb-4">
+                    <span
+                        className="text-3xl font-bold"
+                        style={{ color: "#A64AC9" }}
+                    >
+                        {formatPrice(product.price, product.currencyType)}
+                    </span>
+                    {product.negotiable && (
+                        <span className="text-sm text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
+                            Negotiable
+                        </span>
+                    )}
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{formatDate(product.createdAt)}</span>
+                <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                    <div className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>
+                            {product.region?.name}, {product.district?.name}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{formatDate(product.createdAt)}</span>
+                    </div>
                 </div>
-              </div>
             </div>
 
-            {/* Description */}
+            {/* Description - Qolgan holati kabi */}
             <section className="bg-white rounded-xl p-5 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-3 border-b pb-2">
                 Description
@@ -342,7 +345,7 @@ const ProductDetail = () => {
               </div>
             </section>
 
-            {/* Specifications */}
+            {/* Specifications - Qolgan holati kabi */}
             <section className="bg-white rounded-xl p-5 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
                 Specifications
@@ -364,7 +367,7 @@ const ProductDetail = () => {
               </div>
             </section>
 
-            {/* Features */}
+            {/* Features - Qolgan holati kabi */}
             {propertyFeatures.length > 0 && (
               <section className="bg-white rounded-xl p-5 shadow-sm">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
@@ -395,10 +398,11 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Right Column (Purchase Info/Seller) - Sticky on large screens */}
+          {/* Right Column (Purchase Info/Seller) - Desktopda yopishib turadi */}
           <div className="lg:col-span-1">
             <div className="lg:sticky lg:top-20 space-y-6">
-              {/* Price Card (Desktop/Tablet View) */}
+              
+              {/* Price Card (Desktop/Tablet View) - lg:block orqali mobil/planshetda yashiriladi */}
               <div className="bg-white rounded-xl p-5 shadow-lg hidden lg:block">
                 <div className="mb-4">
                   <div className="flex items-baseline gap-2 mb-1">
@@ -463,14 +467,14 @@ const ProductDetail = () => {
               </div>
 
               {/* Seller Card */}
-              <div className="w-[100dvw] border bg-white rounded-xl p-5 shadow-lg">
+              {/* max-w/w-100dvw sinflari O'CHIRILDI */}
+              <div className="bg-white rounded-xl p-5 shadow-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-3">
                   Seller Information
                 </h3>
 
-                {/* Seller Info */}
-                <div className="flex items-center gap-3 mb-4">
-                  {/* Seller Avatar */}
+                {/* Seller Info - Qolgan holati kabi */}
+                <div className="flex items-center gap-3 mb-4 w-full">
                   <div
                     className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
                     style={{
@@ -489,7 +493,6 @@ const ProductDetail = () => {
                     )}
                   </div>
 
-                  {/* Seller Name & Join Date */}
                   <div className="flex-1">
                     <p className="font-bold text-gray-900 text-lg">
                       {product.profile?.fullName || "Unknown Seller"}
@@ -503,8 +506,8 @@ const ProductDetail = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="grid w-full grid-cols-2 gap-2">
+                {/* Action Buttons - w-max/w-100dvw sinflari O'CHIRILDI */}
+                <div className="grid grid-cols-2 gap-2">
                   {product.profile?.phoneNumber && (
                     <a
                       href={`tel:${product.profile.phoneNumber}`}
@@ -530,7 +533,8 @@ const ProductDetail = () => {
               </div>
 
               {/* Safety Tips */}
-              <div className="bg-white w-[100dvw] rounded-xl p-5 shadow-lg">
+              {/* max-w/w-100dvw sinflari O'CHIRILDI */}
+              <div className="bg-white rounded-xl p-5 shadow-lg">
                 <div className="flex items-center gap-2 mb-3 border-b pb-2">
                   <AlertCircle
                     className="w-5 h-5 flex-shrink-0"
@@ -552,9 +556,9 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* 3. Fixed Bottom Bar (for Mobile Price/Actions) */}
+      {/* 3. Fixed Bottom Bar (for Mobile Price/Actions) - lg:hidden orqali desktopda yashiriladi */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 shadow-2xl lg:hidden z-30">
-        <div className="flex items-center justify-between gap-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           <div className="flex flex-col">
             <span className="text-xs text-gray-500">Price</span>
             <span className="text-xl font-bold" style={{ color: "#A64AC9" }}>
