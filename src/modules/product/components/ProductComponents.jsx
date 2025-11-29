@@ -20,6 +20,9 @@ import {
   User,
   Clock,
   X,
+  ZoomIn,
+  Store,
+  BadgeCheck,
 } from "lucide-react";
 import useGetOneQuery from "../../../hooks/api/useGetOneQuery";
 import KEYS from "../../../export/keys";
@@ -82,13 +85,11 @@ const ProductDetail = () => {
     if (!isArray(images) || images.length === 0) {
       return [];
     }
-    // Sort images by order field
     return images.sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [item]);
 
   useEffect(() => {
     if (processedImages.length > 0) {
-      // Use imageIndex from API response, fallback to 0 if invalid
       const initialIndex =
         item?.imageIndex !== undefined &&
         item?.imageIndex >= 0 &&
@@ -100,7 +101,6 @@ const ProductDetail = () => {
   }, [processedImages, item?.imageIndex]);
 
   const selectedImageUrl = processedImages[selectedImageIndex]?.url || "";
-
   const defaultImage =
     "https://via.placeholder.com/600x400?text=No+Image+Available";
 
@@ -150,7 +150,6 @@ const ProductDetail = () => {
     );
   };
 
-  // Navigate to next image
   const nextImage = () => {
     setSelectedImageIndex((prev) =>
       prev === processedImages.length - 1 ? 0 : prev + 1
@@ -180,7 +179,6 @@ const ProductDetail = () => {
     setIsModalOpen(false);
   };
 
-  // Handle image load
   const handleImageLoad = () => {
     setIsImageLoading(false);
   };
@@ -199,94 +197,80 @@ const ProductDetail = () => {
       }, 100);
     });
   }
+
   const renderEmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="w-24 h-24 bg-teal-50 rounded-full flex items-center justify-center mb-4">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 text-teal-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 13V6a2 2 0 00-2-2H8a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-          />
-        </svg>
+    <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+      <div className="w-32 h-32 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mb-6 shadow-lg">
+        <Store size={48} className="text-purple-600" />
       </div>
-      <h3 className="text-xl font-semibold text-gray-800 mb-2">
-        Hech qanday mahsulot topilmadi
+      <h3 className="text-2xl font-bold text-gray-800 mb-3">
+        Mahsulotlar topilmadi
       </h3>
-      <p className="text-gray-500 max-w-md">
-        Hozircha bu toifada mahsulotlar mavjud emas. Iltimos, keyinroq qayta
-        tekshiring yoki boshqa toifani tanlang.
+      <p className="text-gray-500 max-w-md text-lg">
+        Hozircha bu toifada mahsulotlar mavjud emas. Iltimos, keyinroq qayta tekshiring.
       </p>
     </div>
   );
 
   const renderSkeletons = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {[...Array(8)].map((_, index) => (
         <div
           key={index}
-          className="rounded-lg shadow-sm overflow-hidden bg-white"
+          className="rounded-2xl shadow-lg overflow-hidden bg-white"
         >
-          <div className="w-full h-48 bg-gray-200 animate-pulse"></div>
-          <div className="p-4">
-            <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-2/3"></div>
-            <div className="h-4 bg-gray-200 rounded animate-pulse mb-4 w-1/4"></div>
-            <div className="h-6 bg-gray-200 rounded animate-pulse mb-4"></div>
-            <div className="flex justify-between">
-              <div className="h-8 bg-gray-200 rounded animate-pulse w-1/4"></div>
-              <div className="h-8 bg-gray-200 rounded-full animate-pulse w-8"></div>
+          <div className="w-full h-56 bg-gradient-to-br from-purple-100 to-purple-200 animate-pulse"></div>
+          <div className="p-5">
+            <div className="h-6 bg-purple-200 rounded-lg animate-pulse mb-3"></div>
+            <div className="h-4 bg-purple-100 rounded-lg animate-pulse mb-2"></div>
+            <div className="h-4 bg-purple-100 rounded-lg animate-pulse mb-3 w-2/3"></div>
+            <div className="h-8 bg-gradient-to-r from-purple-200 to-purple-300 rounded-xl animate-pulse mb-4"></div>
+            <div className="flex justify-between items-center">
+              <div className="h-10 bg-purple-200 rounded-xl animate-pulse w-2/5"></div>
+              <div className="h-10 bg-purple-200 rounded-full animate-pulse w-10"></div>
             </div>
           </div>
         </div>
       ))}
     </div>
   );
-  // Loading skeleton
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div className="md:col-span-1 lg:col-span-3 space-y-6">
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="h-[300px] md:h-[400px] bg-gray-200 animate-pulse"></div>
-                <div className="p-4">
-                  <div className="flex space-x-3">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 py-8 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+                <div className="h-[400px] md:h-[500px] bg-gradient-to-br from-purple-100 to-purple-200 animate-pulse"></div>
+                <div className="p-6">
+                  <div className="flex space-x-4">
                     {[...Array(4)].map((_, i) => (
                       <div
                         key={i}
-                        className="w-16 h-16 md:w-20 md:h-20 bg-gray-200 rounded-lg animate-pulse"
+                        className="w-20 h-20 md:w-24 md:h-24 bg-purple-200 rounded-2xl animate-pulse"
                       ></div>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                <div className="h-6 bg-gray-200 w-1/3 rounded animate-pulse"></div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
+              <div className="bg-white rounded-3xl shadow-xl p-8 space-y-4">
+                <div className="h-8 bg-purple-200 w-1/3 rounded-xl animate-pulse"></div>
+                <div className="space-y-3">
+                  <div className="h-4 bg-purple-100 rounded-lg animate-pulse"></div>
+                  <div className="h-4 bg-purple-100 rounded-lg animate-pulse"></div>
+                  <div className="h-4 bg-purple-100 rounded-lg animate-pulse w-3/4"></div>
                 </div>
               </div>
             </div>
-            <div className="md:col-span-1 lg:col-span-2">
-              <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                <div className="h-6 bg-gray-200 w-3/4 rounded animate-pulse"></div>
-                <div className="h-8 bg-gray-200 w-1/2 rounded animate-pulse"></div>
-                <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
-                <div className="flex space-x-3">
-                  <div className="h-12 bg-gray-200 rounded-lg flex-1 animate-pulse"></div>
-                  <div className="h-12 bg-gray-200 rounded-lg flex-1 animate-pulse"></div>
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-3xl shadow-xl p-8 space-y-6">
+                <div className="h-8 bg-purple-200 w-3/4 rounded-xl animate-pulse"></div>
+                <div className="h-12 bg-gradient-to-r from-purple-200 to-purple-300 rounded-2xl animate-pulse"></div>
+                <div className="h-32 bg-purple-100 rounded-2xl animate-pulse"></div>
+                <div className="flex space-x-4">
+                  <div className="h-14 bg-purple-200 rounded-2xl flex-1 animate-pulse"></div>
+                  <div className="h-14 bg-purple-200 rounded-2xl flex-1 animate-pulse"></div>
                 </div>
               </div>
             </div>
@@ -297,84 +281,85 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20 md:pb-16">
-      {/* Mobile Header */}
+    <div className="bg-gradient-to-br from-purple-50 via-white to-purple-50 min-h-screen pb-24 md:pb-16">
+      {/* Modern Mobile Header */}
       {isMobile && (
-        <div className="sticky top-0 z-10 bg-white shadow-sm">
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-lg shadow-lg border-b border-purple-100">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <button
-              className="p-2 -ml-2 text-teal-600 hover:bg-teal-50 rounded-full transition-colors"
+              className="p-2.5 -ml-2 text-purple-600 hover:bg-purple-100 rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95"
               onClick={() => window.history.back()}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={22} strokeWidth={2.5} />
             </button>
-            <h1 className="text-lg font-medium truncate max-w-[200px]">
+            <h1 className="text-lg font-bold truncate max-w-[180px] text-gray-800">
               {item?.title}
             </h1>
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <button
-                className="p-2 relative hover:bg-teal-50 rounded-full transition-colors"
+                className="p-2.5 relative hover:bg-purple-100 rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95"
                 onClick={handleLikeClick}
               >
                 <Heart
-                  size={20}
+                  size={22}
+                  strokeWidth={2.5}
                   className={
-                    isLiked ? "fill-red-500 text-red-500" : "text-teal-600"
+                    isLiked ? "fill-red-500 text-red-500" : "text-purple-600"
                   }
                 />
                 {item?.likesCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-lg">
                     {item.likesCount}
                   </span>
                 )}
               </button>
-              <button className="p-2 relative ml-1 text-teal-600 hover:bg-teal-50 rounded-full transition-colors">
-                <Share2 size={20} />
+              <button className="p-2.5 text-purple-600 hover:bg-purple-100 rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95">
+                <Share2 size={22} strokeWidth={2.5} />
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-4 md:py-8 max-w-6xl">
-        {/* Breadcrumbs - Desktop only */}
-        <div className="hidden md:flex items-center text-sm text-gray-500 mb-6">
-          <a href="/" className="hover:text-teal-600 transition-colors">
+      <div className="container mx-auto px-4 py-6 md:py-10 max-w-7xl">
+        {/* Modern Breadcrumbs */}
+        <div className="hidden md:flex items-center text-sm mb-8 bg-white/70 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-sm border border-purple-100">
+          <a href="/" className="text-purple-600 hover:text-purple-700 font-medium transition-colors">
             Bosh sahifa
           </a>
-          <span className="mx-2">/</span>
-          <a href="/products" className="hover:text-teal-600 transition-colors">
+          <ChevronRight size={16} className="mx-2 text-purple-400" />
+          <a href="/products" className="text-purple-600 hover:text-purple-700 font-medium transition-colors">
             Mahsulotlar
           </a>
           {item?.categoryId && (
             <>
-              <span className="mx-2">/</span>
+              <ChevronRight size={16} className="mx-2 text-purple-400" />
               <a
                 href={`/category/${item.categoryId}`}
-                className="hover:text-teal-600 transition-colors"
+                className="text-purple-600 hover:text-purple-700 font-medium transition-colors"
               >
                 {item?.category?.name || "Kategoriya"}
               </a>
             </>
           )}
-          <span className="mx-2">/</span>
-          <span className="text-gray-700 truncate max-w-[200px]">
+          <ChevronRight size={16} className="mx-2 text-purple-400" />
+          <span className="text-gray-700 font-semibold truncate max-w-[200px]">
             {item?.title}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {/* Left Column - Images and Properties */}
-          <div className="md:col-span-1 lg:col-span-3 space-y-6">
-            {/* Main Image */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Images & Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Main Image Gallery */}
+            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-purple-100">
               <div
-                className="relative h-[300px] md:h-[450px] w-full bg-gray-100 flex items-center justify-center cursor-pointer"
+                className="relative h-[350px] md:h-[500px] w-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center cursor-zoom-in group"
                 onClick={() => openModal(selectedImageIndex)}
               >
                 {isImageLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100">
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent shadow-lg"></div>
                   </div>
                 )}
 
@@ -383,13 +368,20 @@ const ProductDetail = () => {
                     <img
                       src={selectedImageUrl || defaultImage}
                       alt={item?.title}
-                      className={`h-full w-full object-contain transition-opacity duration-300 ${
-                        isImageLoading ? "opacity-0" : "opacity-100"
-                      }`}
+                      className={`h-full w-full object-contain transition-all duration-500 ${
+                        isImageLoading ? "opacity-0 scale-95" : "opacity-100 scale-100"
+                      } group-hover:scale-105`}
                       onLoad={handleImageLoad}
                     />
 
-                    {/* Image navigation buttons */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100">
+                        <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-2xl">
+                          <ZoomIn size={32} className="text-purple-600" />
+                        </div>
+                      </div>
+                    </div>
+
                     {processedImages.length > 1 && (
                       <>
                         <button
@@ -397,48 +389,47 @@ const ProductDetail = () => {
                             e.stopPropagation();
                             prevImage();
                           }}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-teal-600 p-2 rounded-full shadow-md transition-all hover:scale-110"
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white text-purple-600 p-3 rounded-2xl shadow-2xl transition-all hover:scale-110 active:scale-95 border border-purple-200"
                         >
-                          <ChevronLeft size={20} />
+                          <ChevronLeft size={24} strokeWidth={2.5} />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             nextImage();
                           }}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-teal-600 p-2 rounded-full shadow-md transition-all hover:scale-110"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white text-purple-600 p-3 rounded-2xl shadow-2xl transition-all hover:scale-110 active:scale-95 border border-purple-200"
                         >
-                          <ChevronRight size={20} />
+                          <ChevronRight size={24} strokeWidth={2.5} />
                         </button>
                       </>
                     )}
                   </>
                 ) : (
-                  <div
-                    className="h-full w-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${defaultImage})` }}
-                  ></div>
+                  <div className="flex flex-col items-center justify-center text-gray-400">
+                    <Store size={64} className="mb-4" />
+                    <p className="text-lg font-medium">Rasm mavjud emas</p>
+                  </div>
                 )}
 
-                {/* Like Button - Overlay */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleLikeClick();
                   }}
-                  className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors z-10"
+                  className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm p-3 rounded-2xl shadow-2xl hover:bg-white transition-all hover:scale-110 active:scale-95 border border-purple-200 z-10"
                 >
                   <Heart
-                    size={20}
+                    size={24}
+                    strokeWidth={2.5}
                     className={
-                      isLiked ? "fill-red-500 text-red-500" : "text-teal-600"
+                      isLiked ? "fill-red-500 text-red-500" : "text-purple-600"
                     }
                   />
                 </button>
 
-                {/* Image Counter - Mobile only */}
                 {processedImages.length > 1 && (
-                  <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                  <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-sm text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg">
                     {selectedImageIndex + 1} / {processedImages.length}
                   </div>
                 )}
@@ -446,22 +437,22 @@ const ProductDetail = () => {
 
               {/* Thumbnails */}
               {processedImages.length > 1 && (
-                <div className="p-4 overflow-x-auto">
-                  <div className="flex space-x-3">
+                <div className="p-6 bg-gradient-to-r from-purple-50 to-white">
+                  <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-100">
                     {processedImages.map((image, index) => (
                       <div
                         key={index}
-                        className={`border rounded-lg w-16 h-16 md:w-20 md:h-20 min-w-[4rem] md:min-w-[5rem] bg-gray-100 cursor-pointer transition-all duration-200 ${
+                        className={`border-2 rounded-2xl min-w-[80px] w-20 h-20 md:min-w-[100px] md:w-24 md:h-24 bg-white cursor-pointer transition-all duration-300 ${
                           selectedImageIndex === index
-                            ? "ring-2 ring-teal-500 scale-105"
-                            : "hover:ring-1 hover:ring-gray-300"
+                            ? "ring-4 ring-purple-500 scale-110 shadow-2xl border-purple-500"
+                            : "hover:ring-2 hover:ring-purple-300 hover:scale-105 border-purple-200 shadow-lg"
                         }`}
                         onClick={() => setSelectedImageIndex(index)}
                       >
                         <img
                           src={image.url || "/placeholder.svg"}
                           alt={`Thumbnail ${index + 1}`}
-                          className="w-full h-full object-cover rounded-lg"
+                          className="w-full h-full object-cover rounded-xl"
                           loading="lazy"
                         />
                       </div>
@@ -471,25 +462,24 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Product Properties - Moved below image */}
-            <div className="space-y-6 bg-white rounded-xl shadow-sm p-4">
-              {/* Tabs for mobile */}
-              <div className="md:hidden flex border-b border-gray-200">
+            {/* Description & Properties */}
+            <div className="space-y-6 bg-white rounded-3xl shadow-2xl p-6 md:p-8 border border-purple-100">
+              <div className="md:hidden flex border-b-2 border-purple-100">
                 <button
-                  className={`flex-1 py-2 text-sm font-medium ${
+                  className={`flex-1 py-3 text-sm font-bold transition-all duration-300 ${
                     activeTab === "description"
-                      ? "text-teal-600 border-b-2 border-teal-500"
-                      : "text-gray-500 hover:text-teal-600"
+                      ? "text-purple-600 border-b-4 border-purple-600 scale-105"
+                      : "text-gray-500 hover:text-purple-600"
                   }`}
                   onClick={() => setActiveTab("description")}
                 >
                   Tavsif
                 </button>
                 <button
-                  className={`flex-1 py-2 text-sm font-medium ${
+                  className={`flex-1 py-3 text-sm font-bold transition-all duration-300 ${
                     activeTab === "properties"
-                      ? "text-teal-600 border-b-2 border-teal-500"
-                      : "text-gray-500 hover:text-teal-600"
+                      ? "text-purple-600 border-b-4 border-purple-600 scale-105"
+                      : "text-gray-500 hover:text-purple-600"
                   }`}
                   onClick={() => setActiveTab("properties")}
                 >
@@ -497,52 +487,55 @@ const ProductDetail = () => {
                 </button>
               </div>
 
-              {/* Description */}
               <div
-                className={`space-y-1 ${
+                className={`space-y-4 ${
                   isMobile && activeTab !== "description" ? "hidden" : ""
                 }`}
               >
-                <h2 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                  <Info size={18} className="mr-2 text-teal-500" />
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-2 rounded-xl mr-3 shadow-lg">
+                    <Info size={24} className="text-white" />
+                  </div>
                   Qisqacha ma'lumot
                 </h2>
-                <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-line">
-                  {item?.description || "Mahsulot haqida ma'lumot mavjud emas."}
-                </p>
+                <div className="bg-gradient-to-br from-purple-50 to-white p-6 rounded-2xl border-2 border-purple-100">
+                  <p className="text-gray-700 text-base leading-relaxed whitespace-pre-line">
+                    {item?.description || "Mahsulot haqida ma'lumot mavjud emas."}
+                  </p>
+                </div>
               </div>
 
-              {/* Properties */}
               <div
                 className={`${
                   isMobile && activeTab !== "properties" ? "hidden" : ""
                 }`}
               >
-                <h2 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                  <Tag size={18} className="mr-2 text-teal-500" />
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center mb-6">
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-2 rounded-xl mr-3 shadow-lg">
+                    <Tag size={24} className="text-white" />
+                  </div>
                   Xususiyatlar
                 </h2>
-                <div className="space-y-1">
+                <div className="space-y-3">
                   {isArray(item?.propertyValues) &&
                   item?.propertyValues.length > 0 ? (
                     item.propertyValues.map((property, index) => (
                       <div
                         key={index}
-                        className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0"
+                        className="flex justify-between items-center py-4 px-6 bg-gradient-to-r from-purple-50 to-white rounded-2xl border border-purple-100 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
                       >
-                        <p className="text-gray-600 font-medium">
+                        <p className="text-gray-600 font-semibold">
                           {property?.value?.key}
                         </p>
-                        <div className="flex-1 mx-4 border-t border-dashed border-gray-200 hidden md:block"></div>
-                        <p className="text-gray-900 font-medium">
+                        <p className="text-gray-900 font-bold text-lg">
                           {property?.value?.value}
                         </p>
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-500 italic">
+                    <div className="text-center py-8 text-gray-500 italic bg-purple-50 rounded-2xl">
                       Xususiyatlar haqida ma'lumot mavjud emas.
-                    </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -550,90 +543,86 @@ const ProductDetail = () => {
           </div>
 
           {/* Right Column - Product Info */}
-          <div className="md:col-span-1 lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm p-4 md:sticky md:top-4 space-y-6">
-              {/* Location and Date */}
-              <div className="flex items-center text-xs md:text-sm text-gray-500 mb-1 flex-wrap">
-                <div className="flex items-center">
-                  <MapPin size={14} className="mr-1 text-teal-500" />
-                  <span>
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 md:sticky md:top-4 space-y-6 border border-purple-100">
+              <div className="flex items-center text-sm text-gray-600 mb-2 flex-wrap gap-3">
+                <div className="flex items-center bg-purple-100 px-3 py-2 rounded-xl">
+                  <MapPin size={16} className="mr-2 text-purple-600" strokeWidth={2.5} />
+                  <span className="font-medium">
                     {item?.location || (
                       <>
-                        {item?.region?.name}{" "}
+                        {item?.region?.name}
                         {item?.district?.name && `, ${item?.district?.name}`}
                       </>
                     )}
                   </span>
                 </div>
-                <div className="w-1 h-1 bg-gray-400 rounded-full mx-2"></div>
-                <div className="flex items-center">
-                  <Clock size={14} className="mr-1 text-teal-500" />
-                  <span>{getTimeAgo(item?.createdAt)}</span>
+                <div className="flex items-center bg-purple-100 px-3 py-2 rounded-xl">
+                  <Clock size={16} className="mr-2 text-purple-600" strokeWidth={2.5} />
+                  <span className="font-medium">{getTimeAgo(item?.createdAt)}</span>
                 </div>
               </div>
 
-              {/* Title - Desktop only */}
-              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
                 {item?.title}
               </h1>
 
-              {/* Price */}
-              <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-4 rounded-xl">
-                <div className="flex items-baseline flex-wrap">
-                  <span className="text-2xl md:text-3xl font-bold text-teal-700">
-                    {formatPrice(item?.price)} {item?.currencyType}
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-3xl shadow-2xl">
+                <div className="flex items-baseline flex-wrap gap-2 mb-3">
+                  <span className="text-3xl md:text-4xl font-black text-white">
+                    {formatPrice(item?.price)}
                   </span>
-                  {item?.negotiable && (
-                    <span className="ml-2 text-sm text-teal-600 font-medium bg-white px-2 py-0.5 rounded-full border border-teal-200">
-                      Narxi kelishiladi
-                    </span>
-                  )}
+                  <span className="text-xl font-bold text-purple-100">
+                    {item?.currencyType}
+                  </span>
                 </div>
-                <div className="mt-2 text-sm text-teal-700">
-                  <span className="font-medium flex items-center">
-                    <Tag size={14} className="mr-1" />
+                {item?.negotiable && (
+                  <span className="inline-flex items-center text-sm font-bold text-purple-900 bg-white px-4 py-2 rounded-full shadow-lg">
+                    <BadgeCheck size={16} className="mr-2" />
+                    Narxi kelishiladi
+                  </span>
+                )}
+                <div className="mt-4 pt-4 border-t border-purple-400">
+                  <span className="text-white font-semibold flex items-center">
+                    <Tag size={18} className="mr-2" />
                     {item?.paymentType || "To'lov turi ko'rsatilmagan"}
                   </span>
                 </div>
               </div>
 
-              {/* Contact Information */}
-              <div className="bg-white p-1 rounded-xl border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                  <User size={18} className="mr-2 text-teal-500" />
-                  Sotuvchi bilan bog&apos;lanish
+              <div className="bg-gradient-to-br from-purple-50 to-white p-6 rounded-3xl border-2 border-purple-200 shadow-lg">
+                <h3 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-2 rounded-xl mr-3">
+                    <User size={20} className="text-white" />
+                  </div>
+                  Sotuvchi
                 </h3>
-                <div className="flex items-center">
+                <div className="flex items-center mb-4">
                   {(item?.profile?.avatar !== null && (
                     <img
-                      className="w-12 h-12 rounded-full"
+                      className="w-16 h-16 rounded-2xl shadow-lg border-2 border-purple-300"
                       src={item?.profile?.avatar}
-                      alt="undefined"
+                      alt="avatar"
                     />
                   )) || (
-                    <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg border-2 border-purple-300">
                       {item?.profile?.fullName?.charAt(0) || "S"}
                     </div>
                   )}
-                  <div className="ml-3">
-                    <p className="font-medium">
+                  <div className="ml-4">
+                    <p className="font-bold text-lg text-gray-800">
                       {item?.profile?.fullName || "Sotuvchi"}
                     </p>
-                    <p className="text-sm font-medium text-teal-600">
+                    <p className="text-base font-semibold text-purple-600">
                       {item?.profile?.phoneNumber ||
                         "Telefon raqam ko'rsatilmagan"}
                     </p>
-                    {item?.profile?.location && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {item.profile.location}
-                      </p>
-                    )}
                   </div>
                 </div>
-                <div className="mt-4 flex space-x-2">
-                  <button className="text-[12px] flex-1 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium p-1 rounded-xl transition-colors flex items-center justify-center shadow-sm">
-                    <Phone size={16} className="mr-1" />
-                    Qo'ng'iroq qilish
+                <div className="flex space-x-3">
+                  <button className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95">
+                    <Phone size={18} className="mr-2" strokeWidth={2.5} />
+                    Qo'ng'iroq
                   </button>
                   <button
                     onClick={async () => {
@@ -642,62 +631,58 @@ const ProductDetail = () => {
                         window.location.href = `/chat?userId=${item?.profile?.user?.id}&productId=${item?.id}`;
                       }
                     }}
-                    className="flex-1 text-[12px] bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 text-teal-700 font-medium p-1 rounded-xl transition-colors flex items-center justify-center border border-teal-200"
+                    className="flex-1 bg-white hover:bg-purple-50 text-purple-600 font-bold py-3 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center border-2 border-purple-300 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95"
                   >
-                    <MessageCircle size={16} className="mr-1" />
-                    Xabar yozish
+                    <MessageCircle size={18} className="mr-2" strokeWidth={2.5} />
+                    Xabar
                   </button>
                 </div>
               </div>
 
-              {/* Social Stats with Like Button */}
-              <div className="flex items-center justify-between space-x-4">
+              <div className="flex items-center justify-between gap-3">
                 <button
-                  className={`flex items-center space-x-2 px-4 py-1 rounded-xl transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-5 py-3 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 ${
                     isLiked
-                      ? "bg-red-50 text-red-500 border border-red-200"
-                      : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200"
+                      ? "bg-gradient-to-r from-red-500 to-pink-500 text-white"
+                      : "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-600 hover:from-purple-200 hover:to-purple-300 border-2 border-purple-300"
                   }`}
                   onClick={handleLikeClick}
                 >
-                  <Heart size={18} className={isLiked ? "fill-red-500" : ""} />
-                  <span>{item?.likesCount || 0}</span>
+                  <Heart size={20} strokeWidth={2.5} className={isLiked ? "fill-white" : ""} />
+                  <span className="font-bold">{item?.likesCount || 0}</span>
                 </button>
-                <div className="flex items-center text-gray-600 bg-gray-50 px-4 py-1 rounded-xl border border-gray-200">
-                  <Eye size={18} className="mr-2 text-teal-500" />
-                  <span>{item?.viewCount || 0}</span>
+                <div className="flex items-center gap-2 bg-gradient-to-r from-purple-100 to-purple-200 px-5 py-3 rounded-2xl border-2 border-purple-300 shadow-lg">
+                  <Eye size={20} className="text-purple-600" strokeWidth={2.5} />
+                  <span className="font-bold text-purple-600">{item?.viewCount || 0}</span>
                 </div>
-                <button className="flex items-center space-x-2 px-4 py-1 rounded-xl transition-colors bg-gray-50 text-gray-600 border border-gray-200 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 ml-auto">
-                  <Share2 size={18} />
+                <button className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl transition-all duration-300 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-600 hover:from-purple-200 hover:to-purple-300 border-2 border-purple-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95">
+                  <Share2 size={20} strokeWidth={2.5} />
                 </button>
               </div>
 
-              {/* Additional Info */}
-              <div className="border-t border-gray-100 pt-4 space-y-3">
-                {/* Date Added */}
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500 flex items-center">
-                    <Calendar size={16} className="mr-2 text-teal-500" />
-                    Qo'shilgan sana:
+              <div className="border-t-2 border-purple-100 pt-6 space-y-4">
+                <div className="flex justify-between items-center bg-purple-50 p-4 rounded-2xl">
+                  <span className="text-gray-600 font-semibold flex items-center">
+                    <Calendar size={18} className="mr-2 text-purple-500" strokeWidth={2.5} />
+                    Qo'shilgan:
                   </span>
-                  <span className="font-medium">
+                  <span className="font-bold text-gray-800">
                     {formatDate(item?.createdAt)}
                   </span>
                 </div>
 
-                {/* Location */}
                 {(item?.location ||
                   item?.region?.name ||
                   item?.district?.name) && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500 flex items-center">
-                      <MapPin size={16} className="mr-2 text-teal-500" />
+                  <div className="flex justify-between items-center bg-purple-50 p-4 rounded-2xl">
+                    <span className="text-gray-600 font-semibold flex items-center">
+                      <MapPin size={18} className="mr-2 text-purple-500" strokeWidth={2.5} />
                       Joylashuv:
                     </span>
-                    <span className="font-medium">
+                    <span className="font-bold text-gray-800">
                       {item?.location || (
                         <>
-                          {item?.region?.name}{" "}
+                          {item?.region?.name}
                           {item?.district?.name && `, ${item?.district?.name}`}
                         </>
                       )}
@@ -705,25 +690,32 @@ const ProductDetail = () => {
                   </div>
                 )}
 
-                {/* ID */}
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500 flex items-center">
-                    <Tag size={16} className="mr-2 text-teal-500" />
+                <div className="flex justify-between items-center bg-purple-50 p-4 rounded-2xl">
+                  <span className="text-gray-600 font-semibold flex items-center">
+                    <Tag size={18} className="mr-2 text-purple-500" strokeWidth={2.5} />
                     E'lon ID:
                   </span>
-                  <span className="font-medium">{item?.id}</span>
+                  <span className="font-bold text-gray-800">{item?.id}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="max-w-10xl  w-full  mt-[30px]">
+
+        {/* Similar Products */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-black text-gray-800 mb-8 flex items-center">
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-2xl mr-4 shadow-xl">
+              <Store size={28} className="text-white" />
+            </div>
+            O'xshash mahsulotlar
+          </h2>
           {smartLoading ? (
             renderSkeletons()
           ) : smartItems?.length === 0 ? (
             renderEmptyState()
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {smartItems?.map((item, index) => (
                 <ItemCard key={item?.id || index} item={item} index={index} />
               ))}
@@ -731,11 +723,13 @@ const ProductDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Bottom Bar */}
       {isMobile && (
-        <div className="fixed bottom-14 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.1)] p-1 flex items-center space-x-2 z-20">
-          <button className="flex-1 bg-gradient-to-r from-teal-50 to-teal-100 border border-teal-200 text-teal-700 font-medium py-2 px-3 rounded-xl flex items-center justify-center">
-            <Phone size={16} className="mr-2" />
-            Qo'ng'iroq qilish
+        <div className="fixed bottom-14 left-0 right-0 bg-white/95 backdrop-blur-lg shadow-[0_-4px_20px_rgba(0,0,0,0.15)] p-4 flex items-center gap-3 z-30 border-t-2 border-purple-100">
+          <button className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold py-4 px-4 rounded-2xl flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 active:scale-95">
+            <Phone size={20} className="mr-2" strokeWidth={2.5} />
+            Qo'ng'iroq
           </button>
           <button
             onClick={async () => {
@@ -744,17 +738,18 @@ const ProductDetail = () => {
                 window.location.href = `/chat?userId=${item?.profile?.user?.id}&productId=${item?.id}`;
               }
             }}
-            className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium py-2 px-3 rounded-xl flex items-center justify-center shadow-sm"
+            className="flex-1 bg-white text-purple-600 font-bold py-4 px-4 rounded-2xl flex items-center justify-center border-2 border-purple-300 shadow-xl hover:shadow-2xl transition-all duration-300 active:scale-95"
           >
-            <MessageCircle size={16} className="mr-2" />
-            Xabar yozish
+            <MessageCircle size={20} className="mr-2" strokeWidth={2.5} />
+            Xabar
           </button>
         </div>
       )}
+
       {/* Image Modal */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center transition-opacity duration-300"
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center transition-all duration-300 animate-in fade-in"
           onClick={closeModal}
         >
           <div
@@ -764,35 +759,32 @@ const ProductDetail = () => {
             <img
               src={processedImages[modalImageIndex]?.url || defaultImage}
               alt={item?.title}
-              className="max-h-[90vh] w-auto object-contain rounded-lg shadow-2xl"
+              className="max-h-[90vh] w-auto object-contain rounded-3xl shadow-2xl"
             />
-            {/* Close Button */}
             <button
               onClick={closeModal}
-              className="absolute top-4 right-4 bg-white/80 hover:bg-white text-teal-600 p-2 rounded-full shadow-md transition-all"
+              className="absolute top-6 right-6 bg-white/95 backdrop-blur-sm hover:bg-white text-purple-600 p-4 rounded-2xl shadow-2xl transition-all hover:scale-110 active:scale-95"
             >
-              <X size={24} />
+              <X size={28} strokeWidth={2.5} />
             </button>
-            {/* Navigation Buttons */}
             {processedImages.length > 1 && (
               <>
                 <button
                   onClick={prevModalImage}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-teal-600 p-3 rounded-full shadow-md transition-all hover:scale-110"
+                  className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white text-purple-600 p-4 rounded-2xl shadow-2xl transition-all hover:scale-110 active:scale-95"
                 >
-                  <ChevronLeft size={24} />
+                  <ChevronLeft size={32} strokeWidth={2.5} />
                 </button>
                 <button
                   onClick={nextModalImage}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-teal-600 p-3 rounded-full shadow-md transition-all hover:scale-110"
+                  className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white text-purple-600 p-4 rounded-2xl shadow-2xl transition-all hover:scale-110 active:scale-95"
                 >
-                  <ChevronRight size={24} />
+                  <ChevronRight size={32} strokeWidth={2.5} />
                 </button>
               </>
             )}
-            {/* Image Counter */}
             {processedImages.length > 1 && (
-              <div className="absolute bottom-4 bg-black/60 text-white text-sm px-3 py-1 rounded-full">
+              <div className="absolute bottom-6 bg-black/70 backdrop-blur-sm text-white text-lg font-bold px-6 py-3 rounded-full shadow-2xl">
                 {modalImageIndex + 1} / {processedImages.length}
               </div>
             )}
