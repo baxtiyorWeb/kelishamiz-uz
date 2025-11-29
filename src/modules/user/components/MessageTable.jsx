@@ -56,7 +56,7 @@ const ProductCard = ({ item, onLike, isLiked }) => (
         {item.description}
       </p>
       <div className="flex items-center justify-between">
-        <span className="text-base md:text-lg font-bold text-teal-600">
+        <span className="text-base md:text-lg font-bold text-purple-600">
           {item.price?.toLocaleString()} UZS
         </span>
         <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -68,7 +68,7 @@ const ProductCard = ({ item, onLike, isLiked }) => (
   </div>
 );
 
-const StatCard = ({ icon: Icon, label, value, color = "teal" }) => (
+const StatCard = ({ icon: Icon, label, value, color = "purple" }) => (
   <div className="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
     <div className="flex items-center justify-between">
       <div>
@@ -170,7 +170,7 @@ const UserDashboard = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-4">
               {/* User Profile */}
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
-                <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md">
                   B
                 </div>
                 <div className="flex-1 min-w-0">
@@ -185,7 +185,7 @@ const UserDashboard = () => {
                   <Link
                     key={link.label}
                     to={link.href}
-                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-all group"
+                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-all group"
                   >
                     <div className="flex items-center gap-3">
                       <link.icon size={20} className="group-hover:scale-110 transition-transform" />
@@ -201,16 +201,16 @@ const UserDashboard = () => {
               </nav>
 
               {/* Stats Preview */}
-              <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4 mb-4">
-                <h4 className="text-sm font-semibold text-teal-800 mb-3">Bu oyda</h4>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 mb-4">
+                <h4 className="text-sm font-semibold text-purple-800 mb-3">Bu oyda</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-teal-700">Ko'rishlar</span>
-                    <span className="font-bold text-teal-800">{stats.views || 0}</span>
+                    <span className="text-purple-700">Ko'rishlar</span>
+                    <span className="font-bold text-purple-800">{stats.views || 0}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-teal-700">E'lonlar</span>
-                    <span className="font-bold text-teal-800">{products.length || 0}</span>
+                    <span className="text-purple-700">E'lonlar</span>
+                    <span className="font-bold text-purple-800">{products.length || 0}</span>
                   </div>
                 </div>
               </div>
@@ -229,7 +229,7 @@ const UserDashboard = () => {
             <div className="lg:hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-white text-lg font-bold">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-lg font-bold">
                     B
                   </div>
                   <div>
@@ -251,7 +251,7 @@ const UserDashboard = () => {
                     <Link
                       key={link.label}
                       to={link.href}
-                      className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg font-medium text-sm text-gray-700 hover:bg-teal-50"
+                      className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg font-medium text-sm text-gray-700 hover:bg-purple-50"
                     >
                       <div className="flex items-center gap-3">
                         <link.icon size={18} />
@@ -268,9 +268,8 @@ const UserDashboard = () => {
               )}
             </div>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
-              <StatCard icon={Package} label="Jami e'lonlar" value={products.length} color="teal" />
+              <StatCard icon={Package} label="Jami e'lonlar" value={products.length} color="purple" />
               <StatCard icon={Eye} label="Ko'rishlar" value={stats.views || 0} color="blue" />
               <StatCard icon={Heart} label="Sevimlilar" value={stats.likes || 0} color="red" />
               <StatCard icon={MessageCircle} label="Xabarlar" value={3} color="purple" />
@@ -283,7 +282,7 @@ const UserDashboard = () => {
                 <h2 className="text-lg md:text-xl font-bold text-gray-800">Mening e'lonlarim</h2>
                 <Link
                   to="/add-item"
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-sm active:scale-95 text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm active:scale-95 text-sm font-medium"
                 >
                   <Plus size={18} />
                   <span>E'lon qo'shish</span>
@@ -298,7 +297,7 @@ const UserDashboard = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap text-sm ${
                       activeTab === tab.id
-                        ? "bg-teal-100 text-teal-700 shadow-sm"
+                        ? "bg-purple-100 text-purple-700 shadow-sm"
                         : "text-gray-600 hover:bg-gray-100"
                     }`}
                   >
@@ -317,7 +316,7 @@ const UserDashboard = () => {
                     placeholder="E'lonlarda qidirish..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -325,7 +324,7 @@ const UserDashboard = () => {
                     onClick={() => setViewMode("grid")}
                     className={`p-2.5 rounded-xl transition-all ${
                       viewMode === "grid"
-                        ? "bg-teal-100 text-teal-700"
+                        ? "bg-purple-100 text-purple-700"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -335,7 +334,7 @@ const UserDashboard = () => {
                     onClick={() => setViewMode("list")}
                     className={`p-2.5 rounded-xl transition-all ${
                       viewMode === "list"
-                        ? "bg-teal-100 text-teal-700"
+                        ? "bg-purple-100 text-purple-700"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -371,7 +370,7 @@ const UserDashboard = () => {
                   </p>
                   <Link
                     to="/add-item"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-sm active:scale-95 font-medium"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm active:scale-95 font-medium"
                   >
                     <Plus size={20} />
                     <span>E'lon qo'shish</span>
