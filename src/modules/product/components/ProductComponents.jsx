@@ -17,6 +17,7 @@ import {
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom"; // useNavigate qo'shildi
 import api from "./../../../config/auth/api";
+import Container from "../../../common/components/Container";
 
 const ProductDetail = () => {
   const [currentImage, setCurrentImage] = useState(0);
@@ -84,7 +85,11 @@ const ProductDetail = () => {
         }
       } catch (err) {
         // Agar xato bo'lsa, uning xabarini ko'rsatamiz
-        setError(err.response?.data?.message || err.message || "Failed to fetch product data.");
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to fetch product data."
+        );
       } finally {
         setLoading(false);
       }
@@ -149,7 +154,7 @@ const ProductDetail = () => {
   // --- Component JSX ---
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <Container>
       {/* 1. Header (Sticky for mobile/desktop) */}
       <header className="bg-white border-b sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -190,15 +195,15 @@ const ProductDetail = () => {
       </header>
 
       {/* 2. Main Content Layout */}
-      <div className="max-w-6xl  px-4 sm:px-6 py-6 lg:py-8 border">
+      <div className="max-w-[100dvw] sm:px-6 py-6 lg:py-8 border">
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Left Column (Main Content) - Mobile first: Full width, then 2/3 on large screens */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image Gallery */}
             <section className="bg-white rounded-xl overflow-hidden shadow-sm">
-              <div className="relative group">
+              <div className="relative group max-w-[100dvw]">
                 {/* Main Image Container */}
-                <div className="aspect-[4/3] h-[50dvh] md:h-[65dvh] w-full">
+                <div className="aspect-[4/3] h-[50dvh]  w-full">
                   {images.length > 0 ? (
                     <img
                       src={images[currentImage]}
@@ -458,15 +463,20 @@ const ProductDetail = () => {
               </div>
 
               {/* Seller Card */}
-              <div className="bg-white rounded-xl p-5 shadow-lg">
+              <div className="w-[100dvw] border bg-white rounded-xl p-5 shadow-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-3">
                   Seller Information
                 </h3>
+
+                {/* Seller Info */}
                 <div className="flex items-center gap-3 mb-4">
                   {/* Seller Avatar */}
                   <div
                     className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
-                    style={{ backgroundColor: "#A64AC9" }}
+                    style={{
+                      backgroundColor:
+                        product.profile?.avatarColor || "#A64AC9",
+                    }}
                   >
                     {product.profile?.avatar ? (
                       <img
@@ -478,37 +488,49 @@ const ProductDetail = () => {
                       product.profile?.fullName?.charAt(0).toUpperCase() || "U"
                     )}
                   </div>
+
+                  {/* Seller Name & Join Date */}
                   <div className="flex-1">
                     <p className="font-bold text-gray-900 text-lg">
                       {product.profile?.fullName || "Unknown Seller"}
                     </p>
-                    {/* Add rating/join date if available */}
-                    <p className="text-sm text-gray-500">
-                      Member since: {new Date().getFullYear()}
-                    </p>
+                    {product.profile?.createdAt && (
+                      <p className="text-sm text-gray-500">
+                        Member since:{" "}
+                        {new Date(product.profile.createdAt).getFullYear()}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    className="py-3 px-4 rounded-xl font-medium text-white text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: "#A64AC9" }}
-                  >
-                    <Phone className="w-4 h-4" />
-                    Call
-                  </button>
-                  <button
-                    className="py-3 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 border-2 transition-all hover:bg-gray-50 shadow-md"
-                    style={{ borderColor: "#A64AC9", color: "#A64AC9" }}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Chat
-                  </button>
+                {/* Action Buttons */}
+                <div className="grid w-full grid-cols-2 gap-2">
+                  {product.profile?.phoneNumber && (
+                    <a
+                      href={`tel:${product.profile.phoneNumber}`}
+                      className="py-3 px-4 rounded-xl font-medium text-white text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-md"
+                      style={{ backgroundColor: "#A64AC9" }}
+                    >
+                      <Phone className="w-4 h-4" />
+                      Call
+                    </a>
+                  )}
+
+                  {product.profile?.userId && (
+                    <a
+                      href={`/chat?userId=${product.profile.userId}&productId=${product.id}`}
+                      className="py-3 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 border-2 transition-all hover:bg-gray-50 shadow-md"
+                      style={{ borderColor: "#A64AC9", color: "#A64AC9" }}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Chat
+                    </a>
+                  )}
                 </div>
               </div>
 
               {/* Safety Tips */}
-              <div className="bg-white rounded-xl p-5 shadow-lg">
+              <div className="bg-white w-[100dvw] rounded-xl p-5 shadow-lg">
                 <div className="flex items-center gap-2 mb-3 border-b pb-2">
                   <AlertCircle
                     className="w-5 h-5 flex-shrink-0"
@@ -529,33 +551,33 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 3. Fixed Bottom Bar (for Mobile Price/Actions) */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 shadow-2xl lg:hidden z-30">
-          <div className="flex items-center justify-between gap-3">
-              <div className="flex flex-col">
-                  <span className="text-xs text-gray-500">Price</span>
-                  <span className="text-xl font-bold" style={{ color: "#A64AC9" }}>
-                      {formatPrice(product.price, product.currencyType)}
-                  </span>
-              </div>
-              <div className="flex gap-2">
-                  <button
-                      className="py-2 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 border transition-all hover:bg-gray-50"
-                      style={{ borderColor: "#A64AC9", color: "#A64AC9" }}
-                  >
-                      <MessageCircle className="w-5 h-5" />
-                  </button>
-                  <button
-                      className="py-2 px-4 rounded-xl font-semibold text-white text-sm transition-all hover:opacity-90"
-                      style={{ backgroundColor: "#A64AC9" }}
-                  >
-                      Buy Now
-                  </button>
-              </div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500">Price</span>
+            <span className="text-xl font-bold" style={{ color: "#A64AC9" }}>
+              {formatPrice(product.price, product.currencyType)}
+            </span>
           </div>
+          <div className="flex gap-2">
+            <button
+              className="py-2 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 border transition-all hover:bg-gray-50"
+              style={{ borderColor: "#A64AC9", color: "#A64AC9" }}
+            >
+              <MessageCircle className="w-5 h-5" />
+            </button>
+            <button
+              className="py-2 px-4 rounded-xl font-semibold text-white text-sm transition-all hover:opacity-90"
+              style={{ backgroundColor: "#A64AC9" }}
+            >
+              Buy Now
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </Container>
   );
 };
 
