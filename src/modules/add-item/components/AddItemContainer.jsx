@@ -6,7 +6,6 @@ import { toast } from "react-toastify";
 import api from "../../../config/auth/api";
 import { Loader2, ChevronLeft, ChevronRight, Check, X, Image as ImageIcon } from "lucide-react";
 
-// Custom input component with modern design
 const StyledInput = ({
   type = "text",
   id,
@@ -25,7 +24,7 @@ const StyledInput = ({
     name={name}
     value={value}
     onChange={onChange}
-    className={`w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 ${
+    className={`w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 ${
       disabled ? "bg-gray-50 text-gray-500" : "bg-white"
     } ${className}`}
     placeholder={placeholder}
@@ -35,7 +34,6 @@ const StyledInput = ({
   />
 );
 
-// Custom select component
 const StyledSelect = ({
   id,
   name,
@@ -52,7 +50,7 @@ const StyledSelect = ({
       name={name}
       value={value}
       onChange={onChange}
-      className={`w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 pr-10 ${
+      className={`w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 pr-10 ${
         disabled ? "bg-gray-50 text-gray-500" : "bg-white"
       } ${className}`}
       required={required}
@@ -68,7 +66,6 @@ const StyledSelect = ({
   </div>
 );
 
-// Custom textarea component
 const StyledTextarea = ({
   id,
   name,
@@ -85,13 +82,12 @@ const StyledTextarea = ({
     value={value}
     onChange={onChange}
     rows={rows}
-    className={`w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 resize-none ${className}`}
+    className={`w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 resize-none ${className}`}
     placeholder={placeholder}
     required={required}
   />
 );
 
-// Custom checkbox component
 const StyledCheckbox = ({ id, name, checked, onChange, label }) => (
   <label htmlFor={id} className="flex items-center cursor-pointer group">
     <div className="relative">
@@ -106,8 +102,8 @@ const StyledCheckbox = ({ id, name, checked, onChange, label }) => (
       <div
         className={`w-6 h-6 rounded-lg border-2 transition-all duration-300 flex items-center justify-center ${
           checked
-            ? "bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-500"
-            : "bg-white border-gray-300 group-hover:border-emerald-400"
+            ? "bg-gradient-to-br from-purple-500 to-purple-600 border-purple-500"
+            : "bg-white border-gray-300 group-hover:border-purple-400"
         }`}
       >
         {checked && (
@@ -119,21 +115,19 @@ const StyledCheckbox = ({ id, name, checked, onChange, label }) => (
   </label>
 );
 
-// Loading spinner component
+
 const LoadingSpinner = ({ size = "small" }) => (
   <Loader2
     className={`animate-spin ${
       size === "small" ? "h-5 w-5" : "h-8 w-8"
-    } text-emerald-600`}
+    } text-purple-600`}
   />
 );
 
 const AddItemContainer = () => {
-  // Current step (0-4)
   const [currentStep, setCurrentStep] = useState(0);
-  const [direction, setDirection] = useState(1); // 1 for forward, -1 for backward
+  const [direction, setDirection] = useState(1); 
 
-  // Form state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -153,7 +147,6 @@ const AddItemContainer = () => {
   const [subcategoryId, setSubcategoryId] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
 
-  // Loading states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingSubcategories, setIsLoadingSubcategories] = useState(false);
@@ -162,7 +155,6 @@ const AddItemContainer = () => {
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
   const [uploadingImages, setUploadingImages] = useState([]);
 
-  // Data states
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [regions, setRegions] = useState([]);
@@ -177,7 +169,6 @@ const AddItemContainer = () => {
     { title: "Rasmlar", icon: "📷" },
   ];
 
-  // Fetch initial data
   useEffect(() => {
     fetchCategories();
     fetchRegions();
@@ -364,7 +355,6 @@ const AddItemContainer = () => {
     maxFiles: 10,
   });
 
-  // Step validation
   const validateStep = (step) => {
     switch (step) {
       case 0:
@@ -388,7 +378,6 @@ const AddItemContainer = () => {
         }
         return true;
       case 2:
-        return true; // Properties are optional
       case 3:
         if (!formData.regionId) {
           toast.error("Viloyat tanlanishi shart");
@@ -413,7 +402,6 @@ const AddItemContainer = () => {
   const nextStep = () => {
     if (validateStep(currentStep)) {
       if (currentStep === 2 && categoryProperties.length === 0) {
-        // Skip properties step if no properties
         setDirection(1);
         setCurrentStep(3);
       } else if (currentStep < steps.length - 1) {
@@ -426,7 +414,6 @@ const AddItemContainer = () => {
   const prevStep = () => {
     if (currentStep > 0) {
       if (currentStep === 3 && categoryProperties.length === 0) {
-        // Skip properties step if no properties
         setDirection(-1);
         setCurrentStep(1);
       } else {
@@ -502,7 +489,6 @@ const AddItemContainer = () => {
     }
   };
 
-  // Render step content
   const renderStepContent = () => {
     const slideVariants = {
       initial: (direction) => ({
@@ -581,7 +567,7 @@ const AddItemContainer = () => {
                     name="currencyType"
                     value={formData.currencyType}
                     onChange={handleChange}
-                    className="px-4 py-2 border border-l-0 border-gray-200 rounded-r-2xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
+                    className="px-4 py-2 border border-l-0 border-gray-200 rounded-r-2xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
                   >
                     <option value="UZS">UZS</option>
                     <option value="USD">USD</option>
@@ -866,7 +852,7 @@ const AddItemContainer = () => {
                 <input {...imageDropzone.getInputProps()} />
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-full flex items-center justify-center mb-4">
-                    <ImageIcon className="w-8 h-8 text-emerald-600" />
+                    <ImageIcon className="w-8 h-8 text-purple-600" />
                   </div>
                   <p className="text-base font-medium text-gray-700 mb-1">
                     Rasmlarni yuklash uchun bosing yoki shu yerga tashlang
@@ -891,8 +877,8 @@ const AddItemContainer = () => {
                         <div
                           className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
                             formData.imageIndex === index
-                              ? "ring-4 ring-emerald-500 shadow-lg scale-105"
-                              : "ring-2 ring-gray-200 hover:ring-emerald-300"
+                              ? "ring-4 ring-purple-500 shadow-lg scale-105"
+                              : "ring-2 ring-gray-200 hover:ring-purple-300"
                           }`}
                         >
                           <img
@@ -901,7 +887,7 @@ const AddItemContainer = () => {
                             className="h-32 w-full object-cover"
                           />
                           {formData.imageIndex === index && (
-                            <div className="absolute top-2 left-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                            <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
                               <Check className="w-3 h-3" />
                               Asosiy
                             </div>
@@ -947,7 +933,7 @@ const AddItemContainer = () => {
                       <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                         <div
                           className={`h-2 rounded-full transition-all duration-300 ${
-                            img.error ? "bg-red-500" : "bg-gradient-to-r from-emerald-500 to-emerald-600"
+                            img.error ? "bg-red-500" : "bg-gradient-to-r from-purple-500 to-purple-600"
                           }`}
                           style={{ width: `${img.progress}%` }}
                         ></div>
@@ -969,13 +955,11 @@ const AddItemContainer = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4 sm:py-8">
       <div className="container mx-auto px-4 max-w-4xl">
-        {/* Header */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Yangi e'lon qo'shish</h1>
           <p className="text-gray-600 text-sm sm:text-base">Ma'lumotlarni to'ldiring va e'loningizni joylashtiring</p>
         </div>
 
-        {/* Progress Bar */}
         <div className="bg-white rounded-3xl shadow-sm p-4 sm:p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => (
@@ -983,9 +967,9 @@ const AddItemContainer = () => {
                 <div
                   className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-lg sm:text-xl transition-all duration-300 ${
                     index < currentStep
-                      ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md"
+                      ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md"
                       : index === currentStep
-                      ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg ring-4 ring-emerald-100"
+                      ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg ring-4 ring-emerald-100"
                       : "bg-gray-100 text-gray-400"
                   }`}
                 >
@@ -1001,7 +985,7 @@ const AddItemContainer = () => {
                 {index < steps.length - 1 && (
                   <div
                     className={`hidden sm:block absolute h-1 transition-all duration-500 ${
-                      index < currentStep ? "bg-emerald-500" : "bg-gray-200"
+                      index < currentStep ? "bg-purple-500" : "bg-gray-200"
                     }`}
                     style={{
                       width: "calc(100% / 5 - 48px)",
@@ -1016,24 +1000,22 @@ const AddItemContainer = () => {
           <div className="sm:hidden">
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-purple-500 to-purple-600 transition-all duration-500"
                 style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
               />
             </div>
           </div>
         </div>
 
-        {/* Form Content */}
         <form onSubmit={handleSubmit}>
           <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 mb-6 min-h-[400px]">
             <div className="mb-6">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{steps[currentStep].title}</h2>
-              <div className="h-1 w-20 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full"></div>
+              <div className="h-1 w-20 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full"></div>
             </div>
             {renderStepContent()}
           </div>
 
-          {/* Navigation Buttons */}
           <div className="flex gap-3 sm:gap-4">
             {currentStep > 0 && (
               <button
@@ -1050,7 +1032,7 @@ const AddItemContainer = () => {
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-2xl hover:from-emerald-600 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-200 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-200 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
               >
                 <span>Keyingisi</span>
                 <ChevronRight className="w-5 h-5" />
@@ -1059,7 +1041,7 @@ const AddItemContainer = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`flex-1 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-2xl hover:from-emerald-600 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-200 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg ${
+                className={`flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-200 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg ${
                   isSubmitting ? "opacity-70 cursor-not-allowed" : ""
                 }`}
               >

@@ -23,6 +23,7 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { isAuthenticated } = useAuthStore();
+   const user = useGetUser();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -175,7 +176,7 @@ const Header = () => {
 
               {/* User/Kabinet */}
               <Link
-                to={isAuthenticated ? `/user` : "/auth/login"}
+                 to={isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login"}
                 className="group flex flex-col items-center min-w-[70px]"
               >
                 <div className="p-2 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-colors">

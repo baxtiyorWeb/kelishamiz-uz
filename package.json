@@ -10,11 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@heroicons/react": "^2.2.0",
+    "@hookform/resolvers": "^5.2.2",
     "@radix-ui/themes": "^3.2.1",
     "axios": "^1.7.9",
     "date-fns": "^4.1.0",
-    "framer-motion": "^12.10.5",
+    "framer-motion": "^12.23.24",
     "i": "^0.3.7",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
@@ -24,12 +27,14 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.3.8",
+    "react-hook-form": "^7.67.0",
     "react-infinite-scroll-component": "^6.1.0",
     "react-query": "^3.39.3",
     "react-router-dom": "^7.1.1",
     "react-toastify": "^11.0.5",
     "socket.io-client": "^4.8.1",
     "tailwindcss-animate": "^1.0.7",
+    "yup": "^1.7.1",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

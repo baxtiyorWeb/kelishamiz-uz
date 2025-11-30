@@ -78,7 +78,7 @@ export default function ChatPage() {
       setTimeout(() => {
         clearInterval(interval);
         reject(new Error("User ID timeout"));
-      }, 10000); // 10s timeout to prevent infinite loop
+      }, 1000); 
     });
   }
 
@@ -93,7 +93,7 @@ export default function ChatPage() {
       }
     };
     fetchUserId();
-  }, [CURRENT_USER]);
+  }, [CURRENT_USER?.sub]);
 
   const getUrlParams = () => ({
     userId: urlParams.get("userId"),
@@ -106,7 +106,7 @@ export default function ChatPage() {
     const socketInstance = io("https://api.kelishamiz.uz/chat", {
       transports: ["websocket", "polling"],
       withCredentials: true,
-      query: { userId: currentUserIdRef.current },
+      query: { userId: CURRENT_USER?.sub },
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
