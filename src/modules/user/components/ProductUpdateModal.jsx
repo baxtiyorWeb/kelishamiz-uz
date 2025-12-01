@@ -84,7 +84,6 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
       setCurrentImages(sortedImages);
       setImageFiles([]);
 
-      // Asosiy rasm indeksini to'g'ri o'rnatish
       let initialMainIndex = initialProduct.imageIndex;
       if (initialMainIndex === -1 && sortedImages.length > 0) {
         initialMainIndex = 0;
@@ -109,11 +108,6 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
         ?.content,
     enabled: !!productData?.categoryId,
   });
-
-  console.log(properties);
-  
-
-
   const { data: region } = useQuery({
     queryKey: ["regions"],
     queryFn: async () => (await api.get(`/location/regions`))?.data?.content,
@@ -169,7 +163,6 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
       file: f.file,
     }));
 
-    // Mavjud rasmlarni va yangi rasmlarni ketma-ket birlashtiramiz
     return [...currentImages, ...newFilesMapped];
   }, [currentImages, imageFiles]);
 
@@ -218,7 +211,6 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
   });
 
   const removeImage = (imageToRemove) => {
-    // Rasm fayllarini tozalash
     if (imageToRemove.isNew) {
       setImageFiles((prev) => prev.filter((f) => f.id !== imageToRemove.id));
       URL.revokeObjectURL(imageToRemove.url);
@@ -228,20 +220,16 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
       );
     }
 
-    // Asosiy rasm indeksini yangilash (mantiqni soddalashtiramiz)
     setMainImageIndex((prevIndex) => {
       const targetIndex = allImages.findIndex(
         (img) => img.id === imageToRemove.id
       );
 
-      // Agar o'chirilgan rasm joriy asosiy rasm bo'lsa
       if (targetIndex === prevIndex) {
-        // Keyingi rasmga o'tish yoki 0 ga o'rnatish
         return allImages.length > 1
           ? Math.min(prevIndex, allImages.length - 2)
           : -1;
       }
-      // Agar o'chirilgan rasm asosiy rasmdan oldin bo'lsa, indeksni bittaga kamaytirish
       if (targetIndex < prevIndex) {
         return Math.max(0, prevIndex - 1);
       }
@@ -253,12 +241,11 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
     setMainImageIndex(index);
   };
 
-  // 8. Mahsulotni yangilash mutatsiyasi (Multipart/Form-Data)
+  // 8. Mahsulotni yangilash mutatsiyasi
   const { mutate: updateProduct, isLoading: isUpdating } = useMutation({
     mutationFn: async (payload) => {
       const formData = new FormData();
 
-      // JSON/oddiy ma'lumotlarni string sifatida qo'shish
       Object.entries(payload).forEach(([key, value]) => {
         if (["propertyValues", "images"].includes(key)) {
           formData.append(key, JSON.stringify(value));
@@ -267,7 +254,6 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
         }
       });
 
-      // Yangi rasm fayllarini 'files' nomi bilan qo'shish
       imageFiles.forEach((fileObj) => {
         formData.append("files", fileObj.file, fileObj.file.name);
       });
@@ -297,16 +283,16 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
   const handleSave = () => {
     if (!productData) return;
 
-    // Serverga yuboriladigan mavjud (isNew emas) rasmlar ro'yxatini tayyorlash
-    const imagesPayload = allImages
-      .filter((img) => !img.isNew) // Faqat serverdan kelgan (yoki yangi yuklanib, saqlangan) rasmlarni qoldiramiz
-      .map((img, index) => ({
-        id: img.id,
-        url: img.url,
-        order: index,
-      }));
+    // eski rasmlar
+    const existingImages = allImages.filter((img) => !img.isNew);
 
-    // Payloadni tayyorlash
+    // tartiblash
+    const orderedImages = existingImages.map((img, index) => ({
+      id: img.id,
+      url: img.url,
+      order: index,
+    }));
+
     const payload = {
       title: productData.title,
       price: String(productData.price),
@@ -317,13 +303,13 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
         propertyId: pv.propertyId,
         value: pv.value,
       })),
-      images: imagesPayload,
+
+      images: orderedImages,
     };
 
     updateProduct(payload);
   };
 
-  // --- 9. Modalning yuklanish holati ---
   if (!isOpen) return null;
   if (isProductLoading || !productData) {
     return createPortal(
@@ -336,38 +322,43 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
     );
   }
 
-  
+  // --- 10. Modalning kontenti (DIZAYN YANGILANDI) ---
   const ModalContent = (
     <div className="space-y-6 overflow-y-auto h-full pr-2">
-      <div>
-        <label className="block text-sm font-medium mb-2">Sarlavha</label>
-        <StyledInput
-          name="title"
-          value={productData.title || ""}
-          onChange={handleInputChange}
-          placeholder="Mahsulot sarlavhasi"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">Narx</label>
-        <StyledInput
-          type="number"
-          name="price"
-          value={productData.price || ""}
-          onChange={handleInputChange}
-          placeholder="200000"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">Kategoriya</label>
-        <div className="w-full px-4 py-3.5 border border-gray-200 bg-gray-100 rounded-2xl text-gray-600">
-          {category?.name || "Yuklanmoqda..."}
+      {/* 🚀 Asosiy Inputlar (3 ustunli Grid) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Sarlavha */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Sarlavha</label>
+          <StyledInput
+            name="title"
+            value={productData.title || ""}
+            onChange={handleInputChange}
+            placeholder="Mahsulot sarlavhasi"
+          />
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
+        {/* Narx */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Narx</label>
+          <StyledInput
+            type="number"
+            name="price"
+            value={productData.price || ""}
+            onChange={handleInputChange}
+            placeholder="200000"
+          />
+        </div>
+
+        {/* Kategoriya (O'zgartirilmaydi) */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Kategoriya</label>
+          <div className="w-full px-4 py-3.5 border border-gray-200 bg-gray-100 rounded-2xl text-gray-600">
+            {category?.name || "Yuklanmoqda..."}
+          </div>
+        </div>
+
+        {/* Viloyat */}
         <div>
           <label className="block text-sm font-medium mb-2">Viloyat</label>
           <select
@@ -385,6 +376,7 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
           </select>
         </div>
 
+        {/* Tuman */}
         <div>
           <label className="block text-sm font-medium mb-2">Tuman</label>
           <select
@@ -402,15 +394,20 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
             ))}
           </select>
         </div>
+
+        {/* Bo'sh joy/Keyingi input uchun joy (agar 6 ta input bo'lsa) */}
+        <div className="hidden lg:block"></div>
       </div>
 
+      {/* 🚀 Qo‘shimcha xususiyatlar (3 ustunli Grid) */}
       {properties?.properties?.length > 0 && (
         <div>
           <label className="block text-sm font-semibold mb-3">
             Qo‘shimcha xususiyatlar
           </label>
-          <div className="space-y-4">
-            {properties?.properties?.map((prop) => {
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {properties.properties.map((prop) => {
               const valueObj = productData.propertyValues?.find(
                 (pv) => pv.propertyId === prop.id
               );
@@ -457,6 +454,7 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
         </div>
       )}
 
+      {/* Rasmlar qismi (O'zgarishsiz qoldi, u allaqachon 7 ustunli Gridda) */}
       <div>
         <label className="block text-sm font-medium mb-2">
           Rasmlar (Maks. 10 ta)
