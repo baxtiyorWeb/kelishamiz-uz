@@ -73,10 +73,32 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // 3. initialProduct yuklanganda holatlarni o'rnatish
+  // 3. initialProduct yuklanganda holatlarni o'rnatish (Yaxshilangan)
   useEffect(() => {
     if (initialProduct) {
-      setProductData(initialProduct);
+      const initialPropertyValues = initialProduct.propertyValues
+        ? initialProduct.propertyValues.map((pv) => {
+            const rawValue = pv.value;
+            const formattedValue =
+              typeof rawValue === "string"
+                ? {
+                    key: pv.type === "STRING" ? "key" : pv.name || null,
+                    value: rawValue,
+                  }
+                : rawValue;
+
+            return {
+              ...pv,
+              type: pv.type,
+              value: formattedValue,
+            };
+          })
+        : [];
+
+      setProductData({
+        ...initialProduct,
+        propertyValues: initialPropertyValues,
+      });
 
       const sortedImages = initialProduct.images
         ? [...initialProduct.images].sort((a, b) => a.order - b.order)
@@ -101,13 +123,14 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
       (await api.get(`/category/${productData?.categoryId}`))?.data?.content,
     enabled: !!productData?.categoryId,
   });
+
   const { data: properties } = useQuery({
     queryKey: ["property_id", productData?.categoryId],
     queryFn: async () =>
-      (await api.get(`/category/${productData?.categoryId}/properties`))?.data
-        ?.content,
+      (await api.get(`/category/${productData?.categoryId}/properties`))?.data,
     enabled: !!productData?.categoryId,
   });
+
   const { data: region } = useQuery({
     queryKey: ["regions"],
     queryFn: async () => (await api.get(`/location/regions`))?.data?.content,
@@ -121,7 +144,7 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
     enabled: !!productData?.regionId,
   });
 
-  // 5. Input o'zgarishlarini boshqarish
+  // 5. Input o'zgarishlarini boshqarish (Asosiy ma'lumotlar)
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     const newValue =
@@ -133,24 +156,42 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
     }));
   };
 
-  // 6. Xususiyat (Property) o'zgarishlarini boshqarish
-  const handlePropertyChange = (propertyId, value) => {
+  const handlePropertyChange = (propertyId, type, newValue, propertyName) => {
     setProductData((prevData) => {
       const existingValues = prevData.propertyValues || [];
-      const stringValue = String(value);
+      const stringValue = String(newValue);
 
       const newPropertyValues = existingValues.some(
         (pv) => pv.propertyId === propertyId
       )
         ? existingValues.map((pv) =>
-            pv.propertyId === propertyId ? { ...pv, value: stringValue } : pv
+            pv.propertyId === propertyId
+              ? {
+                  ...pv,
+                  type,
+                  value: {
+                    key:
+                      type === "STRING"
+                        ? "key"
+                        : propertyName || pv.value?.key || null,
+                    value: stringValue,
+                  },
+                }
+              : pv
           )
-        : [...existingValues, { propertyId: propertyId, value: stringValue }];
+        : [
+            ...existingValues,
+            {
+              propertyId,
+              type,
+              value: {
+                key: type === "STRING" ? "key" : propertyName || null,
+                value: stringValue,
+              },
+            },
+          ];
 
-      return {
-        ...prevData,
-        propertyValues: newPropertyValues,
-      };
+      return { ...prevData, propertyValues: newPropertyValues };
     });
   };
 
@@ -247,6 +288,7 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
       const formData = new FormData();
 
       Object.entries(payload).forEach(([key, value]) => {
+        // 'propertyValues' va 'images' ni JSON string sifatida yuborish
         if (["propertyValues", "images"].includes(key)) {
           formData.append(key, JSON.stringify(value));
         } else {
@@ -293,17 +335,20 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
       order: index,
     }));
 
+    // PropertyValues payload (type maydoni qo'shilgan)
+    const propertyValuesPayload = productData.propertyValues.map((pv) => ({
+      propertyId: pv.propertyId,
+      type: pv.type, // Yangi qo'shilgan: serverga Property turini yuborish uchun
+      value: pv.value, // { key: ..., value: ... } objecti
+    }));
+
     const payload = {
       title: productData.title,
       price: String(productData.price),
       regionId: String(productData.regionId),
       districtId: String(productData.districtId),
       imageIndex: String(mainImageIndex),
-      propertyValues: productData.propertyValues.map((pv) => ({
-        propertyId: pv.propertyId,
-        value: pv.value,
-      })),
-
+      propertyValues: propertyValuesPayload,
       images: orderedImages,
     };
 
@@ -322,7 +367,10 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
     );
   }
 
-  // --- 10. Modalning kontenti (DIZAYN YANGILANDI) ---
+  // Properties ma'lumotiga kirish uchun qulay o'zgaruvchi
+  const productProperties = properties?.content?.[0]?.properties || [];
+
+  // --- 10. Modalning kontenti ---
   const ModalContent = (
     <div className="space-y-6 overflow-y-auto h-full pr-2">
       {/* 🚀 Asosiy Inputlar (3 ustunli Grid) */}
@@ -400,18 +448,21 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
       </div>
 
       {/* 🚀 Qo‘shimcha xususiyatlar (3 ustunli Grid) */}
-      {properties?.properties?.length > 0 && (
+      {productProperties.length > 0 && (
         <div>
           <label className="block text-sm font-semibold mb-3">
             Qo‘shimcha xususiyatlar
           </label>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {properties.properties.map((prop) => {
+            {productProperties.map((prop) => {
+              // prop: Bu category/properties API dan kelgan ma'lumot (name, id, type)
+              // pv: Bu productData.propertyValues da saqlangan ma'lumot ({ propertyId, type, value: { key, value }})
               const valueObj = productData.propertyValues?.find(
                 (pv) => pv.propertyId === prop.id
               );
-              const currentValue = valueObj?.value || "";
+              // Inputga ko'rsatish uchun faqat value objectining ichidagi 'value' qismini olish
+              const currentValue = valueObj?.value?.value || "";
 
               return (
                 <div key={prop.id}>
@@ -422,7 +473,7 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
                       placeholder={`${prop.name} (son)`}
                       value={currentValue}
                       onChange={(e) =>
-                        handlePropertyChange(prop.id, e.target.value)
+                        handlePropertyChange(prop.id, prop.type, e.target.value, prop.name)
                       }
                     />
                   )}
@@ -431,16 +482,17 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
                       placeholder={`${prop.name} (matn)`}
                       value={currentValue}
                       onChange={(e) =>
-                        handlePropertyChange(prop.id, e.target.value)
+                        handlePropertyChange(prop.id, prop.type, e.target.value, prop.name)
                       }
                     />
                   )}
                   {prop.type === "BOOLEAN" && (
                     <select
                       className="w-full px-4 py-3.5 border border-gray-200 rounded-2xl"
-                      value={currentValue === "true" ? "true" : "false"}
+                      // Boolean uchun 'true' yoki 'false' stringlarini ishlatish
+                      value={String(currentValue) === "true" ? "true" : "false"}
                       onChange={(e) =>
-                        handlePropertyChange(prop.id, e.target.value)
+                        handlePropertyChange(prop.id, prop.type, e.target.value, prop.name)
                       }
                     >
                       <option value="true">Ha</option>
@@ -454,7 +506,7 @@ const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
         </div>
       )}
 
-      {/* Rasmlar qismi (O'zgarishsiz qoldi, u allaqachon 7 ustunli Gridda) */}
+      {/* Rasmlar qismi */}
       <div>
         <label className="block text-sm font-medium mb-2">
           Rasmlar (Maks. 10 ta)

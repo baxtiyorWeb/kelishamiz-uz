@@ -39,7 +39,7 @@ const Categories = () => {
                 to={`/catalog/${get(item, "id")}`}
                 className="flex flex-col items-center group transition-all duration-300"
               >
-                <div className="relative w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-emerald-100 group-hover:border-emerald-500 transition-all duration-300">
+                <div className="relative w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-purple-100 group-hover:border-purple-500 transition-all duration-300">
                   {item?.imageUrl ? (
                     <img
                       src={get(item, "imageUrl")}
@@ -47,14 +47,14 @@ const Categories = () => {
                       className="w-full h-full object-cover p-2 bg-white"
                     />
                   ) : (
-                    <div className="w-full h-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                    <div className="w-full h-full bg-purple-50 flex items-center justify-center text-purple-500">
                       <span className="text-xl font-bold">
                         {get(item, "name", "").charAt(0)}
                       </span>
                     </div>
                   )}
                 </div>
-                <span className="mt-3 text-center text-sm text-gray-700 group-hover:text-emerald-600 transition-colors duration-300">
+                <span className="mt-3 text-center text-sm text-gray-700 group-hover:text-purple-600 transition-colors duration-300">
                   {get(item, "name", "Category")}
                 </span>
               </Link>

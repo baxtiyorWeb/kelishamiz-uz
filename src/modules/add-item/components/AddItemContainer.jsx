@@ -4,7 +4,20 @@ import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-toastify";
 import api from "../../../config/auth/api";
-import { Loader2, ChevronLeft, ChevronRight, Check, X, Image as ImageIcon } from "lucide-react";
+import {
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  X,
+  Image as ImageIcon,
+  MapPin,
+  CameraIcon,
+  Settings,
+  Folder,
+  DownloadCloud,
+  PlusCircle,
+} from "lucide-react";
 
 const StyledInput = ({
   type = "text",
@@ -24,9 +37,19 @@ const StyledInput = ({
     name={name}
     value={value}
     onChange={onChange}
-    className={`w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 ${
-      disabled ? "bg-gray-50 text-gray-500" : "bg-white"
-    } ${className}`}
+    // IXCHAMLASHTIRILGAN STIL
+    className={`
+      w-full 
+      px-3 py-2.5                       
+      text-sm                          
+      border border-gray-200 
+      rounded-xl
+      focus:outline-none 
+      focus:ring-1 focus:ring-purple-500 focus:border-purple-500  
+      transition-all duration-300 
+      ${disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white"} 
+      ${className}
+    `}
     placeholder={placeholder}
     required={required}
     min={min}
@@ -50,7 +73,7 @@ const StyledSelect = ({
       name={name}
       value={value}
       onChange={onChange}
-      className={`w-full appearance-none px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 pr-10 ${
+      className={`w-full appearance-none px-4 py-2 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 pr-10 ${
         disabled ? "bg-gray-50 text-gray-500" : "bg-white"
       } ${className}`}
       required={required}
@@ -59,7 +82,11 @@ const StyledSelect = ({
       {children}
     </select>
     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-      <svg className="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+      <svg
+        className="fill-current h-5 w-5"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+      >
         <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
       </svg>
     </div>
@@ -106,15 +133,12 @@ const StyledCheckbox = ({ id, name, checked, onChange, label }) => (
             : "bg-white border-gray-300 group-hover:border-purple-400"
         }`}
       >
-        {checked && (
-          <Check className="w-4 h-4 text-white" strokeWidth={3} />
-        )}
+        {checked && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
       </div>
     </div>
     <span className="ml-3 text-gray-700 select-none">{label}</span>
   </label>
 );
-
 
 const LoadingSpinner = ({ size = "small" }) => (
   <Loader2
@@ -126,8 +150,6 @@ const LoadingSpinner = ({ size = "small" }) => (
 
 const AddItemContainer = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [direction, setDirection] = useState(1); 
-
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -162,11 +184,11 @@ const AddItemContainer = () => {
   const [categoryProperties, setCategoryProperties] = useState([]);
 
   const steps = [
-    { title: "Asosiy ma'lumot", icon: "📝" },
-    { title: "Kategoriya", icon: "📂" },
-    { title: "Xususiyatlar", icon: "⚙️" },
-    { title: "Joylashuv", icon: "📍" },
-    { title: "Rasmlar", icon: "📷" },
+    { title: "Asosiy", icon: DownloadCloud },
+    { title: "Kategoriya", icon: Folder },
+    { title: "Xususiyat", icon: Settings },
+    { title: "Joylashuv", icon: MapPin },
+    { title: "Rasmlar", icon: CameraIcon },
   ];
 
   useEffect(() => {
@@ -178,12 +200,9 @@ const AddItemContainer = () => {
     setIsLoadingCategories(true);
     try {
       const response = await api.get("/category?parentId=null");
-      if (response?.data?.success) {
-        setCategories(response.data.content);
-      }
+      if (response?.data?.success) setCategories(response.data.content);
     } catch (error) {
-      console.error("Error fetching categories:", error);
-      toast.error("Kategoriyalarni yuklashda xatolik yuz berdi");
+      toast.error("Kategoriyalarni yuklashda xatolik");
     } finally {
       setIsLoadingCategories(false);
     }
@@ -193,21 +212,17 @@ const AddItemContainer = () => {
     setIsLoadingRegions(true);
     try {
       const response = await api.get("/location/regions");
-      if (response.data.success) {
-        setRegions(response.data.content);
-      }
+      if (response.data.success) setRegions(response.data.content);
     } catch (error) {
-      console.error("Error fetching regions:", error);
-      toast.error("Viloyatlarni yuklashda xatolik yuz berdi");
+      toast.error("Viloyatlarni yuklashda xatolik");
     } finally {
       setIsLoadingRegions(false);
     }
   };
 
   useEffect(() => {
-    if (formData.regionId) {
-      fetchDistricts(formData.regionId);
-    } else {
+    if (formData.regionId) fetchDistricts(formData.regionId);
+    else {
       setDistricts([]);
       setFormData((prev) => ({ ...prev, districtId: "" }));
     }
@@ -217,12 +232,9 @@ const AddItemContainer = () => {
     setIsLoadingDistricts(true);
     try {
       const response = await api.get(`/location/districts/${regionId}`);
-      if (response.data.success) {
-        setDistricts(response.data.content);
-      }
+      if (response.data.success) setDistricts(response.data.content);
     } catch (error) {
-      console.error("Error fetching districts:", error);
-      toast.error("Tumanlarni yuklashda xatolik yuz berdi");
+      toast.error("Tumanlarni yuklashda xatolik");
     } finally {
       setIsLoadingDistricts(false);
     }
@@ -232,12 +244,9 @@ const AddItemContainer = () => {
     setIsLoadingSubcategories(true);
     try {
       const response = await api.get(`/category?parentId=${mainCategoryId}`);
-      if (response.data.success) {
-        setSubcategories(response.data.content);
-      }
+      if (response.data.success) setSubcategories(response.data.content);
     } catch (error) {
-      console.error("Error fetching subcategories:", error);
-      toast.error("Subkategoriyalarni yuklashda xatolik yuz berdi");
+      toast.error("Subkategoriyalarni yuklashda xatolik");
     } finally {
       setIsLoadingSubcategories(false);
     }
@@ -248,26 +257,19 @@ const AddItemContainer = () => {
     try {
       const response = await api.get(`/category/${categoryId}`);
       if (response.data.success) {
-        const categoryData = response.data.content;
-        setCategoryProperties(categoryData.properties || []);
+        const props = response.data.content.properties || [];
+        setCategoryProperties(props);
 
-        const initialProperties = (categoryData.properties || []).map((prop) => ({
-          propertyId: prop.id,
-          type: prop.type,
-          value: {
-            key: prop.name,
-            value: "",
-          },
+        const initial = props.map((p) => ({
+          propertyId: p.id,
+          type: p.type,
+          value: p.type === "BOOLEAN" ? "false" : "",
         }));
 
-        setFormData((prev) => ({
-          ...prev,
-          properties: initialProperties,
-        }));
+        setFormData((prev) => ({ ...prev, properties: initial }));
       }
     } catch (error) {
-      console.error("Error fetching category details:", error);
-      toast.error("Kategoriya xususiyatlarini yuklashda xatolik yuz berdi");
+      toast.error("Xususiyatlarni yuklashda xatolik");
     } finally {
       setIsLoadingProperties(false);
     }
@@ -284,53 +286,47 @@ const AddItemContainer = () => {
   const handlePropertyChange = (propertyId, value) => {
     setFormData((prev) => ({
       ...prev,
-      properties: prev.properties.map((prop) =>
-        prop.propertyId === propertyId
-          ? { ...prop, value: { ...prop.value, value } }
-          : prop
+      properties: prev.properties.map((p) =>
+        p.propertyId === propertyId ? { ...p, value } : p
       ),
     }));
   };
 
-  const onImageDrop = useCallback(
-    async (acceptedFiles) => {
-      if (acceptedFiles.length === 0) return;
+  const onImageDrop = useCallback(async (acceptedFiles) => {
+    if (acceptedFiles.length === 0) return;
 
-      for (const file of acceptedFiles) {
-        const uploadId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
-        setUploadingImages((prev) => [...prev, { id: uploadId, name: file.name, progress: 0 }]);
+    for (const file of acceptedFiles) {
+      const uploadId = Date.now() + Math.random();
+      setUploadingImages((prev) => [
+        ...prev,
+        { id: uploadId, name: file.name, progress: 0 },
+      ]);
 
-        try {
-          const previewUrl = URL.createObjectURL(file);
-          setImageFiles((prev) => [...prev, { file, previewUrl, id: uploadId }]);
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        setImageFiles((prev) => [...prev, { file, previewUrl, id: uploadId }]);
 
-          if (imageFiles.length === 0) {
-            setFormData((prev) => ({ ...prev, imageIndex: 0 }));
-          }
+        setUploadingImages((prev) =>
+          prev.map((img) =>
+            img.id === uploadId ? { ...img, progress: 100 } : img
+          )
+        );
 
+        setTimeout(() => {
           setUploadingImages((prev) =>
-            prev.map((img) => (img.id === uploadId ? { ...img, progress: 100 } : img))
+            prev.filter((img) => img.id !== uploadId)
           );
-
-          setTimeout(() => {
-            setUploadingImages((prev) => prev.filter((img) => img.id !== uploadId));
-          }, 1000);
-        } catch (error) {
-          console.error("Error processing image:", error);
-          setUploadingImages((prev) =>
-            prev.map((img) => (img.id === uploadId ? { ...img, error: true } : img))
-          );
-
-          setTimeout(() => {
-            setUploadingImages((prev) => prev.filter((img) => img.id !== uploadId));
-          }, 3000);
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        }, 1000);
+      } catch (error) {
+        setUploadingImages((prev) =>
+          prev.map((img) =>
+            img.id === uploadId ? { ...img, error: true } : img
+          )
+        );
       }
-    },
-    [imageFiles.length]
-  );
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }, []);
 
   const removeImage = (index) => {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
@@ -339,8 +335,6 @@ const AddItemContainer = () => {
       imageIndex:
         prev.imageIndex >= index && prev.imageIndex > 0
           ? prev.imageIndex - 1
-          : prev.imageIndex >= imageFiles.length - 1
-          ? Math.max(0, imageFiles.length - 2)
           : prev.imageIndex,
     }));
   };
@@ -349,7 +343,7 @@ const AddItemContainer = () => {
     setFormData((prev) => ({ ...prev, imageIndex: index }));
   };
 
-  const imageDropzone = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: onImageDrop,
     accept: { "image/*": [".jpeg", ".jpg", ".png", ".webp"] },
     maxFiles: 10,
@@ -371,13 +365,30 @@ const AddItemContainer = () => {
           return false;
         }
         return true;
+
       case 1:
         if (!formData.categoryId) {
           toast.error("Kategoriya tanlanishi shart");
           return false;
         }
         return true;
+
       case 2:
+        if (categoryProperties.length > 0) {
+          const allFilled = categoryProperties.every((prop) => {
+            const userValue =
+              formData.properties.find((p) => p.propertyId === prop.id)
+                ?.value ?? "";
+            if (prop.type === "BOOLEAN") return true;
+            return userValue.toString().trim() !== "";
+          });
+          if (!allFilled) {
+            toast.error("Barcha xususiyatlarni to'ldiring");
+            return false;
+          }
+        }
+        return true;
+
       case 3:
         if (!formData.regionId) {
           toast.error("Viloyat tanlanishi shart");
@@ -388,48 +399,42 @@ const AddItemContainer = () => {
           return false;
         }
         return true;
+
       case 4:
         if (imageFiles.length === 0) {
           toast.error("Kamida bitta rasm yuklash shart");
           return false;
         }
         return true;
+
       default:
         return true;
     }
   };
 
   const nextStep = () => {
-    if (validateStep(currentStep)) {
-      if (currentStep === 2 && categoryProperties.length === 0) {
-        setDirection(1);
-        setCurrentStep(3);
-      } else if (currentStep < steps.length - 1) {
-        setDirection(1);
-        setCurrentStep(currentStep + 1);
-      }
+    if (!validateStep(currentStep)) return;
+
+    if (currentStep === 2 && categoryProperties.length === 0) {
+      setCurrentStep(3);
+    } else if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
   const prevStep = () => {
-    if (currentStep > 0) {
-      if (currentStep === 3 && categoryProperties.length === 0) {
-        setDirection(-1);
-        setCurrentStep(1);
-      } else {
-        setDirection(-1);
-        setCurrentStep(currentStep - 1);
-      }
+    if (currentStep === 3 && categoryProperties.length === 0) {
+      setCurrentStep(1);
+    } else if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateStep(currentStep)) return;
 
     setIsSubmitting(true);
-
     try {
       const submitFormData = new FormData();
       submitFormData.append("title", formData.title);
@@ -442,14 +447,13 @@ const AddItemContainer = () => {
       submitFormData.append("regionId", formData.regionId);
       submitFormData.append("districtId", formData.districtId);
       submitFormData.append("imageIndex", formData.imageIndex.toString());
-
-      if (formData.properties && formData.properties.length > 0) {
-        submitFormData.append("properties", JSON.stringify(formData.properties));
+      if (formData.properties.length > 0) {
+        submitFormData.append(
+          "properties",
+          JSON.stringify(formData.properties)
+        );
       }
-
-      imageFiles.forEach((imgFile) => {
-        submitFormData.append("files", imgFile.file);
-      });
+      imageFiles.forEach((img) => submitFormData.append("files", img.file));
 
       const response = await api.post("/products", submitFormData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -472,57 +476,59 @@ const AddItemContainer = () => {
           imageIndex: 0,
         });
         setImageFiles([]);
-        setSubcategories([]);
         setCategoryProperties([]);
+        setSubcategories([]);
         setDistricts([]);
-        setMainCategoryId("");
-        setSubcategoryId("");
         setCurrentStep(0);
       } else {
-        toast.error(response.data?.message || "E'lonni qo'shishda xatolik yuz berdi");
+        toast.error(response.data?.message || "Xatolik yuz berdi");
       }
     } catch (error) {
-      console.error("E'lonni qo'shishda xatolik:", error);
-      toast.error(error.response?.data?.message || "E'lonni qo'shishda xatolik yuz berdi");
+      toast.error(error.response?.data?.message || "E'lon qo'shishda xatolik");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const renderStepContent = () => {
-    const slideVariants = {
-      initial: (direction) => ({
-        x: direction > 0 ? 50 : -50,
-        opacity: 0,
-      }),
-      animate: {
-        x: 0,
-        opacity: 1,
-        transition: {
-          duration: 0.3,
-          ease: "easeOut",
-        },
-      },
-      exit: (direction) => ({
-        x: direction > 0 ? -50 : 50,
-        opacity: 0,
-        transition: {
-          duration: 0.2,
-          ease: "easeIn",
-        },
-      }),
+    // Styling uchun ishlatiladigan asosiy rang
+    const PRIMARY_COLOR = "#A64AC9";
+
+    // Iconlar (masalan, lucide-react'dan)
+    const { Check, X, ImageIcon } = {
+      Check: (props) => (
+        <svg {...props}>
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      ),
+      X: (props) => (
+        <svg {...props}>
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      ),
+      ImageIcon: (props) => (
+        <svg {...props}>
+          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="m21 15-5-5L5 21" />
+        </svg>
+      ),
     };
 
+    // isLoadingCategories, mainCategoryId, setSubcategories va boshqa funksiyalar/state'lar
+    // yuqoridagi asosiy komponentda e'lon qilingan deb faraz qilinadi.
+
     switch (currentStep) {
+      // --- 1-BOSQICH: Asosiy Ma'lumotlar (Title, Description, Price) ---
       case 0:
         return (
-          <div className="space-y-6 animate-fadeIn">
+          // space-y-6 o'rniga space-y-4
+          <div className="space-y-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Sarlavha <span className="text-red-500">*</span>
               </label>
               <StyledInput
-                id="title"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
@@ -530,36 +536,30 @@ const AddItemContainer = () => {
                 required
               />
             </div>
-
             <div>
-              <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Tavsif <span className="text-red-500">*</span>
               </label>
               <StyledTextarea
-                id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Mahsulot haqida batafsil ma'lumot"
-                rows={5}
+                rows={4} // rows 5 o'rniga 4
                 required
               />
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   Narx <span className="text-red-500">*</span>
                 </label>
                 <div className="flex">
                   <StyledInput
                     type="number"
-                    id="price"
                     name="price"
                     value={formData.price}
                     onChange={handleChange}
                     className="rounded-r-none"
-                    placeholder="0"
                     min="0"
                     required
                   />
@@ -567,20 +567,18 @@ const AddItemContainer = () => {
                     name="currencyType"
                     value={formData.currencyType}
                     onChange={handleChange}
-                    className="px-4 py-2 border border-l-0 border-gray-200 rounded-r-2xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                    className="px-3 py-2 border border-l-0 border-gray-200 rounded-r-xl bg-gray-50 text-sm" // padding va border kichiklashtirildi
                   >
                     <option value="UZS">UZS</option>
                     <option value="USD">USD</option>
                   </select>
                 </div>
               </div>
-
               <div>
-                <label htmlFor="paymentType" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   To'lov turi
                 </label>
                 <StyledSelect
-                  id="paymentType"
                   name="paymentType"
                   value={formData.paymentType}
                   onChange={handleChange}
@@ -590,8 +588,7 @@ const AddItemContainer = () => {
                 </StyledSelect>
               </div>
             </div>
-
-            <div className="pt-2">
+            <div>
               <StyledCheckbox
                 id="negotiable"
                 name="negotiable"
@@ -603,227 +600,213 @@ const AddItemContainer = () => {
           </div>
         );
 
+      // --- 2-BOSQICH: Kategoriyalarni tanlash ---
       case 1:
         return (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="mainCategoryId" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Asosiy kategoriya <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <StyledSelect
-                  id="mainCategoryId"
-                  name="mainCategoryId"
                   value={mainCategoryId}
                   onChange={(e) => {
-                    const selectedMainCategoryId = e.target.value;
-                    setMainCategoryId(selectedMainCategoryId);
+                    const id = e.target.value;
+                    setMainCategoryId(id);
                     setSubcategoryId("");
                     setSubcategories([]);
-                    setFormData((prev) => ({ ...prev, categoryId: selectedMainCategoryId }));
-                    if (selectedMainCategoryId) {
-                      fetchSubcategories(selectedMainCategoryId);
-                      fetchCategoryDetails(selectedMainCategoryId);
+                    setFormData((prev) => ({ ...prev, categoryId: id }));
+                    if (id) {
+                      fetchSubcategories(id);
+                      fetchCategoryDetails(id);
                     }
                   }}
-                  required
                   disabled={isLoadingCategories}
                 >
-                  <option value="">Kategoriyani tanlang</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
+                  <option value="">Tanlang</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
                     </option>
                   ))}
                 </StyledSelect>
                 {isLoadingCategories && (
-                  <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
-                    <LoadingSpinner />
+                  // Loading spinner ixchamlashtirildi (right-12 o'rniga right-3)
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <LoadingSpinner className="w-5 h-5 text-purple-600" />
                   </div>
                 )}
               </div>
             </div>
-
             {subcategories.length > 0 && (
               <div>
-                <label htmlFor="subcategoryId" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   Subkategoriya
                 </label>
-                <div className="relative">
-                  <StyledSelect
-                    id="subcategoryId"
-                    name="subcategoryId"
-                    value={subcategoryId}
-                    onChange={(e) => {
-                      const selectedSubcategoryId = e.target.value;
-                      setSubcategoryId(selectedSubcategoryId);
-                      setFormData((prev) => ({
-                        ...prev,
-                        categoryId: selectedSubcategoryId || mainCategoryId,
-                      }));
-                      if (selectedSubcategoryId) {
-                        fetchCategoryDetails(selectedSubcategoryId);
-                      } else if (mainCategoryId) {
-                        fetchCategoryDetails(mainCategoryId);
-                      }
-                    }}
-                    disabled={isLoadingSubcategories}
-                  >
-                    <option value="">Subkategoriyani tanlang</option>
-                    {subcategories.map((subcategory) => (
-                      <option key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                      </option>
-                    ))}
-                  </StyledSelect>
-                  {isLoadingSubcategories && (
-                    <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
-                      <LoadingSpinner />
-                    </div>
-                  )}
-                </div>
+                <StyledSelect
+                  value={subcategoryId}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    setSubcategoryId(id);
+                    const finalId = id || mainCategoryId;
+                    setFormData((prev) => ({ ...prev, categoryId: finalId }));
+                    fetchCategoryDetails(finalId);
+                  }}
+                  disabled={isLoadingSubcategories}
+                >
+                  <option value="">Tanlang</option>
+                  {subcategories.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </StyledSelect>
               </div>
             )}
           </div>
         );
 
+      // --- 3-BOSQICH: Kategoriya Xususiyatlari (Dynamic Properties) ---
       case 2:
         if (categoryProperties.length === 0) {
           return (
-            <div className="text-center py-12 animate-fadeIn">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                <span className="text-3xl">⚙️</span>
-              </div>
-              <p className="text-gray-600">Bu kategoriya uchun xususiyatlar mavjud emas</p>
+            <div className="text-center py-10">
+              <p className="text-base text-gray-600">
+                Bu kategoriya uchun qo'shimcha xususiyatlar mavjud emas
+              </p>
             </div>
           );
         }
 
         return (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {categoryProperties.map((property) => (
-                <div key={property.id}>
-                  <label htmlFor={`property-${property.id}`} className="block text-sm font-semibold text-gray-700 mb-2">
-                    {property.name}
-                  </label>
+              {categoryProperties.map((prop) => {
+                const userVal =
+                  formData.properties.find((p) => p.propertyId === prop.id)
+                    ?.value ?? "";
+                return (
+                  <div key={prop.id}>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      {prop.name}
+                    </label>
 
-                  {property.type === "STRING" && !property.options && (
-                    <StyledInput
-                      id={`property-${property.id}`}
-                      value={formData.properties.find((p) => p.propertyId === property.id)?.value.value || ""}
-                      onChange={(e) => handlePropertyChange(property.id, e.target.value)}
-                      placeholder={`${property.name} kiriting`}
-                    />
-                  )}
-
-                  {(property.type === "SELECT" || (property.type === "STRING" && property.options)) && (
-                    <StyledSelect
-                      id={`property-${property.id}`}
-                      value={formData.properties.find((p) => p.propertyId === property.id)?.value?.value || ""}
-                      onChange={(e) => handlePropertyChange(property.id, e.target.value)}
-                    >
-                      <option value="">Tanlang</option>
-                      {property.options?.map((option, index) => (
-                        <option key={index} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </StyledSelect>
-                  )}
-
-                  {property.type === "DATE" && (
-                    <StyledInput
-                      type="date"
-                      id={`property-${property.id}`}
-                      value={formData.properties.find((p) => p.propertyId === property.id)?.value.value || ""}
-                      onChange={(e) => handlePropertyChange(property.id, e.target.value)}
-                    />
-                  )}
-
-                  {property.type === "BOOLEAN" && (
-                    <div className="pt-2">
-                      <StyledCheckbox
-                        id={`property-${property.id}`}
-                        checked={formData.properties.find((p) => p.propertyId === property.id)?.value.value === "true"}
-                        onChange={(e) => handlePropertyChange(property.id, e.target.checked ? "true" : "false")}
-                        label={property.name}
+                    {prop.type === "STRING" && !prop.options && (
+                      <StyledInput
+                        value={userVal}
+                        onChange={(e) =>
+                          handlePropertyChange(prop.id, e.target.value)
+                        }
+                        placeholder={prop.name}
                       />
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+
+                    {prop.type === "NUMBER" && (
+                      <StyledInput
+                        type="number"
+                        value={userVal}
+                        onChange={(e) =>
+                          handlePropertyChange(prop.id, e.target.value)
+                        }
+                      />
+                    )}
+
+                    {(prop.type === "SELECT" || prop.options) && (
+                      <StyledSelect
+                        value={userVal}
+                        onChange={(e) =>
+                          handlePropertyChange(prop.id, e.target.value)
+                        }
+                      >
+                        <option value="">Tanlang</option>
+                        {prop.options?.map((o, i) => (
+                          <option key={i} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </StyledSelect>
+                    )}
+
+                    {prop.type === "DATE" && (
+                      <StyledInput
+                        type="date"
+                        value={userVal}
+                        onChange={(e) =>
+                          handlePropertyChange(prop.id, e.target.value)
+                        }
+                      />
+                    )}
+
+                    {prop.type === "BOOLEAN" && (
+                      <div className="pt-1">
+                        <StyledCheckbox
+                          id={`bool-${prop.id}`}
+                          checked={userVal === "true"}
+                          onChange={(e) =>
+                            handlePropertyChange(
+                              prop.id,
+                              e.target.checked ? "true" : "false"
+                            )
+                          }
+                          label={prop.name}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
 
+      // --- 4-BOSQICH: Manzil ma'lumotlari ---
       case 3:
         return (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="regionId" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   Viloyat <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <StyledSelect
-                    id="regionId"
-                    name="regionId"
-                    value={formData.regionId}
-                    onChange={handleChange}
-                    required
-                    disabled={isLoadingRegions}
-                  >
-                    <option value="">Viloyatni tanlang</option>
-                    {regions.map((region) => (
-                      <option key={region.id} value={region.id}>
-                        {region.name}
-                      </option>
-                    ))}
-                  </StyledSelect>
-                  {isLoadingRegions && (
-                    <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
-                      <LoadingSpinner />
-                    </div>
-                  )}
-                </div>
+                <StyledSelect
+                  name="regionId"
+                  value={formData.regionId}
+                  onChange={handleChange}
+                  disabled={isLoadingRegions}
+                >
+                  <option value="">Tanlang</option>
+                  {regions.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </StyledSelect>
               </div>
-
               <div>
-                <label htmlFor="districtId" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
                   Tuman <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <StyledSelect
-                    id="districtId"
-                    name="districtId"
-                    value={formData.districtId}
-                    onChange={handleChange}
-                    required
-                    disabled={!formData.regionId || districts.length === 0 || isLoadingDistricts}
-                  >
-                    <option value="">Tumanni tanlang</option>
-                    {districts.map((district) => (
-                      <option key={district.id} value={district.id}>
-                        {district.name}
-                      </option>
-                    ))}
-                  </StyledSelect>
-                  {isLoadingDistricts && (
-                    <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
-                      <LoadingSpinner />
-                    </div>
-                  )}
-                </div>
+                <StyledSelect
+                  name="districtId"
+                  value={formData.districtId}
+                  onChange={handleChange}
+                  disabled={!formData.regionId || isLoadingDistricts}
+                >
+                  <option value="">Tanlang</option>
+                  {districts.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </StyledSelect>
               </div>
             </div>
-
             <div>
-              <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Batafsil manzil (ixtiyoriy)
               </label>
               <StyledInput
-                id="location"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
@@ -833,84 +816,87 @@ const AddItemContainer = () => {
           </div>
         );
 
+      // --- 5-BOSQICH: Rasmlar (Images) ---
       case 4:
         return (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Rasmlar <span className="text-red-500">*</span>
               </label>
-
               <div
-                {...imageDropzone.getRootProps()}
-                className={`border-2 border-dashed rounded-3xl p-8 text-center cursor-pointer transition-all duration-300 ${
-                  imageDropzone.isDragActive
-                    ? "border-emerald-400 bg-emerald-50 scale-[1.02]"
-                    : "border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
+                  // rounded-3xl -> rounded-2xl, p-8 -> p-6
+                  isDragActive
+                    ? "border-emerald-400 bg-emerald-50"
+                    : "border-gray-300 hover:border-emerald-400"
                 }`}
               >
-                <input {...imageDropzone.getInputProps()} />
+                <input {...getInputProps()} />
                 <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-full flex items-center justify-center mb-4">
-                    <ImageIcon className="w-8 h-8 text-purple-600" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-full flex items-center justify-center mb-3">
+                    <ImageIcon
+                      className="w-6 h-6"
+                      style={{ color: PRIMARY_COLOR }}
+                    />
                   </div>
-                  <p className="text-base font-medium text-gray-700 mb-1">
+                  <p className="text-sm font-medium text-gray-700 mb-0.5">
                     Rasmlarni yuklash uchun bosing yoki shu yerga tashlang
                   </p>
-                  <p className="text-sm text-gray-500">PNG, JPG, WEBP (max: 5MB har biri)</p>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG, WEBP (max: 5MB)
+                  </p>
                 </div>
               </div>
 
               {imageFiles.length > 0 && (
-                <div className="mt-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-gray-700">
+                <div className="mt-4">
+                  <div className="flex justify-between mb-2">
+                    <p className="text-xs font-medium">
                       Yuklangan rasmlar ({imageFiles.length})
                     </p>
                     <p className="text-xs text-gray-500">
-                      Asosiy rasm: {formData.imageIndex + 1}
+                      Asosiy: {formData.imageIndex + 1}
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {imageFiles.map((image, index) => (
-                      <div key={image.id} className="relative group">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {imageFiles.map((img, i) => (
+                      <div key={img.id} className="relative group">
                         <div
-                          className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
-                            formData.imageIndex === index
-                              ? "ring-4 ring-purple-500 shadow-lg scale-105"
-                              : "ring-2 ring-gray-200 hover:ring-purple-300"
+                          className={`relative rounded-xl overflow-hidden transition-all ${
+                            // rounded-2xl -> rounded-xl
+                            formData.imageIndex === i
+                              ? `ring-3 ring-[${PRIMARY_COLOR}] shadow-md` // ring-4 -> ring-3
+                              : "ring-1 ring-gray-200" // ring-2 -> ring-1
                           }`}
                         >
                           <img
-                            src={image.previewUrl}
-                            alt={`Product ${index + 1}`}
-                            className="h-32 w-full object-cover"
+                            src={img.previewUrl}
+                            alt=""
+                            className="h-24 w-full object-cover" // h-32 -> h-24
                           />
-                          {formData.imageIndex === index && (
-                            <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
-                              <Check className="w-3 h-3" />
-                              Asosiy
+                          {formData.imageIndex === i && (
+                            <div className="absolute top-1.5 left-1.5 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Check className="w-3 h-3" /> Asosiy
                             </div>
                           )}
                         </div>
-
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent rounded-2xl flex items-end justify-center pb-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                          <div className="flex gap-2">
-                            {formData.imageIndex !== index && (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
+                          <div className="flex gap-1.5">
+                            {formData.imageIndex !== i && (
                               <button
                                 type="button"
-                                onClick={() => setAsMainImage(index)}
-                                className="bg-white/90 backdrop-blur-sm text-gray-700 rounded-full p-2 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
-                                title="Asosiy rasm"
+                                onClick={() => setAsMainImage(i)}
+                                className="bg-white/90 p-1.5 rounded-full" // p-2 -> p-1.5
                               >
                                 <Check className="w-4 h-4" />
                               </button>
                             )}
                             <button
                               type="button"
-                              onClick={() => removeImage(index)}
-                              className="bg-red-500/90 backdrop-blur-sm text-white rounded-full p-2 shadow-lg hover:bg-red-600 hover:scale-110 transition-all duration-200"
-                              title="O'chirish"
+                              onClick={() => removeImage(i)}
+                              className="bg-red-500/90 p-1.5 rounded-full text-white" // p-2 -> p-1.5
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -919,28 +905,6 @@ const AddItemContainer = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {uploadingImages.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {uploadingImages.map((img) => (
-                    <div key={img.id} className="bg-gray-50 rounded-2xl p-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700 truncate">{img.name}</span>
-                        <span className="text-xs text-gray-500">{img.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            img.error ? "bg-red-500" : "bg-gradient-to-r from-purple-500 to-purple-600"
-                          }`}
-                          style={{ width: `${img.progress}%` }}
-                        ></div>
-                      </div>
-                      {img.error && <p className="text-xs text-red-500 mt-1">Yuklashda xatolik yuz berdi</p>}
-                    </div>
-                  ))}
                 </div>
               )}
             </div>
@@ -952,79 +916,103 @@ const AddItemContainer = () => {
     }
   };
 
+  const PRIMARY_COLOR = "#A64AC9";
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4 sm:py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Yangi e'lon qo'shish</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Ma'lumotlarni to'ldiring va e'loningizni joylashtiring</p>
-        </div>
+        <div className="mb-6 flex items-start justify-start border-b border-gray-100 pb-4">
+          <div
+            className="p-3 mr-4 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: PRIMARY_COLOR + "15" }} // Ochiq binafsha fon
+          >
+            <PlusCircle className="w-6 h-6" style={{ color: PRIMARY_COLOR }} />
+          </div>
 
-        <div className="bg-white rounded-3xl shadow-sm p-4 sm:p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            {steps.map((step, index) => (
-              <div key={index} className="flex flex-col items-center flex-1">
-                <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-lg sm:text-xl transition-all duration-300 ${
-                    index < currentStep
-                      ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md"
-                      : index === currentStep
-                      ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg ring-4 ring-emerald-100"
-                      : "bg-gray-100 text-gray-400"
-                  }`}
-                >
-                  {index < currentStep ? <Check className="w-5 h-5 sm:w-6 sm:h-6" /> : step.icon}
-                </div>
-                <p
-                  className={`text-xs sm:text-sm mt-2 text-center transition-all duration-300 ${
-                    index <= currentStep ? "text-gray-900 font-semibold" : "text-gray-400"
-                  }`}
-                >
-                  <span className="hidden sm:inline">{step.title}</span>
-                </p>
-                {index < steps.length - 1 && (
+          <div>
+            <h1
+              className="text-2xl font-extrabold" // Kichiklashtirilgan: 3xl -> 2xl
+              style={{ color: PRIMARY_COLOR }} // Binafsha sarlavha
+            >
+              Yangi E'lon Qo'shish
+            </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Ma'lumotlarni to'ldiring va e'loningizni joylashtiring
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-row items-center justify-between flex-wrap mb-6">
+          {steps.map((step, i) => {
+            const isCompleted = i < currentStep;
+            const isActive = i === currentStep;
+            const StepIcon = step.icon;
+            const PRIMARY_COLOR = "#A64AC9";
+
+            return (
+              <div
+                key={i}
+                className="flex flex-col items-center justify-center relative mb-4 sm:mb-0 w-[60px]"
+              >
+                {/* Desktop chiziqlar */}
+                {i > 0 && (
                   <div
-                    className={`hidden sm:block absolute h-1 transition-all duration-500 ${
-                      index < currentStep ? "bg-purple-500" : "bg-gray-200"
-                    }`}
+                    className="absolute left-0 top-5 h-0.5 hidden sm:block"
                     style={{
-                      width: "calc(100% / 5 - 48px)",
-                      left: `calc((100% / 5) * ${index + 1} - (100% / 10))`,
-                      top: "24px",
+                      width: "100%",
+                      backgroundColor: isCompleted ? PRIMARY_COLOR : "#E5E7EB",
                     }}
                   />
                 )}
+
+                {/* Icon */}
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-300 ${
+                    isCompleted || isActive
+                      ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+                      : "bg-gray-100 text-gray-400"
+                  } ${isActive ? "ring-3 ring-purple-100 shadow-sm" : ""}`}
+                >
+                  {isCompleted ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <StepIcon className="w-5 h-5" />
+                  )}
+                </div>
+
+                {/* Title */}
+                <p
+                  className={`text-[10px] mt-1 text-center truncate ${
+                    isCompleted || isActive
+                      ? "text-gray-900 font-semibold"
+                      : "text-gray-500 font-medium"
+                  }`}
+                >
+                  {i + 1}. {step.title}
+                </p>
               </div>
-            ))}
-          </div>
-          <div className="sm:hidden">
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-purple-500 to-purple-600 transition-all duration-500"
-                style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-              />
-            </div>
-          </div>
+            );
+          })}
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 mb-6 min-h-[400px]">
+          <div className="bg-white rounded-3xl shadow-sm p-8 mb-6 min-h-[400px]">
             <div className="mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{steps[currentStep].title}</h2>
-              <div className="h-1 w-20 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full"></div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {steps[currentStep].title}
+              </h2>
+              <div className="h-1 w-20 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full mt-2"></div>
             </div>
             {renderStepContent()}
           </div>
 
-          <div className="flex gap-3 sm:gap-4">
+          <div className="flex gap-4">
             {currentStep > 0 && (
               <button
                 type="button"
                 onClick={prevStep}
-                className="flex-1 sm:flex-none px-6 py-3.5 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-4 focus:ring-gray-200 transition-all duration-300 flex items-center justify-center gap-2 shadow-sm"
+                className="px-6 py-3.5 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 flex items-center gap-2"
               >
                 <ChevronLeft className="w-5 h-5" />
-                <span className="hidden sm:inline">Orqaga</span>
+                Orqaga
               </button>
             )}
 
@@ -1032,28 +1020,24 @@ const AddItemContainer = () => {
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-200 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 flex items-center justify-center gap-2"
               >
-                <span>Keyingisi</span>
+                Keyingisi
                 <ChevronRight className="w-5 h-5" />
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-200 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg ${
-                  isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-                }`}
+                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 flex items-center justify-center gap-2 disabled:opacity-70"
               >
                 {isSubmitting ? (
                   <>
-                    <LoadingSpinner />
-                    <span>Yuklanmoqda...</span>
+                    <LoadingSpinner /> Yuklanmoqda...
                   </>
                 ) : (
                   <>
-                    <Check className="w-5 h-5" />
-                    <span>E'lonni joylashtirish</span>
+                    <Check className="w-5 h-5" /> E'lonni joylashtirish
                   </>
                 )}
               </button>
@@ -1061,23 +1045,6 @@ const AddItemContainer = () => {
           </div>
         </form>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 };

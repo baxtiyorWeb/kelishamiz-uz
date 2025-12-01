@@ -8,14 +8,14 @@ import {
   Grid3X3,
   List,
   SlidersHorizontal,
-  ArrowDownNarrowWide, // Yangi ikonka
-  ArrowUpWideNarrow, // Yangi ikonka
+  ArrowDownNarrowWide,
+  ArrowUpWideNarrow,
+  Sparkles,
 } from "lucide-react";
-import ItemCard from "../../../common/components/ItemCard"; // Sizning prop-laringizdan olindi
+import ItemCard from "../../../common/components/ItemCard";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 const CatalogFilter = ({
-  // State
   searchQuery,
   setSearchQuery,
   priceRange,
@@ -29,13 +29,10 @@ const CatalogFilter = ({
   isLoading,
   fetchNextPage,
   hasNextPage,
-
-  // Handlers
   handlePriceChange,
   handlePropertyChange,
   handleSortChange,
   toggleFilterExpand,
-  // applyFilters, // AVTOMAT FILTRLASH UCHUN ISHLATILMAYDI
   clearFilters,
   getActiveFilterCount,
   setMobileFiltersOpen,
@@ -44,184 +41,153 @@ const CatalogFilter = ({
   refetch,
   isProductLiked = () => false,
 }) => {
-  // Bitta xususiyatni o'chirish
   const removeProperty = (propertyName) => {
     handlePropertyChange(propertyName, "");
   };
 
-  // Narx oralig'ini tozalash
   const clearPriceRange = () => {
     handlePriceChange("min", "");
     handlePriceChange("max", "");
   };
 
-  // Saralash opsiyasini tozalash (faol filtrlar uchun)
   const clearSort = () => {
-    handleSortChange(null); // handleSortChange ni null ga chaqirsa, u hammasini tozalaydi
+    handleSortChange(null);
   };
 
-  // Filtr taglaridan qidiruvni tozalash
   const clearSearch = () => {
     setSearchQuery("");
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 bg-gray-50 min-h-screen">
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* ===================== DESKTOP SIDEBAR ===================== */}
-        <aside className="hidden lg:block w-80 flex-shrink-0">
-          <div className="sticky top-6 space-y-4">
-            {/* Barcha Filtrlarni o'z ichiga oluvchi asosiy konteyner */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl ring-1 ring-gray-100 space-y-6">
-              {/* 1. Filtr Sarlavhasi + Tozalash Tugmasi */}
-              <div className="pb-4 border-b border-gray-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xl font-bold text-purple-700 flex items-center gap-3">
-                    <Filter className="w-6 h-6" />
-                    Filtrlar
-                  </h2>
-                  {getActiveFilterCount() > 0 && (
-                    <button
-                      onClick={clearFilters}
-                      className="text-sm font-medium text-red-500 hover:text-red-700 transition"
-                      title="Barcha filtrlarni tozalash"
-                    >
-                      Tozalash ({getActiveFilterCount()})
-                    </button>
-                  )}
-                </div>
+    <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* ===================== COMPACT SIDEBAR ===================== */}
+        <aside className="hidden lg:block w-72 flex-shrink-0">
+          <div className="sticky top-4 space-y-3">
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 pb-3 border-b">
+                <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-purple-600" />
+                  Filtrlar
+                </h2>
+                {getActiveFilterCount() > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs font-medium text-red-500 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded-lg transition"
+                  >
+                    Tozalash
+                  </button>
+                )}
               </div>
 
-              {/* 2. Qidiruv (Search) */}
-              <div className="pb-4 border-b border-gray-100">
-                <h3 className="font-bold text-lg text-gray-800 mb-3 flex items-center gap-2">
-                  <Search className="w-5 h-5 text-purple-600" />
-                  Nomi bo'yicha qidirish
-                </h3>
+              {/* Search */}
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                  Qidirish
+                </label>
                 <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Mahsulot nomini kiriting..."
+                    placeholder="Nomi..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    // Qidiruvni onBlur bilan yangilash shart emas, chunki u keydown bosilganda ham tez-tez yangilanadi
-                    className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                    className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition"
                   />
                 </div>
               </div>
 
-              {/* 3. Narx Oralig'i */}
-              <div className="pb-4 border-b border-gray-100">
-                <h3 className="font-bold text-lg text-gray-800 mb-3 flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-purple-600" />
-                  Narx oralig'i
-                </h3>
-                <div className="flex items-center gap-3">
+              {/* Price Range */}
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                  Narx (so'm)
+                </label>
+                <div className="flex items-center gap-2">
                   <input
                     type="number"
                     placeholder="Min"
                     value={priceRange.min}
                     onChange={(e) => handlePriceChange("min", e.target.value)}
                     onBlur={() => refetch()}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none"
                   />
-                  <span className="text-gray-400 font-medium">—</span>
+                  <span className="text-gray-400">—</span>
                   <input
                     type="number"
                     placeholder="Max"
                     value={priceRange.max}
                     onChange={(e) => handlePriceChange("max", e.target.value)}
                     onBlur={() => refetch()}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none"
                   />
                 </div>
               </div>
 
-              {/* 4. Dinamik Xususiyatlar (Accordeon qismi) */}
-              <div className="space-y-4">
+              {/* Properties */}
+              <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
                 {properties.map((property) => (
-                  <div
-                    key={property.id}
-                    className="border-b border-gray-100 last:border-b-0 pb-4"
-                  >
-                    {/* Accordeon sarlavhasi */}
+                  <div key={property.id} className="border-b border-gray-100 pb-3 last:border-0">
                     <button
                       onClick={() => toggleFilterExpand(property.name)}
-                      className="w-full flex items-center justify-between text-left group"
+                      className="w-full flex items-center justify-between text-left group py-1"
                     >
-                      <h3 className="font-bold text-lg text-gray-800 group-hover:text-purple-600 transition-colors">
+                      <span className="text-xs font-semibold text-gray-700 group-hover:text-purple-600 transition">
                         {property.name}
-                      </h3>
+                      </span>
                       <ChevronDown
-                        className={`w-5 h-5 text-gray-500 transition-transform ${
-                          expandedFilters[property.name]
-                            ? "rotate-180 text-purple-600"
-                            : ""
+                        className={`w-4 h-4 text-gray-400 transition-transform ${
+                          expandedFilters[property.name] ? "rotate-180 text-purple-600" : ""
                         }`}
                       />
                     </button>
 
-                    {/* Accordeon kontenti */}
                     <div
-                      className={`mt-3 overflow-hidden transition-all duration-300 ${
+                      className={`mt-2 overflow-hidden transition-all duration-300 ${
                         expandedFilters[property.name]
-                          ? "max-h-96 opacity-100 pt-1"
+                          ? "max-h-40 opacity-100"
                           : "max-h-0 opacity-0"
                       }`}
                     >
-                      <div className="space-y-3">
-                        {/* SELECT / BOOLEAN */}
-                        {(property.type === "SELECT" ||
-                          property.type === "BOOLEAN") && (
-                          <select
-                            value={selectedProperties[property.name] || ""}
-                            onChange={(e) => {
-                              handlePropertyChange(
-                                property.name,
-                                e.target.value
-                              );
-                              refetch();
-                            }}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none cursor-pointer"
-                          >
-                            <option value="">Tanlang</option>
-                            {property.type === "BOOLEAN" ? (
-                              <>
-                                <option value="true">Ha</option>
-                                <option value="false">Yo'q</option>
-                              </>
-                            ) : (
-                              property.options &&
-                              property.options.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))
-                            )}
-                          </select>
-                        )}
+                      {(property.type === "SELECT" || property.type === "BOOLEAN") && (
+                        <select
+                          value={selectedProperties[property.name] || ""}
+                          onChange={(e) => {
+                            handlePropertyChange(property.name, e.target.value);
+                            refetch();
+                          }}
+                          className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none cursor-pointer"
+                        >
+                          <option value="">Tanlang</option>
+                          {property.type === "BOOLEAN" ? (
+                            <>
+                              <option value="true">Ha</option>
+                              <option value="false">Yo'q</option>
+                            </>
+                          ) : (
+                            property.options?.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      )}
 
-                        {/* STRING / INTEGER / DOUBLE */}
-                        {(property.type === "STRING" ||
-                          property.type === "INTEGER" ||
-                          property.type === "DOUBLE") && (
-                          <input
-                            type={
-                              property.type === "STRING" ? "text" : "number"
-                            }
-                            placeholder={`${property.name} kiriting`}
-                            value={selectedProperties[property.name] || ""}
-                            onChange={(e) =>
-                              handlePropertyChange(
-                                property.name,
-                                e.target.value
-                              )
-                            }
-                            onBlur={() => refetch()}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
-                          />
-                        )}
-                      </div>
+                      {(property.type === "STRING" ||
+                        property.type === "INTEGER" ||
+                        property.type === "DOUBLE") && (
+                        <input
+                          type={property.type === "STRING" ? "text" : "number"}
+                          placeholder={`${property.name}...`}
+                          value={selectedProperties[property.name] || ""}
+                          onChange={(e) =>
+                            handlePropertyChange(property.name, e.target.value)
+                          }
+                          onBlur={() => refetch()}
+                          className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none"
+                        />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -231,39 +197,35 @@ const CatalogFilter = ({
         </aside>
 
         {/* ===================== MAIN CONTENT ===================== */}
-        <div className="flex-1">
-          {/* Toolbar */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 ring-1 ring-gray-100">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              {/* Saralash */}
-              <div className="flex flex-wrap gap-3">
+        <div className="flex-1 min-w-0">
+          {/* Compact Toolbar */}
+          <div className="bg-white rounded-xl p-3 md:p-4 mb-4 shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              {/* Sort Buttons */}
+              <div className="flex flex-wrap gap-2">
                 {sortOptions.map((opt) => {
                   const active = sortOption.field === opt.field;
-                  const currentOrder =
-                    sortOption.field === opt.field ? sortOption.order : "DESC";
-                  const nextOrder = currentOrder === "DESC" ? "ASC" : "DESC";
-
-                  // Agar saralash narx bo'yicha bo'lsa, tartibni ham ko'rsatish
+                  const currentOrder = sortOption.field === opt.field ? sortOption.order : "DESC";
                   const isPriceSort = opt.field === "price";
 
                   return (
                     <button
                       key={opt.field}
                       onClick={() => handleSortChange(opt.field)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         active
-                          ? "bg-purple-600 text-white shadow-lg"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                          : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
                       }`}
                     >
-                      <opt.icon className="w-4 h-4" />
-                      {opt.label}
+                      <opt.icon className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{opt.label}</span>
                       {active && isPriceSort && (
-                        <span className="ml-1">
+                        <span className="ml-0.5">
                           {currentOrder === "ASC" ? (
-                            <ArrowUpWideNarrow className="w-4 h-4" />
+                            <ArrowUpWideNarrow className="w-3.5 h-3.5" />
                           ) : (
-                            <ArrowDownNarrowWide className="w-4 h-4" />
+                            <ArrowDownNarrowWide className="w-3.5 h-3.5" />
                           )}
                         </span>
                       )}
@@ -272,206 +234,160 @@ const CatalogFilter = ({
                 })}
               </div>
 
-              {/* View Mode + Mobile Filter */}
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <div className="flex bg-gray-100 rounded-xl p-1">
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`p-2 rounded-lg transition ${
-                      viewMode === "grid"
-                        ? "bg-white text-purple-600 shadow-md"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    <Grid3X3 className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`p-2 rounded-lg transition ${
-                      viewMode === "list"
-                        ? "bg-white text-purple-600 shadow-md"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    <List className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => setMobileFiltersOpen(true)}
-                  className="lg:hidden relative flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-xl font-medium text-sm shadow-lg"
-                >
-                  <SlidersHorizontal className="w-5 h-5" />
-                  Filtrlar
-                  {getActiveFilterCount() > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {getActiveFilterCount()}
-                    </span>
-                  )}
-                </button>
-              </div>
+              {/* Mobile Filter Button */}
+              <button
+                onClick={() => setMobileFiltersOpen(true)}
+                className="lg:hidden relative flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium text-xs shadow-md"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Filtrlar
+                {getActiveFilterCount() > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    {getActiveFilterCount()}
+                  </span>
+                )}
+              </button>
             </div>
 
-            {/* Faol Filtrlar (Tags) */}
+            {/* Active Filters - Compact Tags */}
             {getActiveFilterCount() > 0 && (
-              <div className="mt-6 pt-6 border-t border-gray-200 flex flex-wrap gap-3">
-                <span className="text-gray-600 font-semibold text-sm mr-2 hidden sm:block">
-                  Faol filtrlar:
-                </span>
-
-                {/* Qidiruv */}
+              <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5">
                 {searchQuery && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                    <Search className="w-4 h-4" />
-                    {searchQuery}
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-medium">
+                    <Search className="w-3 h-3" />
+                    {searchQuery.length > 15 ? searchQuery.substring(0, 15) + "..." : searchQuery}
                     <button
                       onClick={clearSearch}
-                      className="ml-1 hover:bg-purple-200 rounded-full p-0.5 transition"
+                      className="ml-0.5 hover:bg-purple-100 rounded-full p-0.5"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
 
-                {/* Narx */}
                 {(priceRange.min || priceRange.max) && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                    <DollarSign className="w-4 h-4" />
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-md text-xs font-medium">
+                    <DollarSign className="w-3 h-3" />
                     {priceRange.min || "0"} — {priceRange.max || "∞"}
                     <button
                       onClick={clearPriceRange}
-                      className="ml-1 hover:bg-purple-200 rounded-full p-0.5 transition"
+                      className="ml-0.5 hover:bg-green-100 rounded-full p-0.5"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
 
-                {/* Saralash (Faol filtrlar orasida ko'rsatish) */}
                 {sortOption.field && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                    {
-                      sortOptions.find((opt) => opt.field === sortOption.field)
-                        ?.label
-                    }
-                    {sortOption.field === "price" &&
-                      (sortOption.order === "ASC" ? " (↑)" : " (↓)")}
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
+                    {sortOptions.find((opt) => opt.field === sortOption.field)?.label}
+                    {sortOption.field === "price" && (sortOption.order === "ASC" ? " ↑" : " ↓")}
                     <button
                       onClick={clearSort}
-                      className="ml-1 hover:bg-purple-200 rounded-full p-0.5 transition"
+                      className="ml-0.5 hover:bg-blue-100 rounded-full p-0.5"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
 
-                {/* Xususiyatlar */}
                 {Object.entries(selectedProperties)
                   .filter(([_, value]) => value)
                   .map(([key, value]) => (
                     <span
                       key={key}
-                      className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium"
                     >
-                      {key}:{" "}
-                      <strong className="font-semibold">
-                        {value === "true"
-                          ? "Ha"
-                          : value === "false"
-                          ? "Yo'q"
-                          : value}
-                      </strong>
+                      {key}: {value === "true" ? "Ha" : value === "false" ? "Yo'q" : value}
                       <button
                         onClick={() => removeProperty(key)}
-                        className="ml-1 hover:bg-purple-200 rounded-full p-0.5 transition"
+                        className="ml-0.5 hover:bg-amber-100 rounded-full p-0.5"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3" />
                       </button>
                     </span>
                   ))}
 
-                {/* Barchasini tozalash tugmasi */}
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium hover:bg-red-200 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-md text-xs font-medium hover:bg-red-100 transition"
                 >
-                  <X className="w-4 h-4" /> Barchasini tozalash
+                  <X className="w-3 h-3" /> Tozalash
                 </button>
               </div>
             )}
           </div>
 
-          {/* Mahsulotlar Ro'yxati */}
-          {/* Items qismi CatalogPage ichidagi InfiniteScroll ichiga joylashtiriladi. 
-              Bu yerda faqat "Hech narsa topilmadi" xabarini ko'rsatamiz, qolganini CatalogPage bajaradi. */}
+          {/* Products Grid */}
           {isLoading ? (
-            // Yuklanayotgan skeletni ko'rsatish
             renderSkeletons()
           ) : items.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl shadow-xl border border-gray-100">
-              <div className="w-28 h-28 bg-purple-100 rounded-full mx-auto flex items-center justify-center mb-6">
-                <Search className="w-14 h-14 text-purple-600" />
+            <div className="text-center py-12 md:py-16 bg-white rounded-xl border border-gray-100">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl mx-auto flex items-center justify-center mb-4">
+                <Sparkles className="w-10 h-10 text-purple-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-3">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">
                 Hech narsa topilmadi
               </h3>
-              <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                Filtrlaringiz bo'yicha mos keladigan e'lonlar yo'q. Filtrlarni
-                o'zgartiring.
+              <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+                Filtrlarni o'zgartiring yoki boshqa kategoriyani tanlang
               </p>
               {getActiveFilterCount() > 0 && (
                 <button
                   onClick={clearFilters}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg transition"
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md transition text-sm"
                 >
                   Filtrlarni tozalash
                 </button>
               )}
             </div>
           ) : (
-            <div className="container mx-auto px-4 py-8">
-              <InfiniteScroll
-                dataLength={items.length}
-                next={fetchNextPage}
-                hasMore={hasNextPage}
-                loader={
-                  <div className="col-span-full text-center py-8">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
-                  </div>
-                }
-                endMessage={
-                  <p className="text-center py-10 text-gray-500">
-                    {items.length > 0
-                      ? "Barcha e'lonlar yuklandi"
-                      : "Bu kategoriyada hali e'lon yo'q"}
-                  </p>
-                }
-              >
-                <div
-                  className={
-                    viewMode === "grid"
-                      ? "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                      : "space-y-6"
-                  }
-                >
-                  {items.map((item, index) => (
-                    <ItemCard
-                      key={item.id || index}
-                      item={item}
-                      index={index}
-                      // isLiked={isLiked(item.id)}
-                      refresh={refetch}
-                    />
-                  ))}
+            <InfiniteScroll
+              dataLength={items.length}
+              next={fetchNextPage}
+              hasMore={hasNextPage}
+              loader={
+                <div className="text-center py-6">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-purple-600 border-t-transparent"></div>
                 </div>
-              </InfiniteScroll>
-
-              {/* Agar hali yuklanayotgan bo'lsa skelet */}
-              {isLoading && renderSkeletons()}
-            </div>
+              }
+              endMessage={
+                <p className="text-center py-8 text-sm text-gray-500">
+                  {items.length > 0 ? "✨ Barcha e'lonlar yuklandi" : ""}
+                </p>
+              }
+            >
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                {items.map((item, index) => (
+                  <ItemCard
+                    key={item.id || index}
+                    item={item}
+                    index={index}
+                    refresh={refetch}
+                  />
+                ))}
+              </div>
+            </InfiniteScroll>
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #c4b5fd;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #a78bfa;
+        }
+      `}</style>
     </div>
   );
 };

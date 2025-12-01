@@ -14,7 +14,7 @@ const Layout = () => {
   const { isAuthenticated } = useAuthStore();
 
   // agar /add-item va /user (yoki ularning nested route'lari) da headerni yashirmoqchi bo'lsangiz:
-  const hideForPaths = ["/add-item", "/user","/detail"];
+  const hideForPaths = ["/add-item"];
   // nested route'lar ham hisobga olinsin:
   const hideHeader = hideForPaths.some(
     (p) => location.pathname === p || location.pathname.startsWith(`${p}/`)

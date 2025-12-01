@@ -8,12 +8,12 @@ import {
   Search as SearchIcon,
   User,
   ShoppingBag,
-  Home as HomeIcon,
-  ChevronDown,
   PlusCircleIcon,
+  ChevronDown,
+  Home as HomeIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import useGetUser from "../../hooks/services/useGetUser";
 import useAuthStore from "../../store";
 import HeaderCatalog from "./HeaderCatalog";
@@ -23,7 +23,9 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { isAuthenticated } = useAuthStore();
-   const user = useGetUser();
+  const user = useGetUser();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,7 +45,9 @@ const Header = () => {
     >
       <input
         type="text"
-        placeholder={isMobile ? "Qidirish..." : "Mahsulotlar va turkumlar izlash"}
+        placeholder={
+          isMobile ? "Qidirish..." : "Mahsulotlar va turkumlar izlash"
+        }
         className={`${
           isMobile ? "h-9 text-xs" : "h-10 text-sm"
         } flex-1 bg-white pl-3 md:pl-4 pr-2 text-gray-600 outline-none`}
@@ -106,12 +110,24 @@ const Header = () => {
               >
                 <ShoppingBag size={18} className="text-purple-600" />
               </Link>
-              <Link
-                to="/profile/dashboard/favourites"
-                className="p-2 rounded-full bg-red-50 hover:bg-red-100 active:scale-95 transition-all shrink-0"
+              <button
+                onClick={() => {
+                  localStorage.setItem("liked", JSON.stringify("liked"));
+                  navigate(
+                    isAuthenticated
+                      ? `/user/${get(user, "sub")}`
+                      : "/auth/login"
+                  );
+                }}
+                className="group flex flex-col items-center min-w-[70px]"
               >
-                <Heart size={18} className="text-red-500" />
-              </Link>
+                <div className="p-2 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-colors">
+                  <Heart
+                    className="text-purple-600 group-hover:text-purple-700"
+                    size={20}
+                  />
+                </div>
+              </button>
             </div>
           </div>
 
@@ -134,7 +150,9 @@ const Header = () => {
                 <span className="font-medium">Katalog</span>
                 <ChevronDown
                   size={16}
-                  className={`${isOpen ? "rotate-180" : ""} transition-transform duration-300`}
+                  className={`${
+                    isOpen ? "rotate-180" : ""
+                  } transition-transform duration-300`}
                 />
               </button>
 
@@ -159,8 +177,15 @@ const Header = () => {
               </Link>
 
               {/* Favourites */}
-              <Link
-                to="/profile/dashboard/favourites"
+              <button
+                onClick={() => {
+                  localStorage.setItem("liked", JSON.stringify("liked"));
+                  navigate(
+                    isAuthenticated
+                      ? `/user/${get(user, "sub")}`
+                      : "/auth/login"
+                  );
+                }}
                 className="group flex flex-col items-center min-w-[70px]"
               >
                 <div className="p-2 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-colors">
@@ -172,11 +197,13 @@ const Header = () => {
                 <span className="text-xs text-gray-600 group-hover:text-purple-600 mt-1">
                   Sevimlilar
                 </span>
-              </Link>
+              </button>
 
               {/* User/Kabinet */}
               <Link
-                 to={isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login"}
+                to={
+                  isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login"
+                }
                 className="group flex flex-col items-center min-w-[70px]"
               >
                 <div className="p-2 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-colors">

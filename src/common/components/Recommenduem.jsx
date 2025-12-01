@@ -40,10 +40,10 @@ const Recommenduem = () => {
 
   const renderEmptyState = () => (
     <div className="flex flex-col items-center justify-center py-12 md:py-16 px-4 text-center">
-      <div className="w-20 h-20 md:w-24 md:h-24 bg-teal-50 rounded-full flex items-center justify-center mb-3 md:mb-4">
+      <div className="w-20 h-20 md:w-24 md:h-24 bg-purple-50 rounded-full flex items-center justify-center mb-3 md:mb-4">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-10 w-10 md:h-12 md:w-12 text-teal-500"
+          className="h-10 w-10 md:h-12 md:w-12 text-purple-500"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -95,12 +95,12 @@ const Recommenduem = () => {
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <h2 className="text-base sm:text-sm md:text-xl lg:text-2xl font-medium text-gray-800 relative">
           <span className="relative z-10">Tavsiya etilgan mahsulotlar</span>
-          <span className="absolute bottom-0 left-0 w-1/2 h-2 md:h-3 bg-teal-100 -z-0"></span>
+          <span className="absolute bottom-0 left-0 w-1/2 h-2 md:h-3 bg-purple-100 -z-0"></span>
         </h2>
 
         <a
           href="/all-products"
-          className="text-teal-600 hover:text-teal-700 font-medium flex items-center transition-colors text-xs sm:text-sm md:text-base shrink-0"
+          className="text-purple-600 hover:text-purple-700 font-medium flex items-center transition-colors text-xs sm:text-sm md:text-base shrink-0"
         >
           <span className="hidden sm:inline">Barchasini ko'rish</span>
           <span className="sm:hidden">Barchasi</span>
@@ -131,7 +131,7 @@ const Recommenduem = () => {
           scrollThreshold={0.9}
           loader={
             <div className="flex justify-center py-4 md:py-6">
-              <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-teal-500" />
+              <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-purple-500" />
             </div>
           }
           endMessage={

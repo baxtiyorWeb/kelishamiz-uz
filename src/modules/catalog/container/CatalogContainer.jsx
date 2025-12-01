@@ -50,13 +50,12 @@ const CatalogPage = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [selectedProperties, setSelectedProperties] = useState({});
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [viewMode, setViewMode] = useState("grid"); // grid | list
+  const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState({ field: null, order: null });
   const [expandedFilters, setExpandedFilters] = useState({});
 
   // ========== API ==========
-  // Kategoriya ma'lumotlari
   const { data: categoryData } = useGetAllQuery({
     key: `category_${id}`,
     url: `/category/${id}`,
@@ -64,7 +63,6 @@ const CatalogPage = () => {
   });
   const category = get(categoryData, "data.content", {});
 
-  // Kategoriya xususiyatlari (filtrlar uchun)
   const { data: propertiesData } = useGetAllQuery({
     key: `/category/${id}/properties`,
     url: `/category/${id}/properties`,
@@ -74,7 +72,6 @@ const CatalogPage = () => {
     ? get(propertiesData, "data.content", [])
     : [];
 
-  // Mahsulotlar (infinite scroll)
   const {
     data,
     fetchNextPage,
@@ -91,7 +88,6 @@ const CatalogPage = () => {
 
   const items = data?.pages?.flatMap((page) => page?.content?.data || []) || [];
 
-  // Kategoriya o'zgarganda filtrni yangilash
   useEffect(() => {
     if (id) {
       setFilters((prev) => ({ ...prev, categoryId: parseInt(id) }));
@@ -168,32 +164,30 @@ const CatalogPage = () => {
     return count;
   };
 
-  // ========== SORT OPTIONS ==========
   const sortOptions = [
     { field: "createdAt", label: "Yangi e'lonlar", icon: Clock },
     { field: "price", label: "Narx bo'yicha", icon: DollarSign },
     { field: "viewCount", label: "Mashhur e'lonlar", icon: Eye },
   ];
 
-  // ========== SKELETON ==========
   const renderSkeletons = () => (
     <div
       className={`grid ${
         viewMode === "grid"
           ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           : "grid-cols-1"
-      } gap-6`}
+      } gap-4`}
     >
       {[...Array(12)].map((_, i) => (
         <div
           key={i}
-          className="bg-white rounded-3xl overflow-hidden shadow-sm animate-pulse"
+          className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse"
         >
           <div className="aspect-square bg-gray-200" />
-          <div className="p-4 space-y-3">
-            <div className="h-5 bg-gray-200 rounded w-3/4" />
-            <div className="h-4 bg-gray-200 rounded w-1/2" />
-            <div className="h-6 bg-gray-300 rounded w-1/3" />
+          <div className="p-3 space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+            <div className="h-3 bg-gray-200 rounded w-1/2" />
+            <div className="h-5 bg-gray-300 rounded w-1/3" />
           </div>
         </div>
       ))}
@@ -204,11 +198,12 @@ const CatalogPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <CatalogBreadCrumbs id={id} category={category} />
 
-      <div className="bg-purple-50 border-b border-purple-200">
-        <div className="container mx-auto px-4 py-2">
-          <p className="text-xl md:text-4xl  font-semibold text-purple-700 mb-4">
+      {/* Compact Header */}
+      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100">
+        <div className="container mx-auto px-4 py-3">
+          <h1 className="text-lg md:text-2xl font-bold text-purple-800 mb-2">
             {category?.name || "Katalog"}
-          </p>
+          </h1>
 
           {category?.children && category.children.length > 0 && (
             <div className="relative">
@@ -217,13 +212,12 @@ const CatalogPage = () => {
                   <Link
                     key={sub.id}
                     to={`/catalog/${sub.id}`}
-                    className="flex-shrink-0 px-4  py-1.5 
-                text-sm text-purple-700 
-                bg-white border border-purple-200
-                rounded-2xl
-                hover:bg-purple-100 hover:border-purple-300
-                transition-colors 
-                whitespace-nowrap"
+                    className="flex-shrink-0 px-3 py-1 text-xs md:text-sm
+                      text-purple-700 bg-white/80 backdrop-blur
+                      border border-purple-200 rounded-full
+                      hover:bg-purple-100 hover:border-purple-300
+                      transition-all duration-200 whitespace-nowrap
+                      shadow-sm hover:shadow"
                   >
                     {sub.name}
                   </Link>
@@ -235,7 +229,6 @@ const CatalogPage = () => {
       </div>
 
       <CatalogFilter
-        // States
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         priceRange={priceRange}
@@ -249,7 +242,6 @@ const CatalogPage = () => {
         isLoading={isLoading}
         fetchNextPage={fetchNextPage}
         hasNextPage={hasNextPage}
-        // Handlers
         handlePriceChange={handlePriceChange}
         handlePropertyChange={handlePropertyChange}
         handleSortChange={handleSortChange}
@@ -261,8 +253,7 @@ const CatalogPage = () => {
         renderSkeletons={renderSkeletons}
         sortOptions={sortOptions}
         refetch={refetch}
-        // liked funksiyasi (agar backendda liked bo'lsa)
-        isProductLiked={(productId) => false} // o'zingizning liked logicangizni qo'ying
+        isProductLiked={(productId) => false}
       />
 
       <MobileCatalogFilter
@@ -282,9 +273,6 @@ const CatalogPage = () => {
         refetch={refetch}
       />
 
-      
-
-      {/* Scrollbar hide */}
       <style jsx>{`
         .scrollbar-hide {
           -ms-overflow-style: none;

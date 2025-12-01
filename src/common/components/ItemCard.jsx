@@ -8,8 +8,10 @@ import { Link } from "react-router-dom";
 import useGetUser from "../../hooks/services/useGetUser";
 import api from "../../config/auth/api";
 
-const ItemCard = React.memo(({ item, index, authToken, refresh }) => {
+const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
   // Internal state for like status and count, initialized from item prop
+  console.log(viewMode);
+  
   const [currentIsLiked, setCurrentIsLiked] = useState(false);
   const [currentLikesCount, setCurrentLikesCount] = useState();
   const user = useGetUser();
