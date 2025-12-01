@@ -1,735 +1,582 @@
-"use client";
-
-import { useState, useEffect, useCallback } from "react";
-import { useForm, Controller, useWatch } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import {
-  X,
-  Save,
-  Trash2,
-  UploadCloud,
-  MapPin,
-  Tag,
-  Package,
-  GripVertical,
-  Star,
-  ChevronDown,
-} from "lucide-react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
+import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useDropzone } from "react-dropzone";
 import api from "../../../config/auth/api";
 
-// Validation Schema
-const validationSchema = yup.object().shape({
-  title: yup.string().required("Sarlavha majburiy"),
-  description: yup.string().required("Tavsif majburiy"),
-  price: yup
-    .number()
-    .typeError("Narx raqam bo'lishi kerak")
-    .required("Narx majburiy")
-    .positive("Narx musbat bo'lishi kerak"),
-  currencyType: yup.string().required("Valyuta majburiy"),
-  categoryId: yup.number().required("Kategoriya majburiy"),
-  regionId: yup.number().required("Viloyat majburiy"),
-  districtId: yup.number().required("Tuman majburiy"),
-  paymentType: yup.string().required("To'lov turi majburiy"),
-  negotiable: yup.boolean(),
-});
+// =====================================================================
+// === 1. Utility komponentlar ===
+// =====================================================================
 
-const SectionBox = ({ title, children, icon: Icon }) => (
-  <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-    <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-3">
-      <Icon size={24} className="text-purple-600" />
-      {title}
-    </h3>
-    {children}
-  </div>
+/**
+ * Oddiy, stil berilgan input komponenti
+ */
+const StyledInput = ({
+  type = "text",
+  name,
+  value,
+  onChange,
+  placeholder,
+  required = false,
+  min,
+  className = "",
+  disabled = false,
+}) => (
+  <input
+    type={type}
+    name={name}
+    value={value}
+    onChange={onChange}
+    className={`w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 ${
+      disabled ? "bg-gray-50 text-gray-500" : "bg-white"
+    } ${className}`}
+    placeholder={placeholder}
+    required={required}
+    min={min}
+    disabled={disabled}
+  />
 );
 
-const ControlledInput = ({ control, name, label, ...rest }) => {
-  return (
-    <div className="mb-3">
-      <label className="form-label">{label}</label>
+// =====================================================================
+// === 2. Asosiy Modal Komponenti ===
+// =====================================================================
 
-      <Controller
-        control={control}
-        name={name}
-        render={({ field }) => (
-          <input {...field} {...rest} className="form-control" />
-        )}
-      />
-    </div>
-  );
-};
-const ControlledSelect = ({
-  control,
-  name,
-  label,
-  options = [],
-  activeSelect,
-  setActiveSelect,
-}) => {
-  const isOpen = activeSelect === name;
+const ProductUpdateModal = ({ isOpen, onClose, productId }) => {
+  const queryClient = useQueryClient();
 
-  return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field }) => {
-        const selected = options.find((o) => o.value == field.value);
+  // --- Rasmlarni boshqarish uchun holatlar ---
+  const [currentImages, setCurrentImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState([]);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
 
-        return (
-          <div
-            className="mb-4 relative"
-            onClick={(e) => e.stopPropagation()} // window clickdan himoya
-          >
-            <label className="block text-sm font-medium mb-1">{label}</label>
+  // --- Umumiy mahsulot ma'lumotlari holati ---
+  const [productData, setProductData] = useState(null);
 
-            {/* Select Button */}
-            <button
-              type="button"
-              onClick={() => setActiveSelect(isOpen ? null : name)}
-              className="w-full flex justify-between items-center px-4 py-2 border rounded-lg bg-white shadow-sm hover:border-purple-500 transition"
-            >
-              <span className="text-gray-700">
-                {selected ? selected.label : "Tanlang..."}
-              </span>
-              <ChevronDown
-                size={18}
-                className={`${isOpen ? "rotate-180" : ""} transition`}
-              />
-            </button>
-
-            {/* Dropdown */}
-            {isOpen && (
-              <ul className="absolute z-20 w-full mt-2 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
-                {options.map((opt) => (
-                  <li
-                    key={opt.value}
-                    onClick={() => {
-                      field.onChange(opt.value);
-                      setActiveSelect(null); // tanlangandan keyin yopish
-                    }}
-                    className={`px-4 py-2 cursor-pointer hover:bg-purple-50 ${
-                      field.value == opt.value
-                        ? "bg-purple-100 font-medium"
-                        : ""
-                    }`}
-                  >
-                    {opt.label}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        );
-      }}
-    />
-  );
-};
-
-// Sortable Image Item
-const SortableImage = ({ image, index, onRemove }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: image.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`relative group aspect-square rounded-xl overflow-hidden border-2 ${
-        index === 0
-          ? "border-purple-500 ring-4 ring-purple-200"
-          : "border-gray-200"
-      } ${isDragging ? "z-50 shadow-2xl" : "shadow-md"}`}
-    >
-      <img
-        src={image.previewUrl || image.url}
-        alt=""
-        className="w-full h-full object-cover"
-      />
-
-      {/* Asosiy rasm belgilovi */}
-      {index === 0 && (
-        <div className="absolute top-3 left-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg">
-          <Star size={14} fill="white" />
-          Asosiy
-        </div>
-      )}
-
-      {/* Yangi yuklangan */}
-      {image.isNew && (
-        <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-          Yangi
-        </div>
-      )}
-
-      {/* Drag handle */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity cursor-move flex items-center justify-center"
-      >
-        <GripVertical size={36} className="text-white drop-shadow-lg" />
-      </div>
-
-      {/* O'chirish tugmasi */}
-      <button
-        type="button"
-        onClick={() => onRemove(image.id)}
-        className="absolute bottom-3 right-3 p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all"
-      >
-        <Trash2 size={18} />
-      </button>
-    </div>
-  );
-};
-
-// Image Upload Zone
-const ImageUploadDropzone = ({ images, setImages, max = 10 }) => {
-  const [isDragOver, setIsDragOver] = useState(false);
-
-  const handleDrop = useCallback(
-    (e) => {
-      e.preventDefault();
-      setIsDragOver(false);
-
-      if (images.length >= max) return;
-
-      const files = Array.from(e.dataTransfer.files)
-        .filter((f) => f.type.startsWith("image/"))
-        .slice(0, max - images.length);
-
-      const newImages = files.map((file) => ({
-        id: `new-${Date.now()}-${Math.random()}`,
-        file,
-        previewUrl: URL.createObjectURL(file),
-        isNew: true,
-      }));
-
-      setImages((prev) => [...prev, ...newImages]);
-    },
-    [images.length, max, setImages]
-  );
-
-  const handleChange = (e) => {
-    if (!e.target.files || images.length >= max) return;
-
-    const files = Array.from(e.target.files)
-      .filter((f) => f.type.startsWith("image/"))
-      .slice(0, max - images.length);
-
-    const newImages = files.map((file) => ({
-      id: `new-${Date.now()}-${Math.random()}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      isNew: true,
-    }));
-
-    setImages((prev) => [...prev, ...newImages]);
-    e.target.value = "";
-  };
-
-  const removeImage = (id) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
-  };
-
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (active.id !== over?.id) {
-      setImages((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over?.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-semibold text-gray-700">
-          {images.length} / {max} ta rasm
-        </span>
-        {images.length > 0 && (
-          <span className="text-xs text-purple-600 font-medium">
-            Birinchi rasm – asosiy rasm
-          </span>
-        )}
-      </div>
-
-      {/* Dropzone */}
-      <label
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-        onDragEnter={() => setIsDragOver(true)}
-        onDragLeave={() => setIsDragOver(false)}
-        className={`block border-3 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 ${
-          isDragOver
-            ? "border-purple-500 bg-purple-50 scale-105 shadow-2xl"
-            : images.length >= max
-            ? "border-gray-300 bg-gray-50 opacity-60 cursor-not-allowed"
-            : "border-purple-300 bg-purple-50/50 hover:border-purple-500 hover:bg-purple-100"
-        }`}
-      >
-        <UploadCloud
-          size={56}
-          className={`mx-auto mb-4 transition-colors ${
-            isDragOver ? "text-purple-600" : "text-purple-500"
-          }`}
-        />
-        <p className="text-lg font-bold text-gray-800">Rasm yuklang</p>
-        <p className="text-sm text-gray-600 mt-1">
-          Suratni bosing yoki bu yerga tashlang
-        </p>
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleChange}
-          disabled={images.length >= max}
-          className="hidden"
-        />
-      </label>
-
-      {/* Rasmlar ro'yxati */}
-      {images.length > 0 && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={images.map((i) => i.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-5">
-              {images.map((image, index) => (
-                <SortableImage
-                  key={image.id}
-                  image={image}
-                  index={index}
-                  onRemove={removeImage}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      )}
-    </div>
-  );
-};
-
-// Asosiy komponent
-const ProductUpdateModal = ({
-  isOpen,
-  onClose,
-  productData,
-  productId,
-  onSave,
-}) => {
-  const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [regions, setRegions] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [dynamicProps, setDynamicProps] = useState([]);
-  const [images, setImages] = useState([]);
-  const [activeSelect, setActiveSelect] = useState(null);
-
-  const closeAllSelects = () => setActiveSelect(null);
-
-  // click outside → yopish
+  // 1. ESC tugmasi orqali modalni yopish
   useEffect(() => {
-    const handleClick = () => closeAllSelects();
-    window.addEventListener("click", handleClick);
-    return () => window.removeEventListener("click", handleClick);
-  }, []);
-  const {
-    control,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(validationSchema),
+    const handleKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  // 2. Mahsulotni yuklab olish
+  const { data: initialProduct, isLoading: isProductLoading } = useQuery({
+    queryKey: ["product_id", productId],
+    queryFn: async () => {
+      const response = await api.get(`/products/by-id/${productId}`);
+      return response?.data?.content;
+    },
+    enabled: !!productId && isOpen,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const selectedRegionId = useWatch({ control, name: "regionId" });
-  const selectedCategoryId = useWatch({ control, name: "categoryId" });
-
-  // Ma'lumotlarni yuklash
+  // 3. initialProduct yuklanganda holatlarni o'rnatish
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [catRes, regRes] = await Promise.all([
-          api.get("/category"),
-          api.get("/location/regions"),
-        ]);
-        setCategories(catRes.data.content || []);
-        setRegions(regRes.data.content || []);
-      } catch (err) {
-        console.error("Ma'lumot yuklashda xato", err);
+    if (initialProduct) {
+      setProductData(initialProduct);
+
+      const sortedImages = initialProduct.images
+        ? [...initialProduct.images].sort((a, b) => a.order - b.order)
+        : [];
+      setCurrentImages(sortedImages);
+      setImageFiles([]);
+
+      // Asosiy rasm indeksini to'g'ri o'rnatish
+      let initialMainIndex = initialProduct.imageIndex;
+      if (initialMainIndex === -1 && sortedImages.length > 0) {
+        initialMainIndex = 0;
+      } else if (initialMainIndex >= sortedImages.length) {
+        initialMainIndex = Math.max(0, sortedImages.length - 1);
       }
-    };
-    load();
-  }, []);
-
-  // Tumanlar
-  useEffect(() => {
-    if (selectedRegionId) {
-      api.get(`/location/districts/${selectedRegionId}`).then((res) => {
-        setDistricts(res.data.content || []);
-      });
-    } else {
-      setDistricts([]);
-      setValue("districtId", "");
+      setMainImageIndex(initialMainIndex);
     }
-  }, [selectedRegionId, setValue]);
+  }, [initialProduct]);
 
-  // Dinamik xususiyatlar
-  useEffect(() => {
-    if (selectedCategoryId) {
-      api.get(`/category/${selectedCategoryId}/properties`).then((res) => {
-        setDynamicProps(res.data.content?.properties || []);
-      });
-    } else {
-      setDynamicProps([]);
-    }
-  }, [selectedCategoryId]);
+  // 4. Qo'shimcha ma'lumotlarni yuklash (Category, Regions, Districts)
+  const { data: category } = useQuery({
+    queryKey: ["category_id", productData?.categoryId],
+    queryFn: async () =>
+      (await api.get(`/category/${productData?.categoryId}`))?.data?.content,
+    enabled: !!productData?.categoryId,
+  });
+  const { data: properties } = useQuery({
+    queryKey: ["property_id", productData?.categoryId],
+    queryFn: async () =>
+      (await api.get(`/category/${productData?.categoryId}/properties`))?.data
+        ?.content,
+    enabled: !!productData?.categoryId,
+  });
 
-  // productData o'zgarganda to'ldirish
-  useEffect(() => {
-    if (!productData) {
-      reset({});
-      setImages([]);
-      return;
-    }
+  console.log(properties);
+  
 
-    const propsObj = {};
-    productData.propertyValues?.forEach((pv) => {
-      propsObj[`prop_${pv.propertyId}`] = pv.value?.value || pv.value;
+
+  const { data: region } = useQuery({
+    queryKey: ["regions"],
+    queryFn: async () => (await api.get(`/location/regions`))?.data?.content,
+    enabled: !!productId,
+  });
+  const { data: district } = useQuery({
+    queryKey: ["district", productData?.regionId],
+    queryFn: async () =>
+      (await api.get(`/location/districts/${productData?.regionId}`))?.data
+        ?.content,
+    enabled: !!productData?.regionId,
+  });
+
+  // 5. Input o'zgarishlarini boshqarish
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    const newValue =
+      name === "price" && e.target.type === "number" ? Number(value) : value;
+    setProductData((prevData) => ({
+      ...prevData,
+      [name]: newValue,
+      ...(name === "regionId" && { districtId: null }),
+    }));
+  };
+
+  // 6. Xususiyat (Property) o'zgarishlarini boshqarish
+  const handlePropertyChange = (propertyId, value) => {
+    setProductData((prevData) => {
+      const existingValues = prevData.propertyValues || [];
+      const stringValue = String(value);
+
+      const newPropertyValues = existingValues.some(
+        (pv) => pv.propertyId === propertyId
+      )
+        ? existingValues.map((pv) =>
+            pv.propertyId === propertyId ? { ...pv, value: stringValue } : pv
+          )
+        : [...existingValues, { propertyId: propertyId, value: stringValue }];
+
+      return {
+        ...prevData,
+        propertyValues: newPropertyValues,
+      };
     });
+  };
 
-    reset({
-      title: productData.title || "",
-      description: productData.description || "",
-      price: productData.price || "",
-      currencyType: productData.currencyType || "UZS",
-      categoryId: productData.category?.id || "",
-      regionId: productData.region?.id || "",
-      districtId: productData.district?.id || "",
-      paymentType: productData.paymentType || "card",
-      negotiable: productData.negotiable || false,
-      ...propsObj,
+  // Barcha rasmlarni birlashtirish (Mavjud + Yangi fayllar)
+  const allImages = useMemo(() => {
+    const newFilesMapped = imageFiles.map((f) => ({
+      id: f.id,
+      url: f.previewUrl,
+      isNew: true, // Yangi fayl
+      file: f.file,
+    }));
+
+    // Mavjud rasmlarni va yangi rasmlarni ketma-ket birlashtiramiz
+    return [...currentImages, ...newFilesMapped];
+  }, [currentImages, imageFiles]);
+
+  // 7. Rasm tashlash/tanlash funksiyasi
+  const onImageDrop = useCallback(
+    (acceptedFiles) => {
+      if (acceptedFiles.length === 0) return;
+
+      const spaceLeft = 10 - allImages.length;
+      const filesToProcess = acceptedFiles.slice(0, spaceLeft);
+
+      const newFiles = filesToProcess.map((file) => {
+        const uploadId =
+          Date.now().toString() + Math.random().toString(36).substring(2, 9);
+        return {
+          file,
+          previewUrl: URL.createObjectURL(file),
+          id: uploadId,
+        };
+      });
+
+      setImageFiles((prev) => [...prev, ...newFiles]);
+      setUploadingImages((prev) => [
+        ...prev,
+        ...newFiles.map((f) => ({
+          id: f.id,
+          name: f.file.name,
+          progress: 100,
+        })),
+      ]);
+
+      setTimeout(() => {
+        setUploadingImages((prev) =>
+          prev.filter((img) => !newFiles.some((f) => f.id === img.id))
+        );
+      }, 500);
+    },
+    [allImages.length]
+  );
+
+  const imageDropzone = useDropzone({
+    onDrop: onImageDrop,
+    accept: { "image/*": [".jpeg", ".jpg", ".png", ".webp"] },
+    maxFiles: 10 - allImages.length,
+    disabled: allImages.length >= 10,
+  });
+
+  const removeImage = (imageToRemove) => {
+    // Rasm fayllarini tozalash
+    if (imageToRemove.isNew) {
+      setImageFiles((prev) => prev.filter((f) => f.id !== imageToRemove.id));
+      URL.revokeObjectURL(imageToRemove.url);
+    } else {
+      setCurrentImages((prev) =>
+        prev.filter((img) => img.id !== imageToRemove.id)
+      );
+    }
+
+    // Asosiy rasm indeksini yangilash (mantiqni soddalashtiramiz)
+    setMainImageIndex((prevIndex) => {
+      const targetIndex = allImages.findIndex(
+        (img) => img.id === imageToRemove.id
+      );
+
+      // Agar o'chirilgan rasm joriy asosiy rasm bo'lsa
+      if (targetIndex === prevIndex) {
+        // Keyingi rasmga o'tish yoki 0 ga o'rnatish
+        return allImages.length > 1
+          ? Math.min(prevIndex, allImages.length - 2)
+          : -1;
+      }
+      // Agar o'chirilgan rasm asosiy rasmdan oldin bo'lsa, indeksni bittaga kamaytirish
+      if (targetIndex < prevIndex) {
+        return Math.max(0, prevIndex - 1);
+      }
+      return prevIndex;
     });
+  };
 
-    const existingImages = (productData.images || [])
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((img) => ({
-        id: img.id,
-        url: img.url,
-        isNew: false,
-      }));
+  const setAsMainImage = (index) => {
+    setMainImageIndex(index);
+  };
 
-    setImages(existingImages);
-  }, [productData, reset]);
-
-  const onSubmit = async (data) => {
-    if (!productId) return;
-
-    setLoading(true);
-    try {
+  // 8. Mahsulotni yangilash mutatsiyasi (Multipart/Form-Data)
+  const { mutate: updateProduct, isLoading: isUpdating } = useMutation({
+    mutationFn: async (payload) => {
       const formData = new FormData();
 
-      Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined && value !== "" && !key.startsWith("prop_")) {
+      // JSON/oddiy ma'lumotlarni string sifatida qo'shish
+      Object.entries(payload).forEach(([key, value]) => {
+        if (["propertyValues", "images"].includes(key)) {
+          formData.append(key, JSON.stringify(value));
+        } else {
           formData.append(key, value);
         }
       });
 
-      const properties = dynamicProps
-        .map((prop) => {
-          const value = data[`prop_${prop.id}`];
-          if (value === undefined || value === "" || value === null)
-            return null;
-          return {
-            propertyId: prop.id,
-            type: prop.type,
-            value: { key: prop.name, value: String(value) },
-          };
-        })
-        .filter(Boolean);
+      // Yangi rasm fayllarini 'files' nomi bilan qo'shish
+      imageFiles.forEach((fileObj) => {
+        formData.append("files", fileObj.file, fileObj.file.name);
+      });
 
-      if (properties.length > 0) {
-        formData.append("properties", JSON.stringify(properties));
-      }
+      const response = await api.patch(`/products/${productId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      alert("Mahsulot muvaffaqiyatli yangilandi!");
+      queryClient.invalidateQueries(["product_id", productId]);
+      queryClient.invalidateQueries("products_list");
+      onClose();
+    },
+    onError: (error) => {
+      console.error("Yangilashda xato:", error);
+      alert(
+        "Mahsulotni yangilashda xato yuz berdi. Xato: " +
+          (error.response?.data?.message || error.message)
+      );
+    },
+  });
 
-      const imagesData = images.map((img, index) => ({
-        id: img.id || null,
-        url: img.url || "",
+  const handleSave = () => {
+    if (!productData) return;
+
+    // Serverga yuboriladigan mavjud (isNew emas) rasmlar ro'yxatini tayyorlash
+    const imagesPayload = allImages
+      .filter((img) => !img.isNew) // Faqat serverdan kelgan (yoki yangi yuklanib, saqlangan) rasmlarni qoldiramiz
+      .map((img, index) => ({
+        id: img.id,
+        url: img.url,
         order: index,
       }));
-      formData.append("images", JSON.stringify(imagesData));
 
-      images.forEach((img) => {
-        if (img.isNew && img.file) {
-          formData.append("files", img.file);
-        }
-      });
+    // Payloadni tayyorlash
+    const payload = {
+      title: productData.title,
+      price: String(productData.price),
+      regionId: String(productData.regionId),
+      districtId: String(productData.districtId),
+      imageIndex: String(mainImageIndex),
+      propertyValues: productData.propertyValues.map((pv) => ({
+        propertyId: pv.propertyId,
+        value: pv.value,
+      })),
+      images: imagesPayload,
+    };
 
-      formData.append("imageIndex", "0");
-
-      await api.patch(`/products/${productId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      alert("E'lon muvaffaqiyatli yangilandi!");
-      onSave?.();
-      onClose();
-    } catch (err) {
-      alert("Xato: " + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
+    updateProduct(payload);
   };
 
-  if (!isOpen || !productData) return null;
+  // --- 9. Modalning yuklanish holati ---
+  if (!isOpen) return null;
+  if (isProductLoading || !productData) {
+    return createPortal(
+      <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50">
+        <div className="text-white text-xl p-5 bg-gray-700 rounded-lg">
+          Yuklanmoqda...
+        </div>
+      </div>,
+      document.body
+    );
+  }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fadeIn">
-      <div className="bg-white w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-3xl shadow-2xl">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center z-10 rounded-t-3xl">
-          <h2 className="text-3xl font-bold flex items-center gap-4 text-gray-800">
-            <Package className="text-purple-600" size={36} />
-            E'lonni tahrirlash
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-3 hover:bg-gray-100 rounded-full transition"
+  
+  const ModalContent = (
+    <div className="space-y-6 overflow-y-auto h-full pr-2">
+      <div>
+        <label className="block text-sm font-medium mb-2">Sarlavha</label>
+        <StyledInput
+          name="title"
+          value={productData.title || ""}
+          onChange={handleInputChange}
+          placeholder="Mahsulot sarlavhasi"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Narx</label>
+        <StyledInput
+          type="number"
+          name="price"
+          value={productData.price || ""}
+          onChange={handleInputChange}
+          placeholder="200000"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Kategoriya</label>
+        <div className="w-full px-4 py-3.5 border border-gray-200 bg-gray-100 rounded-2xl text-gray-600">
+          {category?.name || "Yuklanmoqda..."}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Viloyat</label>
+          <select
+            name="regionId"
+            className="w-full px-4 py-3.5 border border-gray-200 rounded-2xl"
+            value={productData.regionId || ""}
+            onChange={handleInputChange}
           >
-            <X size={28} />
-          </button>
+            <option value="">Tanlang</option>
+            {region?.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Chap taraf */}
-            <div className="lg:col-span-2 space-y-8">
-              <SectionBox title="Asosiy ma'lumotlar" icon={Package}>
-                <div className="space-y-5">
-                  <ControlledInput
-                    control={control}
-                    name="title"
-                    label="Sarlavha *"
-                    error={errors.title}
-                  />
-                  <Controller
-                    control={control}
-                    name="description"
-                    render={({ field }) => (
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">
-                          Tavsif *
-                        </label>
-                        <textarea
-                          {...field}
-                          rows={6}
-                          className="w-full px-5 py-4 border border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 transition"
-                          placeholder="Mahsulot haqida batafsil yozing..."
-                        />
-                        {errors.description && (
-                          <p className="text-red-500 text-xs">
-                            {errors.description.message}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  />
-                  <div className="grid sm:grid-cols-2 gap-5">
-                    <ControlledInput
-                      control={control}
-                      name="price"
-                      label="Narx *"
-                      type="number"
-                      error={errors.price}
-                    />
-                    <ControlledSelect
-                      control={control}
-                      name="currencyType"
-                      label="Valyuta"
-                      error={errors.currencyType}
-                      options={[
-                        { value: "UZS", label: "UZS" },
-                        { value: "USD", label: "USD" },
-                      ]}
-                      placeholder="Valyuta"
-                      activeSelect={activeSelect}
-                      setActiveSelect={setActiveSelect}
-                    />
-                  </div>
-                </div>
-              </SectionBox>
-
-              <SectionBox title="Joylashuv va kategoriya" icon={MapPin}>
-                <div className="grid sm:grid-cols-2 gap-5">
-                  <ControlledSelect
-                    control={control}
-                    name="categoryId"
-                    label="Kategoriya *"
-                    error={errors.categoryId}
-                    options={categories.map((c) => ({
-                      value: c.id,
-                      label: c.name,
-                    }))}
-                    placeholder="Kategoriyani tanlang"
-                    activeSelect={activeSelect}
-                    setActiveSelect={setActiveSelect}
-                  />
-                  <ControlledSelect
-                    control={control}
-                    name="regionId"
-                    label="Viloyat *"
-                    error={errors.regionId}
-                    options={regions.map((r) => ({
-                      value: r.id,
-                      label: r.name,
-                    }))}
-                    placeholder="Viloyatni tanlang"
-                    activeSelect={activeSelect}
-                    setActiveSelect={setActiveSelect}
-                  />
-                  <ControlledSelect
-                    control={control}
-                    name="districtId"
-                    label="Tuman *"
-                    error={errors.districtId}
-                    options={districts.map((d) => ({
-                      value: d.id,
-                      label: d.name,
-                    }))}
-                    placeholder="Tumanni tanlang"
-                    disabled={!selectedRegionId}
-                    activeSelect={activeSelect}
-                    setActiveSelect={setActiveSelect}
-                  />
-                  <ControlledSelect
-                    control={control}
-                    name="paymentType"
-                    label="To'lov turi"
-                    error={errors.paymentType}
-                    options={[
-                      { value: "card", label: "Karta" },
-                      { value: "cash", label: "Naqd" },
-                    ]}
-                    placeholder="Tanlang"
-                    activeSelect={activeSelect}
-                    setActiveSelect={setActiveSelect}
-                  />
-                </div>
-                <div className="mt-6">
-                  <Controller
-                    control={control}
-                    name="negotiable"
-                    render={({ field }) => (
-                      <label className="flex items-center gap-3 cursor-pointer text-lg">
-                        <input
-                          type="checkbox"
-                          {...field}
-                          checked={field.value}
-                          className="w-6 h-6 text-purple-600 rounded focus:ring-purple-500"
-                        />
-                        <span className="font-medium">Kelishuv narxi</span>
-                      </label>
-                    )}
-                  />
-                </div>
-              </SectionBox>
-
-              {dynamicProps.length > 0 && (
-                <SectionBox title="Qo'shimcha xususiyatlar" icon={Tag}>
-                  <DynamicProperties
-                    properties={dynamicProps}
-                    control={control}
-                  />
-                </SectionBox>
-              )}
-            </div>
-
-            {/* O'ng taraf – Rasmlar */}
-            <div className="lg:col-span-1">
-              <SectionBox title="Rasmlar (10 tagacha)" icon={UploadCloud}>
-                <ImageUploadDropzone
-                  images={images}
-                  setImages={setImages}
-                  max={10}
-                />
-              </SectionBox>
-            </div>
-          </div>
-
-          {/* Tugmalar */}
-          <div className="flex justify-end gap-5 pt-8 border-t border-gray-200 sticky bottom-0 bg-white py-6 -mx-8 px-8">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-8 py-4 border border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition"
-            >
-              Bekor qilish
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-10 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition flex items-center gap-3 disabled:opacity-70 shadow-lg"
-            >
-              {loading ? (
-                "Saqlanmoqda..."
-              ) : (
-                <>
-                  <Save size={22} />
-                  Saqlash
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+        <div>
+          <label className="block text-sm font-medium mb-2">Tuman</label>
+          <select
+            name="districtId"
+            className="w-full px-4 py-3.5 border border-gray-200 rounded-2xl"
+            value={productData.districtId || ""}
+            onChange={handleInputChange}
+            disabled={!productData.regionId}
+          >
+            <option value="">Tanlang</option>
+            {district?.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {properties?.properties?.length > 0 && (
+        <div>
+          <label className="block text-sm font-semibold mb-3">
+            Qo‘shimcha xususiyatlar
+          </label>
+          <div className="space-y-4">
+            {properties?.properties?.map((prop) => {
+              const valueObj = productData.propertyValues?.find(
+                (pv) => pv.propertyId === prop.id
+              );
+              const currentValue = valueObj?.value || "";
+
+              return (
+                <div key={prop.id}>
+                  <label className="block text-sm mb-1">{prop.name}</label>
+                  {prop.type === "NUMBER" && (
+                    <StyledInput
+                      type="number"
+                      placeholder={`${prop.name} (son)`}
+                      value={currentValue}
+                      onChange={(e) =>
+                        handlePropertyChange(prop.id, e.target.value)
+                      }
+                    />
+                  )}
+                  {prop.type === "STRING" && (
+                    <StyledInput
+                      placeholder={`${prop.name} (matn)`}
+                      value={currentValue}
+                      onChange={(e) =>
+                        handlePropertyChange(prop.id, e.target.value)
+                      }
+                    />
+                  )}
+                  {prop.type === "BOOLEAN" && (
+                    <select
+                      className="w-full px-4 py-3.5 border border-gray-200 rounded-2xl"
+                      value={currentValue === "true" ? "true" : "false"}
+                      onChange={(e) =>
+                        handlePropertyChange(prop.id, e.target.value)
+                      }
+                    >
+                      <option value="true">Ha</option>
+                      <option value="false">Yo‘q</option>
+                    </select>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Rasmlar (Maks. 10 ta)
+        </label>
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3">
+          {allImages.map((img, index) => (
+            <div
+              key={img.id}
+              className={`relative w-full h-16 rounded-xl overflow-hidden border-2 cursor-pointer ${
+                index === mainImageIndex
+                  ? "border-purple-500 ring-2 ring-purple-300"
+                  : "border-gray-200"
+              }`}
+            >
+              <img
+                src={img.url}
+                className="w-full h-full object-cover"
+                alt="Mahsulot rasmi"
+                onClick={() => setAsMainImage(index)}
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeImage(img);
+                }}
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-bl-lg p-1 text-xs leading-none z-10"
+                title="O'chirish"
+              >
+                &times;
+              </button>
+              {index === mainImageIndex && (
+                <span className="absolute bottom-0 left-0 bg-purple-500 text-white text-[10px] px-1 rounded-tr-lg">
+                  Asosiy
+                </span>
+              )}
+            </div>
+          ))}
+
+          {allImages.length < 10 && (
+            <div
+              {...imageDropzone.getRootProps()}
+              className={`w-full h-16 rounded-xl border-2 border-dashed flex items-center justify-center text-gray-400 text-xs text-center cursor-pointer hover:border-purple-400 transition-colors ${
+                imageDropzone.isDragActive
+                  ? "border-purple-500 bg-purple-50"
+                  : ""
+              }`}
+            >
+              <input {...imageDropzone.getInputProps()} />
+              {allImages.length === 0 ? "Rasm qo'shish" : "+ Rasm"}
+            </div>
+          )}
+        </div>
+        {uploadingImages.map((img) => (
+          <div key={img.id} className="text-xs text-gray-500 mt-1">
+            {img.name} yuklandi (Simulyatsiya)
+          </div>
+        ))}
+      </div>
+
+      <button
+        className="w-full bg-purple-600 text-white py-3 rounded-xl text-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400"
+        onClick={handleSave}
+        disabled={isUpdating}
+      >
+        {isUpdating ? "Saqlanmoqda..." : "Saqlash"}
+      </button>
     </div>
+  );
+
+  // --- 11. Modalni render qilish ---
+  return createPortal(
+    <div className="fixed inset-0 z-[999]">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className="
+          hidden md:flex 
+          fixed inset-0 
+          items-center justify-center
+        "
+      >
+        <div
+          className="
+            bg-white w-[80dvw] max-w-[90%] h-[80dvh] max-h-[90%] rounded-xl shadow-xl 
+            p-6 animate-fadeIn
+          "
+        >
+          {ModalContent}
+        </div>
+      </div>
+      <div
+        className="
+          md:hidden
+          fixed top-0 right-0 h-full
+          w-[100%] max-w-[400px]
+          bg-white shadow-xl p-5
+          animate-slideRight
+        "
+      >
+        {ModalContent}
+      </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.25s ease-out;
+        }
+        @keyframes slideRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slideRight {
+          animation: slideRight 0.3s ease-out;
+        }
+      `}</style>
+    </div>,
+    document.body
   );
 };
 
