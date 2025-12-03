@@ -41,7 +41,8 @@ const Layout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* 1. HEADER (faqa /add-item va /auth da yashirinadi) */}
-      {!hideHeader || window.innerWidth >= 450 && hideForPathsMobile && <Header />}
+      {!hideHeader ||
+        (window.innerWidth >= 450 && hideForPathsMobile && <Header />)}
 
       {/* 2. ASOSIY KONTENT */}
       <main className="flex-grow ">
@@ -104,7 +105,7 @@ const Layout = () => {
         </nav>
       )}
 
-      {!hideFooter && <Footer  />}
+      {!hideFooter && <Footer />}
     </div>
   );
 };
