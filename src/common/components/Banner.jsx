@@ -9,9 +9,6 @@ const fetchBanners = async () => {
   if (response.status !== 200 || !response.data) {
     throw new Error("Bannerlarni yuklashda xatolik yuz berdi.");
   }
-
-  console.log(response.data);
-
   return response.data?.content;
 };
 
@@ -108,7 +105,6 @@ const Banner = () => {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Slides Container */}
         <div
           className="flex h-full transition-transform duration-700 ease-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -119,10 +115,8 @@ const Banner = () => {
                 className="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
                 style={{ backgroundImage: `url(${slide.imageUrl})` }}
               >
-                {/* Enhanced Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
 
-                {/* Content */}
                 <div className="absolute inset-0 flex items-center">
                   <div className="text-white p-8 md:p-28 max-w-lg space-y-4">
                     {slide.title && (
@@ -153,7 +147,6 @@ const Banner = () => {
           ))}
         </div>
 
-        {/* Navigation Buttons */}
         <button
           onClick={goToPrevSlide}
           className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 flex items-center justify-center text-white transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50"
@@ -170,7 +163,6 @@ const Banner = () => {
           <ChevronRight size={20} />
         </button>
 
-        {/* Enhanced Indicators */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
           {slides.map((_, index) => (
             <button
@@ -186,7 +178,6 @@ const Banner = () => {
           ))}
         </div>
 
-        {/* Slide Counter */}
         <div className="absolute top-6 right-6 bg-black/30 backdrop-blur-md text-white px-3 py-1 rounded-full text-sm font-medium">
           {currentIndex + 1} / {slides.length}
         </div>

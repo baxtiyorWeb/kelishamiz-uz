@@ -5,37 +5,104 @@ import KEYS from "../../export/keys";
 import URLS from "../../export/urls";
 import useGetInfinityScrollQuery from "../../hooks/api/useGetInfinityScrollQuery";
 import ItemCard from "./ItemCard";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const Recommenduem = () => {
   const [likedProducts, setLikedProducts] = useState([]);
-  const { data, fetchNextPage, hasNextPage, refetch, isLoading } =
-    useGetInfinityScrollQuery({
-      key: KEYS.products,
-      url: URLS.products,
-      initialPageParam: 1,
-    });
+  const [districtIds, setDistrictIds] = useState([]);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("likedProducts") || "[]");
-    setLikedProducts(stored);
+    const loadDistrictIds = () => {
+      try {
+        const storedDistricts = localStorage.getItem("selectedDistricts");
+        if (storedDistricts) {
+          const parsedDistricts = JSON.parse(storedDistricts);
+          if (isArray(parsedDistricts) && parsedDistricts.length > 0) {
+            setDistrictIds(parsedDistricts);
+          } else {
+            setDistrictIds([]);
+          }
+        } else {
+          setDistrictIds([]);
+        }
+      } catch (error) {
+        console.error("Error parsing selectedDistricts:", error);
+        setDistrictIds([]);
+      }
+    };
+
+    loadDistrictIds();
+
+    const handleStorageChange = (e) => {
+      if (e.key === "selectedDistricts") {
+        loadDistrictIds();
+      }
+    };
+
+    const handleCustomStorageChange = () => {
+      loadDistrictIds();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("localStorageUpdated", handleCustomStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("localStorageUpdated", handleCustomStorageChange);
+    };
   }, []);
 
-  const isProductLiked = (productId) => {
+  const { data, fetchNextPage, hasNextPage, refetch, isLoading, isFetching } =
+    useGetInfinityScrollQuery({
+      key: [KEYS.products, districtIds.join(",")],
+      url: URLS.products,
+      initialPageParam: 1,
+      elements: {
+        districtIds: districtIds.length > 0 ? districtIds.join(",") : undefined,
+      },
+    });
+
+    console.log(data);
+    
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("likedProducts");
+      if (stored) {
+        setLikedProducts(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error("Error loading liked products:", error);
+      setLikedProducts([]);
+    }
+  }, []);
+
+  // districtIds o'zgarganda refetch qilish
+  useEffect(() => {
+    if (districtIds.length >= 0) {
+      console.log("District IDs changed:", districtIds);
+      refetch();
+    }
+  }, [districtIds, refetch]);
+
+  const isProductLiked = useCallback((productId) => {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
       return likedProducts.includes(productId);
     } else {
       return (
-        data?.data?.some?.((item) => item.id === productId && item.isLiked) ||
-        false
+        data?.pages?.some((page) =>
+          get(page, "content.data", []).some(
+            (item) => item.id === productId && item.isLiked
+          )
+        ) || false
       );
     }
-  };
+  }, [likedProducts, data]);
 
   const items = isArray(get(data, "pages", []))
-    ? data?.pages.flatMap((page) => get(page, "content.data", []))
+    ? data?.pages?.flatMap((page) => get(page, "content.data", []))
     : [];
 
   const renderEmptyState = () => (
@@ -60,18 +127,19 @@ const Recommenduem = () => {
         Hech qanday mahsulot topilmadi
       </h3>
       <p className="text-sm md:text-base text-gray-500 max-w-md">
-        Hozircha bu toifada mahsulotlar mavjud emas. Iltimos, keyinroq qayta
-        tekshiring yoki boshqa toifani tanlang.
+        {districtIds.length > 0
+          ? "Tanlangan tumanlarda hozircha mahsulotlar mavjud emas."
+          : "Hozircha bu toifada mahsulotlar mavjud emas. Iltimos, keyinroq qayta tekshiring yoki boshqa toifani tanlang."}
       </p>
     </div>
   );
 
   const renderSkeletons = () => (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 gap-y-4 md:gap-y-6">
-      {[...Array(8)].map((_, index) => (
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4 lg:gap-5 gap-y-4 md:gap-y-6">
+      {[...Array(10)].map((_, index) => (
         <div
           key={index}
-          className="rounded-lg shadow-sm overflow-hidden bg-white"
+          className="rounded-lg shadow-sm overflow-hidden bg-white border border-gray-200"
         >
           <div className="w-full h-32 sm:h-40 md:h-48 bg-gray-200 animate-pulse"></div>
           <div className="p-2 md:p-4">
@@ -93,10 +161,11 @@ const Recommenduem = () => {
   return (
     <div className="mt-6 md:mt-8 lg:mt-10 container mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-4 md:mb-6">
-        <h2 className="text-base sm:text-sm md:text-xl lg:text-2xl font-medium text-gray-800 relative">
+        <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-800 relative">
           <span className="relative z-10">Tavsiya etilgan mahsulotlar</span>
           <span className="absolute bottom-0 left-0 w-1/2 h-2 md:h-3 bg-purple-100 -z-0"></span>
         </h2>
+
 
         <a
           href="/all-products"
@@ -119,15 +188,15 @@ const Recommenduem = () => {
         </a>
       </div>
 
-      {isLoading ? (
+      {isLoading || isFetching ? (
         renderSkeletons()
-      ) : items?.length === 0 ? (
+      ) : items.length === 0 ? (
         renderEmptyState()
       ) : (
         <InfiniteScroll
-          dataLength={items?.length || 0}
+          dataLength={items.length}
           next={fetchNextPage}
-          hasMore={hasNextPage}
+          hasMore={hasNextPage || false}
           scrollThreshold={0.9}
           loader={
             <div className="flex justify-center py-4 md:py-6">
@@ -135,22 +204,22 @@ const Recommenduem = () => {
             </div>
           }
           endMessage={
-            <div className="text-center py-4 md:py-6 text-sm md:text-base text-gray-500">
-              Barcha mahsulotlar yuklandi
-            </div>
+            items.length > 0 && (
+              <div className="text-center py-4 md:py-6 text-sm md:text-base text-gray-500">
+                Barcha mahsulotlar yuklandi
+              </div>
+            )
           }
         >
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4 lg:gap-5 gap-y-4 md:gap-y-6">
-            {items?.map((item, index) => (
-            <>  
-            
+            {items.map((item, index) => (
               <ItemCard
-                key={item?.id || index}
+                key={`${item?.id}-${index}`}
                 item={item}
                 index={index}
                 isLiked={isProductLiked(item.id)}
                 refresh={refetch}
-              /> </>
+              />
             ))}
           </div>
         </InfiniteScroll>

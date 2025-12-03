@@ -41,21 +41,21 @@ const Layout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* 1. HEADER (faqa /add-item va /auth da yashirinadi) */}
-      {!hideHeader ||
-        (window.innerWidth >= 450 && hideForPathsMobile && <Header />)}
+      {(!hideHeader || (window.innerWidth >= 450 && hideForPathsMobile)) && (
+        <Header />
+      )}
 
       {/* 2. ASOSIY KONTENT */}
       <main className="flex-grow ">
-        <Container>
-          <div
-            className="min-h-[70vh] flex-grow-0 "
-            style={{ paddingBottom: showMobileNav ? "80px" : "0" }}
-          >
+        <div
+          className="min-h-screen flex-grow-0 "
+          style={{ paddingBottom: showMobileNav ? "80px" : "0" }}
+        >
+          <Container>
             <Outlet />
-          </div>
-
-          <HeaderCatalog isOpen={isOpen} setisOpen={setIsOpen} />
-        </Container>
+          </Container>
+        </div>
+        <HeaderCatalog isOpen={isOpen} setisOpen={setIsOpen} />
       </main>
 
       {showMobileNav && (

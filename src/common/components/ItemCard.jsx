@@ -9,36 +9,24 @@ import useGetUser from "../../hooks/services/useGetUser";
 import api from "../../config/auth/api";
 
 const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
-  // Internal state for like status and count, initialized from item prop
-  console.log(viewMode);
   
   const [currentIsLiked, setCurrentIsLiked] = useState(false);
   const [currentLikesCount, setCurrentLikesCount] = useState();
   const user = useGetUser();
   const userId = user?.sub;
 
-  // authToken ni localStorage dan olish agar prop sifatida kelmasa
   const getAuthToken = useCallback(() => {
     if (authToken) return authToken;
     return localStorage.getItem("accessToken");
   }, [authToken]);
 
-  // Debug uchun
-  console.log(
-    "ItemCard render - userId:",
-    userId,
-    "authToken:",
-    !!getAuthToken()
-  );
+ 
 
-  // Initialize state based on item prop and local storage on mount
   useEffect(() => {
     const token = getAuthToken();
     if (userId && token && item?.likes) {
-      // Authenticated user: check if user has liked from backend data
       setCurrentIsLiked(item.likes.some((likeUser) => likeUser.id === userId));
     } else {
-      // Unauthenticated user: check localStorage
       const likedProducts = JSON.parse(
         localStorage.getItem("likedProducts") || "[]"
       );
@@ -47,7 +35,6 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
     setCurrentLikesCount(item?.likesCount || 0);
   }, [item, userId, getAuthToken]);
 
-  // Sync localStorage likes with backend when user logs in
   useEffect(() => {
     const syncLocalLikes = async () => {
       const token = getAuthToken();
@@ -58,10 +45,8 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
           );
 
           if (likedProducts.length > 0) {
-            // Send localStorage IDs to backend for sync
             await api.get(`/products/liked?ids=${likedProducts.join(",")}`, {});
 
-            // Clear localStorage after sync
             localStorage.removeItem("likedProducts");
           }
         } catch (error) {
@@ -71,7 +56,7 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
     };
 
     syncLocalLikes();
-  }, [userId, getAuthToken]); // Run when user logs in
+  }, [userId, getAuthToken]);
 
   const formattedDate = useMemo(() => {
     if (item?.createdAt) {
@@ -101,15 +86,13 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
 
       const token = getAuthToken();
 
-      console.log("handleLikeClick - userId:", userId, "authToken:", !!token);
 
       try {
         let newIsLiked;
         let newLikesCount;
 
         if (userId && token) {
-          console.log("Using API endpoint for authenticated user");
-          // Authenticated user: Use API endpoint
+          
           const response = await api.post(`/products/${item.id}/like`, {});
           newIsLiked = response.data?.content?.liked;
           newLikesCount = response.data?.content?.likesCount;
@@ -119,19 +102,16 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
           console.log(
             "Using localStorage for unauthenticated user or missing token"
           );
-          // Unauthenticated user: Use localStorage only
           const likedProducts = JSON.parse(
             localStorage.getItem("likedProducts") || "[]"
           );
           const currentLikedSet = new Set(likedProducts);
 
           if (currentLikedSet.has(item.id)) {
-            // Unlike
             currentLikedSet.delete(item.id);
             newIsLiked = false;
             newLikesCount = currentLikesCount > 0 ? currentLikesCount - 1 : 0;
           } else {
-            // Like
             currentLikedSet.add(item.id);
             newIsLiked = true;
             newLikesCount = currentLikesCount + 1;
@@ -154,18 +134,16 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
 
   return (
     <div
-      className={`group relative bg-white flex-col relative rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
+      className={`group  bg-white flex-col relative rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
         index ? "animate-fade-in" : ""
       }`}
     >
-      {/* TOP badge */}
       {item?.isTop && (
         <span className="absolute left-3 top-3 z-10 bg-gradient-to-r from-purple-500 to-purple-600 px-2 py-0.5 text-[10px] font-medium text-white rounded">
           TOP
         </span>
       )}
 
-      {/* Image container */}
       <div className="relative w-full overflow-hidden aspect-[4/3]">
         <Link to={detailLink} className="absolute inset-0 block">
           <img
@@ -177,14 +155,11 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
         </Link>
       </div>
 
-      {/* Content */}
       <div className="p-3">
-        {/* Title */}
         <h3 className="text-base font-semibold text-gray-800 line-clamp-1 mb-1">
           {item?.title}
         </h3>
 
-        {/* Price */}
         <div className="flex items-center justify-between mb-2">
           <span className="text-lg font-bold text-purple-600">
             {item?.price}
@@ -193,17 +168,16 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
             </span>
           </span>
           {item?.negotiable && (
-            <span className="text-[10px] absolute right-1 top-[80px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] absolute right-1 top-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
               Kelishiladi
             </span>
           )}
         </div>
 
-        {/* Location + Date */}
         <div className="flex items-start justify-center space-y-1 flex-col text-gray-500 text-xs mb-2">
           <div className="flex items-center">
             <MapPinIcon className="w-3.5 h-3.5 mr-1 text-purple-600" />
-            <span className="truncate max-w-[70px]">{item?.region?.name}</span>
+            <span className="truncate max-w-[70px]">{item?.district?.name}</span>
           </div>
           <div className="flex items-center text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
             <Calendar className="w-3.5 h-3.5 mr-1 text-purple-600" />
@@ -211,7 +185,6 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
           </div>
         </div>
 
-        {/* Views + Likes */}
         <div className="flex items-center justify-between">
           <div className="flex items-center text-gray-500 text-xs">
             <Eye className="w-4 h-4 mr-1 text-purple-600" />

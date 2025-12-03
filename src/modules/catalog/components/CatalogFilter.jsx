@@ -82,7 +82,6 @@ const CatalogFilter = ({
                 )}
               </div>
 
-              {/* Search */}
               <div className="mb-4">
                 <label className="text-xs font-semibold text-gray-700 mb-2 block">
                   Qidirish
@@ -94,13 +93,11 @@ const CatalogFilter = ({
                     placeholder="Nomi..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    // onBlur yoki refetch yo'q, chunki u debounce orqali ishlaydi
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition"
+                    className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition"
                   />
                 </div>
               </div>
 
-              {/* Price Range */}
               <div className="mb-4">
                 <label className="text-xs font-semibold text-gray-700 mb-2 block">
                   Narx (so'm)
@@ -111,8 +108,7 @@ const CatalogFilter = ({
                     placeholder="Min"
                     value={priceRange.min}
                     onChange={(e) => handlePriceChange("min", e.target.value)}
-                    // onBlur={() => refetch()} Olib tashlandi
-                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-400 outline-none"
                   />
                   <span className="text-gray-400">—</span>
                   <input
@@ -120,13 +116,11 @@ const CatalogFilter = ({
                     placeholder="Max"
                     value={priceRange.max}
                     onChange={(e) => handlePriceChange("max", e.target.value)}
-                    // onBlur={() => refetch()} Olib tashlandi
-                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-400 outline-none"
                   />
                 </div>
               </div>
 
-              {/* Properties */}
               <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
                 {properties.map((property) => (
                   <div
@@ -162,9 +156,8 @@ const CatalogFilter = ({
                           value={selectedProperties[property.name] || ""}
                           onChange={(e) => {
                             handlePropertyChange(property.name, e.target.value);
-                            // refetch() Olib tashlandi
                           }}
-                          className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none cursor-pointer"
+                          className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-400 outline-none cursor-pointer"
                         >
                           <option value="">Tanlang</option>
                           {property.type === "BOOLEAN" ? (
@@ -212,7 +205,7 @@ const CatalogFilter = ({
               {/* Sort Buttons */}
               <div className="w-full max-w-xs">
                 <select
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm shadow-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   // sortOption.field va sortOption.order ni birlashtirib, joriy qiymatni yaratish
                   value={sortOption.field + "_" + sortOption.order}
                   onChange={(e) => {
@@ -361,7 +354,7 @@ const CatalogFilter = ({
               }
               endMessage={
                 <p className="text-center py-8 text-sm text-gray-500">
-                  {items.length > 0 ? "✨ Barcha e'lonlar yuklandi" : ""}
+                  {items.length > 0 ? "Barcha e'lonlar yuklandi" : ""}
                 </p>
               }
             >

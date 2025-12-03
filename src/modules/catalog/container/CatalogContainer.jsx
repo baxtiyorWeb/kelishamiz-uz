@@ -64,7 +64,6 @@ const CatalogPage = () => {
       : [];
   }, [propertiesData]);
 
-  // 2. Filterlarni API formatiga o'tkazish funksiyasi
   const generateApiPayload = useCallback(() => {
     const formattedProperties = Object.entries(selectedProperties)
       .filter(([_, value]) => value !== "" && value !== null)
@@ -81,26 +80,20 @@ const CatalogPage = () => {
     };
   }, [categoryId, searchQuery, priceRange, selectedProperties, sortOption]);
 
-  // --- ASOSIY TUZATISH: DEBOUNCED FILTR UCHUN useEffect ---
-  // Barcha UI filtr holatlari o'zgarganda 500ms kutib, keyin API so'rovini yangilaydi
   useEffect(() => {
     if (mobileFiltersOpen) return;
 
-    // Debounce funksiyasini bir marta yaratish
     const debouncedUpdate = debounce((payload) => {
       setApiFilters((prev) => ({
         ...prev,
         ...payload,
-        // Filtrlar o'zgarganda sahifani 1 ga qaytarish muhim!
         page: 1,
       }));
-    }, 500);
+    }, 100);
 
-    // Har bir filtr o'zgarishida yangi payloadni yuboramiz
     const payload = generateApiPayload();
     debouncedUpdate(payload);
 
-    // Cleanup funksiyasi: oldingi debounce ni bekor qilish
     return () => debouncedUpdate.cancel();
   }, [
     searchQuery,
@@ -110,12 +103,9 @@ const CatalogPage = () => {
     mobileFiltersOpen,
     generateApiPayload,
   ]);
-  // --- ASOSIY TUZATISH TUGADI ---
 
-  // 3. Mahsulotlarni yuklash (apiFilters o'zgarganda avtomatik ravishda qayta ishga tushadi)
   const { data, fetchNextPage, hasNextPage, isLoading, refetch } =
     useInfiniteScrollQuery({
-      // API filtrlariga bog'langan KESH KEY yaratish:
       key: `${KEYS.product_filter}_${categoryId}_${JSON.stringify(apiFilters)}`,
       url: URLS.product_filter,
       method: "POST",
@@ -130,7 +120,6 @@ const CatalogPage = () => {
 
   console.log(items);
 
-  // Category o'zgarganda barcha filtrlarni tozalash
   useEffect(() => {
     if (categoryId) {
       setSearchQuery("");
@@ -163,12 +152,10 @@ const CatalogPage = () => {
     setSortOption({ field: "createdAt", order: "DESC" });
   };
 
-  // Mobil filtrlarni qo'llash faqat knopka bosilganda ishlaydi
   const applyMobileFilters = () => {
     setApiFilters((prev) => ({
       ...prev,
       ...generateApiPayload(),
-      // Mobil filtrlar qo'llanilganda ham sahifani 1 ga qaytarish muhim
       page: 1,
     }));
     setMobileFiltersOpen(false);
@@ -229,8 +216,7 @@ const CatalogPage = () => {
     <div className="min-h-screen bg-gray-50">
       <CatalogBreadCrumbs id={id} category={category} />
 
-      {/* Kategoriya Header */}
-      <div className="bg-white border-b border-gray-200 py-4 mb-4">
+      <div className="bg-white border-b border-gray-200 py-4 mb-4 rounded-xl">
         <div className="container mx-auto px-4">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
             {category?.name || "Katalog"}
@@ -261,7 +247,6 @@ const CatalogPage = () => {
         setViewMode={setViewMode}
         setMobileFiltersOpen={setMobileFiltersOpen}
         renderSkeletons={renderSkeletons}
-        // refetch propini olib tashladik, chunki u endi ota komponentda boshqariladi
       />
 
       <MobileCatalogFilter

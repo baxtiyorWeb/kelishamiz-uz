@@ -28,7 +28,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
   const [selected, setSelected] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [hoveredChild, setHoveredChild] = useState(null);
-  
+
   // Mobile uchun view state (parent, child, grandchild)
   const [mobileView, setMobileView] = useState("parent");
 
@@ -83,54 +83,6 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
     }
   }, [isOpen]);
 
-  const getCategoryIcon = (category, index) => {
-    const name = get(category, "name", "").toLowerCase();
-
-    if (
-      name.includes("auto") ||
-      name.includes("avtomobil") ||
-      name.includes("car")
-    ) {
-      return <Car className="w-5 h-5" />;
-    } else if (
-      name.includes("electron") ||
-      name.includes("phone") ||
-      name.includes("smart") ||
-      name.includes("gadjet")
-    ) {
-      return <Smartphone className="w-5 h-5" />;
-    } else if (
-      name.includes("home") ||
-      name.includes("house") ||
-      name.includes("uy") ||
-      name.includes("maishiy")
-    ) {
-      return <Home className="w-5 h-5" />;
-    } else if (
-      name.includes("shop") ||
-      name.includes("market") ||
-      name.includes("hafta")
-    ) {
-      return <ShoppingCart className="w-5 h-5" />;
-    } else if (
-      name.includes("turizm") ||
-      name.includes("ov") ||
-      name.includes("baliq")
-    ) {
-      return <Package className="w-5 h-5" />;
-    } else if (name.includes("kiyim") || name.includes("fashion")) {
-      return <Tag className="w-5 h-5" />;
-    }
-
-    const icons = [
-      <Zap key="zap" className="w-5 h-5" />,
-      <Layers key="layers" className="w-5 h-5" />,
-      <Grid key="grid" className="w-5 h-5" />,
-      <Package key="package" className="w-5 h-5" />,
-    ];
-    return icons[index % icons.length];
-  };
-
   const handleClose = () => {
     setisOpen(false);
   };
@@ -166,24 +118,23 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
 
   return isOpen ? (
     <div
-      className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 rounded-xl z-[9999] bg-black/40 backdrop-blur-sm"
       onClick={handleClose}
       style={{ fontFamily: "Inter, sans-serif" }}
     >
       <div
         className={`
-          fixed inset-0 
-          md:left-1/2 md:top-1/2 
-          md:-translate-x-1/2 md:-translate-y-1/2
-          md:w-[95%] md:max-w-7xl md:h-[90vh] 
-          bg-white md:rounded-xl shadow-2xl overflow-hidden
-          transition-all duration-300
-          animate-in fade-in slide-in-from-top-8
-        `}
+    fixed top-0 left-0 w-screen h-screen
+    bg-white rounded-none
+    shadow-2xl overflow-hidden
+    transition-all duration-300
+    animate-in slide-in-from-top-8
+    md:top-20 md:left-[10%] md:w-[80vw] md:h-[80vh] md:rounded-xl
+  `}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between flex-shrink-0">
+        <div className="bg-gradient-to-r rounded-xl from-purple-600 to-indigo-600 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between flex-shrink-0">
           {/* Mobile uchun back button */}
           {mobileView !== "parent" && (
             <button
@@ -193,13 +144,13 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
-          
+
           <h2 className="text-white font-extrabold text-xl md:text-2xl">
             {mobileView === "parent" && "Katalog"}
             {mobileView === "child" && get(selected, "name")}
             {mobileView === "grandchild" && get(hoveredChild, "name")}
           </h2>
-          
+
           <button
             onClick={handleClose}
             aria-label="Katalog oynasini yopish"
@@ -240,7 +191,9 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                   </div>
                 ) : filteredParents.length === 0 ? (
                   <div className="text-center py-12 text-gray-400">
-                    <p className="text-base">Hech qanday kategoriya topilmadi.</p>
+                    <p className="text-base">
+                      Hech qanday kategoriya topilmadi.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-1">
@@ -256,16 +209,6 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                         onClick={() => setSelected(item)}
                       >
                         <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                              isEqual(get(item, "id"), get(selected, "id"))
-                                ? "bg-white/20 text-white"
-                                : "bg-purple-100 text-purple-600"
-                            )}
-                          >
-                            {getCategoryIcon(item, index)}
-                          </div>
                           <span className="font-semibold truncate text-sm">
                             {get(item, "name")}
                           </span>
@@ -360,7 +303,9 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                     {grandchildren.length === 0 ? (
                       <div className="text-center py-12 text-gray-400">
                         <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                        <p className="text-sm">Tegishli mahsulotlar topilmadi</p>
+                        <p className="text-sm">
+                          Tegishli mahsulotlar topilmadi
+                        </p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
@@ -423,7 +368,9 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                     </div>
                   ) : filteredParents.length === 0 ? (
                     <div className="text-center py-12 text-gray-400">
-                      <p className="text-sm">Hech qanday kategoriya topilmadi.</p>
+                      <p className="text-sm">
+                        Hech qanday kategoriya topilmadi.
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -434,9 +381,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
                           onClick={() => handleParentSelect(item)}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-600">
-                              {getCategoryIcon(item, index)}
-                            </div>
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-600"></div>
                             <span className="font-semibold text-sm text-gray-800">
                               {get(item, "name")}
                             </span>

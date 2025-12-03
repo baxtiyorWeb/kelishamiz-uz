@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const CatalogBreadCrumbs = ({ category }) => {
   return (
-    <div className="bg-gradient-to-r from-white to-purple-50/40 border-b border-gray-100">
+    <div className="bg-gradient-to-r rounded-xl mb-3 from-white to-purple-50/40 border-b border-gray-100">
       <div className="container mx-auto px-4 py-2">
         <div className="flex items-center gap-2 text-sm flex-wrap">
 

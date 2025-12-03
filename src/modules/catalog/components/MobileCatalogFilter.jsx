@@ -60,13 +60,11 @@ const MobileCatalogFilter = ({
         onClick={() => setMobileFiltersOpen(false)}
       />
 
-      {/* 2. Asosiy Filtr Drawer (O'ngdan chiquvchi oyna) */}
       <div
         className={`absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-out 
           ${mobileFiltersOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
-        {/* === Header (Rangi va Yopish tugmasi) === */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Filter className="w-6 h-6 text-purple-600" />
@@ -80,10 +78,8 @@ const MobileCatalogFilter = ({
           </button>
         </div>
 
-        {/* === Content (Aylantiriladigan qism) === */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* A. Qidiruv (Search) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
             <h3 className="font-bold text-base text-gray-800 mb-3 flex items-center gap-2">
               <Search className="w-4 h-4 text-purple-600" /> Qidiruv
             </h3>
@@ -93,12 +89,11 @@ const MobileCatalogFilter = ({
                 placeholder="Mahsulot nomidan qidirish..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-base rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all outline-none"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-base rounded-2xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all outline-none"
               />
             </div>
           </div>
 
-          {/* B. Saralash (Sort) */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <h3 className="font-bold text-base text-gray-800 mb-3 flex items-center gap-2">
               <ArrowDownNarrowWide className="w-4 h-4 text-purple-600" />{" "}
@@ -214,7 +209,6 @@ const MobileCatalogFilter = ({
           </div>
         </div>
 
-        {/* === Footer (Amalga oshirish tugmalari) === */}
         <div className="sticky bottom-0 bg-white p-4 border-t border-gray-100 space-y-3 shadow-[0_-5px_15px_-3px_rgba(0,0,0,0.05)]">
           {getActiveFilterCount() > 0 && (
             <button
@@ -228,7 +222,6 @@ const MobileCatalogFilter = ({
           <button
             onClick={() => {
               applyFilters();
-              // setMobileFiltersOpen(false); // applyFilters ichida yopiladi
             }}
             className="w-full text-white text-base font-semibold py-3.5 rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/50 hover:shadow-purple-700/50"
             style={{
