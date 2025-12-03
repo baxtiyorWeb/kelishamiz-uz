@@ -23,7 +23,8 @@ const Layout = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   // === Header/Footer'ni yashirish mantiqi (Sizning talabingiz bo'yicha) ===
-  const hideForPaths = ["/add-item", "/auth"]; // /auth/login va /auth/register kabi yo'llarni yashirish uchun /auth qo'shildi
+  const hideForPaths = ["/add-item", "/auth", "/detail"]; // /auth/login va /auth/register kabi yo'llarni yashirish uchun /auth qo'shildi
+  const hideForPathsMobile = ["/add-item", "/auth", "/detail"]; // /auth/login va /auth/register kabi yo'llarni yashirish uchun /auth qo'shildi
 
   const hideHeader = hideForPaths.some(
     (p) => location.pathname === p || location.pathname.startsWith(`${p}/`)
@@ -40,7 +41,7 @@ const Layout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* 1. HEADER (faqa /add-item va /auth da yashirinadi) */}
-      {!hideHeader && <Header />}
+      {!hideHeader || window.innerWidth >= 450 && hideForPathsMobile && <Header />}
 
       {/* 2. ASOSIY KONTENT */}
       <main className="flex-grow ">
