@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 "use client";
+
 import { get, head, isArray, isEqual, isNil } from "lodash";
 import { useEffect, useState } from "react";
 import KEYS from "../../export/keys.js";
@@ -7,30 +8,29 @@ import URLS from "../../export/urls.js";
 import usePaginateQuery from "../../hooks/api/usePaginateQuery.js";
 import {
   ChevronRight,
+  ChevronLeft,
   X,
   Search,
+  Grid,
+  Tag,
+  Layers,
   Package,
   Car,
   Smartphone,
   Home,
   ShoppingCart,
   Zap,
-  Tag,
-  Layers,
-  Grid,
-  Heart,
-  Shirt,
-  Fish,
-  Gem,
 } from "lucide-react";
 import { cn } from "../../lib/utils.jsx";
 import { Link } from "react-router-dom";
 
 const HeaderCatalog = ({ isOpen, setisOpen }) => {
+  const [selected, setSelected] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selected, setSelected] = useState(null); // Desktop uchun
-  const [hoveredChild, setHoveredChild] = useState(null); // Desktop uchun
-  const [openMobileCategory, setOpenMobileCategory] = useState(null); // Mobil uchun
+  const [hoveredChild, setHoveredChild] = useState(null);
+  
+  // Mobile uchun view state (parent, child, grandchild)
+  const [mobileView, setMobileView] = useState("parent");
 
   const { data: parentList, isLoading } = usePaginateQuery({
     key: KEYS.categories,
@@ -48,7 +48,27 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
       )
     : parents;
 
-  // Body scroll
+  useEffect(() => {
+    const isSelectedInFiltered =
+      selected &&
+      filteredParents.some((p) => isEqual(get(p, "id"), get(selected, "id")));
+
+    if (!isSelectedInFiltered && filteredParents.length > 0) {
+      setSelected(head(filteredParents));
+    } else if (isNil(selected) && filteredParents.length > 0) {
+      setSelected(head(filteredParents));
+    }
+  }, [filteredParents, selected]);
+
+  const childCategories = get(selected, "children", []);
+
+  useEffect(() => {
+    setHoveredChild(null);
+    if (!isNil(selected) && childCategories.length > 0) {
+      setHoveredChild(head(childCategories));
+    }
+  }, [selected, childCategories]);
+
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
     return () => {
@@ -56,330 +76,454 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
     };
   }, [isOpen]);
 
-  const handleClose = () => {
-    setisOpen(false);
-    setSearchTerm("");
-    setSelected(null);
-    setHoveredChild(null);
-    setOpenMobileCategory(null);
-  };
-
-  // Desktop: birinchi kategoriyani avto tanlash
+  // Modal yopilganda mobile view ni reset qilish
   useEffect(() => {
-    if (filteredParents.length > 0 && !selected) {
-      const first = head(filteredParents);
-      setSelected(first);
-      if (first.children?.length > 0) {
-        setHoveredChild(head(first.children));
-      }
+    if (!isOpen) {
+      setMobileView("parent");
     }
-  }, [filteredParents, selected]);
+  }, [isOpen]);
 
-  // Desktop ikona
-  const getDesktopIcon = (category, index) => {
+  const getCategoryIcon = (category, index) => {
     const name = get(category, "name", "").toLowerCase();
-    if (name.includes("auto") || name.includes("avto"))
-      return <Car className="w-5 h-5" />;
-    if (name.includes("smart") || name.includes("telefon"))
-      return <Smartphone className="w-5 h-5" />;
-    if (name.includes("uy") || name.includes("maishiy"))
-      return <Home className="w-5 h-5" />;
-    if (name.includes("hafta")) return <ShoppingCart className="w-5 h-5" />;
-    if (name.includes("turizm") || name.includes("baliq"))
-      return <Package className="w-5 h-5" />;
-    if (name.includes("kiyim")) return <Tag className="w-5 h-5" />;
 
-    const icons = [<Zap />, <Layers />, <Grid />, <Package />];
+    if (
+      name.includes("auto") ||
+      name.includes("avtomobil") ||
+      name.includes("car")
+    ) {
+      return <Car className="w-5 h-5" />;
+    } else if (
+      name.includes("electron") ||
+      name.includes("phone") ||
+      name.includes("smart") ||
+      name.includes("gadjet")
+    ) {
+      return <Smartphone className="w-5 h-5" />;
+    } else if (
+      name.includes("home") ||
+      name.includes("house") ||
+      name.includes("uy") ||
+      name.includes("maishiy")
+    ) {
+      return <Home className="w-5 h-5" />;
+    } else if (
+      name.includes("shop") ||
+      name.includes("market") ||
+      name.includes("hafta")
+    ) {
+      return <ShoppingCart className="w-5 h-5" />;
+    } else if (
+      name.includes("turizm") ||
+      name.includes("ov") ||
+      name.includes("baliq")
+    ) {
+      return <Package className="w-5 h-5" />;
+    } else if (name.includes("kiyim") || name.includes("fashion")) {
+      return <Tag className="w-5 h-5" />;
+    }
+
+    const icons = [
+      <Zap key="zap" className="w-5 h-5" />,
+      <Layers key="layers" className="w-5 h-5" />,
+      <Grid key="grid" className="w-5 h-5" />,
+      <Package key="package" className="w-5 h-5" />,
+    ];
     return icons[index % icons.length];
   };
 
-  // Mobil ikona va rang
-  const getMobileIconAndColor = (name, index) => {
-    const lower = name.toLowerCase();
-    const iconMap = {
-      hafta: { icon: <Zap className="w-6 h-6" />, color: "bg-yellow-500" },
-      qish: { icon: <Package className="w-6 h-6" />, color: "bg-orange-400" },
-      xobbi: { icon: <Heart className="w-6 h-6" />, color: "bg-pink-400" },
-      smartfon: {
-        icon: <Smartphone className="w-6 h-6" />,
-        color: "bg-blue-500",
-      },
-      turizm: { icon: <Fish className="w-6 h-6" />, color: "bg-teal-500" },
-      elektronika: {
-        icon: <Zap className="w-6 h-6" />,
-        color: "bg-purple-500",
-      },
-      maishiy: { icon: <Home className="w-6 h-6" />, color: "bg-indigo-500" },
-      kiyim: { icon: <Shirt className="w-6 h-6" />, color: "bg-green-500" },
-      poyabzal: { icon: <Package className="w-6 h-6" />, color: "bg-red-500" },
-      aksessuar: { icon: <Gem className="w-6 h-6" />, color: "bg-amber-500" },
-      gozallik: { icon: <Heart className="w-6 h-6" />, color: "bg-rose-500" },
-      salomatlik: { icon: <Heart className="w-6 h-6" />, color: "bg-cyan-500" },
-      uy: { icon: <Home className="w-6 h-6" />, color: "bg-gray-600" },
-    };
-
-    for (const key in iconMap) {
-      if (lower.includes(key)) return iconMap[key];
-    }
-    const colors = [
-      "bg-yellow-500",
-      "bg-blue-500",
-      "bg-purple-500",
-      "bg-green-500",
-      "bg-red-500",
-    ];
-    return {
-      icon: <Package className="w-6 h-6" />,
-      color: colors[index % colors.length],
-    };
+  const handleClose = () => {
+    setisOpen(false);
   };
 
-  if (!isOpen) return null;
+  const grandchildren = isArray(get(hoveredChild, "children", []))
+    ? get(hoveredChild, "children", [])
+    : [];
 
-  return (
+  // Mobile uchun parent tanlash
+  const handleParentSelect = (item) => {
+    setSelected(item);
+    if (window.innerWidth < 768) {
+      setMobileView("child");
+    }
+  };
+
+  // Mobile uchun child tanlash
+  const handleChildSelect = (category) => {
+    setHoveredChild(category);
+    if (window.innerWidth < 768) {
+      setMobileView("grandchild");
+    }
+  };
+
+  // Mobile uchun orqaga qaytish
+  const handleBack = () => {
+    if (mobileView === "grandchild") {
+      setMobileView("child");
+    } else if (mobileView === "child") {
+      setMobileView("parent");
+    }
+  };
+
+  return isOpen ? (
     <div
       className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm"
       onClick={handleClose}
+      style={{ fontFamily: "Inter, sans-serif" }}
     >
-      {/* MOBIL VERSIYA (< md) */}
       <div
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom"
+        className={`
+          fixed inset-0 
+          md:left-1/2 md:top-1/2 
+          md:-translate-x-1/2 md:-translate-y-1/2
+          md:w-[95%] md:max-w-7xl md:h-[90vh] 
+          bg-white md:rounded-xl shadow-2xl overflow-hidden
+          transition-all duration-300
+          animate-in fade-in slide-in-from-top-8
+        `}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-center pt-3">
-          <div className="w-12 h-1 bg-gray-300 rounded-full" />
-        </div>
-        <div className="flex items-center justify-between px-5 py-3 border-b">
-          <h2 className="text-xl font-bold">Katalog</h2>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between flex-shrink-0">
+          {/* Mobile uchun back button */}
+          {mobileView !== "parent" && (
+            <button
+              onClick={handleBack}
+              className="md:hidden p-1.5 rounded-full bg-white/10 hover:bg-white/30 text-white transition"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
+          
+          <h2 className="text-white font-extrabold text-xl md:text-2xl">
+            {mobileView === "parent" && "Katalog"}
+            {mobileView === "child" && get(selected, "name")}
+            {mobileView === "grandchild" && get(hoveredChild, "name")}
+          </h2>
+          
           <button
             onClick={handleClose}
-            className="p-2 rounded-full hover:bg-gray-100"
+            aria-label="Katalog oynasini yopish"
+            className="p-1.5 rounded-full bg-white/10 hover:bg-white/30 text-white transition shadow-md"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
 
-        <div className="px-5 py-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Qidirish..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="overflow-y-auto max-h-[calc(90vh-160px)] pb-10">
-          {isLoading ? (
-            <div className="px-4 space-y-3">
-              {[...Array(10)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-16 bg-gray-200 rounded-xl animate-pulse"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="px-3 space-y-2">
-              {filteredParents.map((cat, i) => {
-                const { icon, color } = getMobileIconAndColor(cat.name, i);
-                const isOpen = openMobileCategory === cat.id;
-                const hasChildren =
-                  isArray(cat.children) && cat.children.length > 0;
-
-                return (
-                  <div
-                    key={cat.id}
-                    className="bg-gray-50 rounded-xl overflow-hidden"
-                  >
-                    <button
-                      onClick={() =>
-                        hasChildren &&
-                        setOpenMobileCategory(isOpen ? null : cat.id)
-                      }
-                      className="w-full px-4 py-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={cn(
-                            "w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg",
-                            color
-                          )}
-                        >
-                          {icon}
-                        </div>
-                        <span className="font-semibold text-gray-800">
-                          {cat.name}
-                          {cat.name.toLowerCase().includes("hafta") && " ⭐"}
-                        </span>
-                      </div>
-                      {hasChildren && (
-                        <ChevronRight
-                          className={cn(
-                            "w-5 h-5 transition-transform",
-                            isOpen && "rotate-90"
-                          )}
-                        />
-                      )}
-                    </button>
-
-                    {hasChildren && isOpen && (
-                      <div className="border-t bg-white">
-                        <Link
-                          to={`/catalog/${cat.id}`}
-                          onClick={handleClose}
-                          className="block px-4 py-3 pl-16 font-medium text-purple-600 hover:bg-purple-50"
-                        >
-                          Barchasini ko‘rish
-                        </Link>
-                        {cat.children.map((child) => (
-                          <Link
-                            key={child.id}
-                            to={`/catalog/${child.id}`}
-                            onClick={handleClose}
-                            className="block px-4 py-3 pl-16 text-gray-700 hover:bg-gray-50"
-                          >
-                            {child.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* DESKTOP VERSIYA (≥ md) - Sizning asl kod deyarli o'zgarmagan */}
-      <div
-        className="hidden md:block fixed inset-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-7xl h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
-            <h2 className="text-white font-extrabold text-2xl">Katalog</h2>
-            <button
-              onClick={handleClose}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          <div className="flex h-[calc(100%-68px)]">
-            {/* 1-ustun */}
-            <div className="w-64 bg-white border-r overflow-y-auto">
-              <div className="p-4 bg-gray-50 border-b sticky top-0 z-10">
+        {/* Main Content */}
+        <div className="flex h-[calc(100%-56px)] md:h-[calc(100%-68px)]">
+          {/* DESKTOP: 3-Column Layout */}
+          <div className="hidden md:flex w-full">
+            {/* Column 1: Parent Categories */}
+            <div className="w-64 bg-white border-r overflow-y-auto flex-shrink-0">
+              <div className="p-3 bg-gray-50 border-b sticky top-0 z-10">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
                     placeholder="Kategoriyalarni qidirish..."
-                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
 
-              <div className="p-4 space-y-1">
-                {filteredParents.map((item, i) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setSelected(item)}
-                    className={cn(
-                      "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-all",
-                      selected?.id === item.id
-                        ? "bg-purple-600 text-white shadow-lg"
-                        : "hover:bg-purple-50 text-gray-700"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
+              <div className="p-4">
+                {isLoading ? (
+                  <div className="space-y-3 p-2">
+                    {[...Array(12)].map((_, i) => (
                       <div
+                        key={i}
+                        className="h-10 bg-gray-200 rounded-lg animate-pulse"
+                      />
+                    ))}
+                  </div>
+                ) : filteredParents.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <p className="text-base">Hech qanday kategoriya topilmadi.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {filteredParents.map((item, index) => (
+                      <button
+                        key={get(item, "id")}
                         className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center",
-                          selected?.id === item.id
-                            ? "bg-white/20"
-                            : "bg-purple-100 text-purple-600"
+                          "w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all text-sm",
+                          isEqual(get(item, "id"), get(selected, "id"))
+                            ? "bg-purple-600 text-white shadow-lg shadow-purple-200"
+                            : "hover:bg-purple-50 text-gray-700 hover:text-purple-700"
                         )}
+                        onClick={() => setSelected(item)}
                       >
-                        {getDesktopIcon(item, i)}
-                      </div>
-                      <span className="font-semibold truncate">
-                        {item.name}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                ))}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                              isEqual(get(item, "id"), get(selected, "id"))
+                                ? "bg-white/20 text-white"
+                                : "bg-purple-100 text-purple-600"
+                            )}
+                          >
+                            {getCategoryIcon(item, index)}
+                          </div>
+                          <span className="font-semibold truncate text-sm">
+                            {get(item, "name")}
+                          </span>
+                        </div>
+                        <ChevronRight
+                          className={cn(
+                            "w-4 h-4 transition-transform flex-shrink-0",
+                            isEqual(get(item, "id"), get(selected, "id"))
+                              ? "text-white"
+                              : "text-gray-400"
+                          )}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* 2 va 3-ustun */}
-            {selected && (
-              <div className="flex-1 flex">
-                <div className="w-72 border-r bg-gray-50 overflow-y-auto p-6">
-                  <h3 className="font-bold text-lg mb-4 border-b pb-2">
-                    {selected.name}
-                  </h3>
-                  <Link
-                    to={`/catalog/${selected.id}`}
-                    onClick={handleClose}
-                    className="block px-3 py-2 mb-3 rounded-xl bg-white shadow-sm font-bold text-purple-600 hover:bg-purple-100"
-                  >
-                    Barcha mahsulotlarni ko'rish
-                  </Link>
-                  {selected.children?.map((child) => (
-                    <button
-                      key={child.id}
-                      onMouseEnter={() => setHoveredChild(child)}
-                      onClick={() => setHoveredChild(child)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 rounded-xl flex justify-between items-center",
-                        hoveredChild?.id === child.id
-                          ? "bg-purple-600 text-white"
-                          : "hover:bg-purple-100 text-gray-700"
-                      )}
-                    >
-                      <span>{child.name}</span>
-                      {child.children?.length > 0 && (
-                        <ChevronRight className="w-4 h-4" />
-                      )}
-                    </button>
-                  ))}
-                </div>
+            {/* Column 2 & 3 */}
+            <div className="flex-1 flex overflow-hidden">
+              {selected ? (
+                <div className="flex w-full">
+                  <div className="w-72 border-r overflow-y-auto p-6 bg-gray-50 flex-shrink-0">
+                    <h3 className="font-bold text-lg mb-4 text-gray-900 border-b pb-2">
+                      {get(selected, "name")}
+                    </h3>
+                    {childCategories.length === 0 ? (
+                      <div className="text-center py-12 text-gray-400">
+                        <p className="text-sm">Subkategoriya yo'q</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <Link
+                          to={`/catalog/${get(selected, "id")}`}
+                          onClick={handleClose}
+                          className="block px-3 py-2 rounded-xl text-sm font-bold text-purple-600 hover:bg-purple-100 transition-colors bg-white shadow-sm mb-2"
+                        >
+                          Barcha mahsulotlarni ko'rish
+                        </Link>
 
-                <div className="flex-1 bg-white p-6 overflow-y-auto">
-                  {hoveredChild && (
-                    <>
+                        {childCategories.map((category) => {
+                          const isCurrent = isEqual(
+                            get(category, "id"),
+                            get(hoveredChild, "id")
+                          );
+
+                          return (
+                            <button
+                              key={get(category, "id")}
+                              className={cn(
+                                "w-full flex items-center justify-between text-left px-3 py-2 rounded-xl transition-colors text-sm group",
+                                isCurrent
+                                  ? "bg-purple-600 text-white shadow-md"
+                                  : "text-gray-700 hover:bg-purple-100 hover:text-purple-700"
+                              )}
+                              onMouseEnter={() => setHoveredChild(category)}
+                            >
+                              <span className="font-medium truncate">
+                                {get(category, "name")}
+                              </span>
+                              {isArray(get(category, "children")) &&
+                                get(category, "children").length > 0 && (
+                                  <ChevronRight
+                                    className={cn(
+                                      "w-4 h-4 flex-shrink-0",
+                                      isCurrent
+                                        ? "text-white"
+                                        : "text-gray-400 group-hover:text-purple-700"
+                                    )}
+                                  />
+                                )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-6 bg-white">
+                    {hoveredChild && (
                       <Link
-                        to={`/catalog/${hoveredChild.id}`}
+                        to={`/catalog/${get(hoveredChild, "id")}`}
                         onClick={handleClose}
-                        className="text-lg font-bold text-purple-600 hover:text-purple-700 flex items-center mb-4 border-b pb-2"
+                        className="flex items-center text-lg font-bold mb-4 text-purple-600 hover:text-purple-700 transition-colors border-b pb-2 group"
                       >
-                        {hoveredChild.name}{" "}
-                        <ChevronRight className="w-5 h-5 ml-1" />
+                        {get(hoveredChild, "name")}
+                        <ChevronRight className="w-5 h-5 ml-1 group-hover:translate-x-0.5 transition-transform" />
                       </Link>
-                      <div className="grid grid-cols-3 gap-4">
-                        {hoveredChild.children?.map((grand) => (
+                    )}
+
+                    {grandchildren.length === 0 ? (
+                      <div className="text-center py-12 text-gray-400">
+                        <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p className="text-sm">Tegishli mahsulotlar topilmadi</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
+                        {grandchildren.map((grandchild) => (
                           <Link
-                            key={grand.id}
-                            to={`/catalog/${grand.id}`}
+                            key={get(grandchild, "id")}
+                            to={`/catalog/${get(grandchild, "id")}`}
+                            className="block p-2 rounded-lg hover:bg-purple-50 text-sm text-gray-700 hover:text-purple-700 transition-colors group"
                             onClick={handleClose}
-                            className="p-2 rounded-lg hover:bg-purple-50 text-gray-700 flex items-center gap-3"
                           >
-                            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
-                            <span className="truncate">{grand.name}</span>
+                            <div className="flex items-center">
+                              <div className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-3 group-hover:scale-150 transition-transform flex-shrink-0" />
+                              <span className="truncate font-normal">
+                                {get(grandchild, "name")}
+                              </span>
+                            </div>
                           </Link>
                         ))}
                       </div>
-                    </>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-gray-500">
+                  <p>Kategoriya tanlang</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* MOBILE: Single Column with Views */}
+          <div className="md:hidden w-full overflow-hidden">
+            {/* Parent View */}
+            {mobileView === "parent" && (
+              <div className="h-full overflow-y-auto">
+                {/* Search */}
+                <div className="p-3 bg-gray-50 border-b sticky top-0 z-10">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
+                      placeholder="Kategoriyalarni qidirish..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Categories */}
+                <div className="p-3">
+                  {isLoading ? (
+                    <div className="space-y-3">
+                      {[...Array(10)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-12 bg-gray-200 rounded-lg animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : filteredParents.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400">
+                      <p className="text-sm">Hech qanday kategoriya topilmadi.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredParents.map((item, index) => (
+                        <button
+                          key={get(item, "id")}
+                          className="w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-left transition-all bg-white hover:bg-purple-50 border border-gray-200"
+                          onClick={() => handleParentSelect(item)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-600">
+                              {getCategoryIcon(item, index)}
+                            </div>
+                            <span className="font-semibold text-sm text-gray-800">
+                              {get(item, "name")}
+                            </span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Child View */}
+            {mobileView === "child" && selected && (
+              <div className="h-full overflow-y-auto">
+                <div className="p-3">
+                  {childCategories.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400">
+                      <p className="text-sm">Subkategoriya yo'q</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Link
+                        to={`/catalog/${get(selected, "id")}`}
+                        onClick={handleClose}
+                        className="block px-4 py-3 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-md mb-3"
+                      >
+                        Barcha mahsulotlarni ko'rish
+                      </Link>
+
+                      {childCategories.map((category) => (
+                        <button
+                          key={get(category, "id")}
+                          className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors bg-white hover:bg-purple-50 border border-gray-200"
+                          onClick={() => handleChildSelect(category)}
+                        >
+                          <span className="font-medium text-sm text-gray-800">
+                            {get(category, "name")}
+                          </span>
+                          {isArray(get(category, "children")) &&
+                            get(category, "children").length > 0 && (
+                              <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Grandchild View */}
+            {mobileView === "grandchild" && hoveredChild && (
+              <div className="h-full overflow-y-auto">
+                <div className="p-3">
+                  {grandchildren.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400">
+                      <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">Tegishli mahsulotlar topilmadi</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Link
+                        to={`/catalog/${get(hoveredChild, "id")}`}
+                        onClick={handleClose}
+                        className="block px-4 py-3 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-md mb-3"
+                      >
+                        Barcha mahsulotlarni ko'rish
+                      </Link>
+
+                      {grandchildren.map((grandchild) => (
+                        <Link
+                          key={get(grandchild, "id")}
+                          to={`/catalog/${get(grandchild, "id")}`}
+                          className="block px-4 py-3 rounded-xl hover:bg-purple-50 text-sm text-gray-700 transition-colors bg-white border border-gray-200"
+                          onClick={handleClose}
+                        >
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-purple-400 rounded-full mr-3 flex-shrink-0" />
+                            <span className="font-medium">
+                              {get(grandchild, "name")}
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -388,7 +532,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 };
 
 export default HeaderCatalog;
