@@ -43,10 +43,10 @@ const Layout = () => {
       {!hideHeader && <Header />}
 
       {/* 2. ASOSIY KONTENT */}
-      <main className="flex-grow">
+      <main className="flex-grow ">
         <Container>
           <div
-            className="min-h-[70vh] flex-grow-0"
+            className="min-h-[70vh] flex-grow-0 "
             style={{ paddingBottom: showMobileNav ? "80px" : "0" }}
           >
             <Outlet />

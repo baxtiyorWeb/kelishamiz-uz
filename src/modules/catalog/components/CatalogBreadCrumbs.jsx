@@ -7,7 +7,6 @@ const CatalogBreadCrumbs = ({ category }) => {
       <div className="container mx-auto px-4 py-2">
         <div className="flex items-center gap-2 text-sm flex-wrap">
 
-          {/* HOME BUTTON */}
           <Link
             to="/"
             className="flex items-center gap-1 text-gray-600 hover:text-purple-600 transition-colors font-medium
@@ -19,7 +18,6 @@ const CatalogBreadCrumbs = ({ category }) => {
 
           <ChevronRight className="w-4 h-4 text-gray-400" />
 
-          {/* PARENT CATEGORY */}
           {category?.parent && (
             <>
               <Link

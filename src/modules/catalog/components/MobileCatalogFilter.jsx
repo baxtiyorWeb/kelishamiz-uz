@@ -1,5 +1,12 @@
-import React, { useState } from "react";
-import { Filter, X, Search, DollarSign, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  Filter,
+  X,
+  Search,
+  DollarSign,
+  ChevronDown,
+  ArrowDownNarrowWide,
+} from "lucide-react";
 
 // Iloji boricha chiroyli va purple rang uslubida yaratildi.
 const MobileCatalogFilter = ({
@@ -9,18 +16,20 @@ const MobileCatalogFilter = ({
   setSearchQuery,
   priceRange,
   handlePriceChange,
-  properties, // Dinamik xususiyatlar (Transport kabi)
+  properties,
   selectedProperties,
   handlePropertyChange,
+  sortOption, // Yaxshilangan: Saralash opsiyasi
+  handleSortChange, // Yaxshilangan: Saralash handler
+  sortOptions, // Yaxshilangan: Saralash ro'yxati
   getActiveFilterCount,
   clearFilters,
   applyFilters,
-  items,
+  items, // Natijalar sonini ko'rsatish uchun
 }) => {
-  const PURPLE_COLOR = "#A64AC9"; // Asosiy binafsha
-  const LIGHT_PURPLE_BG = "#F7F5FA"; // Yengil binafsha fon
-  
-  // Dinamik xususiyatlar uchun state (agar sizda yo'q bo'lsa, uni yuqori komponentda e'lon qiling)
+  const PURPLE_COLOR = "#7c3aed"; // Indigo/Purple 600
+  const LIGHT_PURPLE_BG = "#f5f3ff"; // Indigo 50
+
   const [expandedFilters, setExpandedFilters] = useState({});
 
   const toggleFilterExpand = (name) => {
@@ -30,59 +39,88 @@ const MobileCatalogFilter = ({
     }));
   };
 
-  if (!mobileFiltersOpen) {
-    return null;
-  }
+  // Drawer yopilganda expanded holatini tozalash
+  useEffect(() => {
+    if (!mobileFiltersOpen) {
+      setExpandedFilters({});
+    }
+  }, [mobileFiltersOpen]);
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
+    <div
+      className={`fixed inset-0 z-50 lg:hidden transition-all duration-300 ${
+        mobileFiltersOpen ? "visible" : "invisible"
+      }`}
+    >
       {/* 1. Orqa fon (Overlay) */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
+          mobileFiltersOpen ? "opacity-100" : "opacity-0"
+        }`}
         onClick={() => setMobileFiltersOpen(false)}
       />
 
       {/* 2. Asosiy Filtr Drawer (O'ngdan chiquvchi oyna) */}
-      {/* max-w-sm endi 400px atrofida bo'lib, biroz kengroq bo'lishi mumkin */}
-      <div className="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl flex flex-col">
-        
+      <div
+        className={`absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-out 
+          ${mobileFiltersOpen ? "translate-x-0" : "translate-x-full"}
+        `}
+      >
         {/* === Header (Rangi va Yopish tugmasi) === */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Filter className="w-6 h-6" style={{ color: PURPLE_COLOR }} />
+            <Filter className="w-6 h-6 text-purple-600" />
             Filtrlar
           </h2>
           <button
             onClick={() => setMobileFiltersOpen(false)}
-            className="p-1 hover:bg-purple-50 rounded-full transition-colors"
+            className="p-1 hover:bg-purple-100 rounded-full transition-colors"
           >
-            <X className="w-6 h-6" style={{ color: PURPLE_COLOR }} />
+            <X className="w-6 h-6 text-gray-500 hover:text-purple-600" />
           </button>
         </div>
 
-        {/* === Content (Aylantiriladigan qism) - flex-1 va padding bor, footer yuqoriga chiqishi uchun === */}
+        {/* === Content (Aylantiriladigan qism) === */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          
           {/* A. Qidiruv (Search) */}
-          <div className="relative">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-            />
-            <input
-              type="text"
-              placeholder="Mahsulot nomidan qidirish..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              // CHIROYLI INPUT USLUBI: To'liq dumaloq, border-2 va purple focus
-              className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 text-base rounded-2xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all outline-none shadow-sm"
-            />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h3 className="font-bold text-base text-gray-800 mb-3 flex items-center gap-2">
+              <Search className="w-4 h-4 text-purple-600" /> Qidiruv
+            </h3>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Mahsulot nomidan qidirish..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-base rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all outline-none"
+              />
+            </div>
           </div>
 
-          {/* B. Narx Oralig'i */}
-          <div className="rounded-2xl p-4" style={{ backgroundColor: LIGHT_PURPLE_BG }}> 
-            <h3 className="font-bold text-lg text-gray-800 mb-3 flex items-center gap-2">
-              <DollarSign className="w-5 h-5" style={{ color: PURPLE_COLOR }} />
-              Narx oralig'i
+          {/* B. Saralash (Sort) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h3 className="font-bold text-base text-gray-800 mb-3 flex items-center gap-2">
+              <ArrowDownNarrowWide className="w-4 h-4 text-purple-600" />{" "}
+              Saralash
+            </h3>
+            <select
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-base rounded-xl outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all appearance-none cursor-pointer"
+              value={sortOption.field + "_" + sortOption.order}
+              onChange={(e) => handleSortChange(e.target.value)}
+            >
+              {sortOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* C. Narx Oralig'i */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h3 className="font-bold text-base text-gray-800 mb-3 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-purple-600" /> Narx oralig'i
             </h3>
             <div className="flex items-center gap-3">
               <input
@@ -90,8 +128,7 @@ const MobileCatalogFilter = ({
                 placeholder="Min"
                 value={priceRange.min}
                 onChange={(e) => handlePriceChange("min", e.target.value)}
-                // CHIROYLI INPUT USLUBI
-                className="w-full px-4 py-3 bg-white border-2 border-gray-200 text-base rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all outline-none"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-base rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all outline-none"
               />
               <span className="text-gray-400 font-medium text-lg">—</span>
               <input
@@ -99,92 +136,90 @@ const MobileCatalogFilter = ({
                 placeholder="Max"
                 value={priceRange.max}
                 onChange={(e) => handlePriceChange("max", e.target.value)}
-                // CHIROYLI INPUT USLUBI
-                className="w-full px-4 py-3 bg-white border-2 border-gray-200 text-base rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all outline-none"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-base rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all outline-none"
               />
             </div>
           </div>
 
-          {/* C. Dinamik Xususiyatlar (Transport kabi) */}
-          {properties.map((property) => (
-            <div key={property.id} className="rounded-2xl overflow-hidden" style={{ backgroundColor: LIGHT_PURPLE_BG }}>
-              
-              {/* Accordeon Sarlavhasi (Always visible) */}
-              <button
-                onClick={() => toggleFilterExpand(property.name)}
-                className="w-full p-4 flex items-center justify-between text-left"
+          {/* D. Xususiyatlar (Properties) */}
+          <div className="space-y-3">
+            {properties.map((property) => (
+              <div
+                key={property.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-100"
               >
-                <h3 className="font-bold text-lg text-gray-800">
-                  {property.name}
-                </h3>
-                <ChevronDown
+                <button
+                  onClick={() => toggleFilterExpand(property.name)}
+                  className="w-full p-4 flex items-center justify-between text-left"
+                >
+                  <h3 className="font-bold text-base text-gray-800">
+                    {property.name}
+                  </h3>
+                  <ChevronDown
                     className={`w-5 h-5 text-purple-600 transition-transform ${
                       expandedFilters[property.name] ? "rotate-180" : ""
                     }`}
-                />
-              </button>
-
-              {/* Accordeon Kontenti (Collapsible) */}
-              <div
-                className={`px-4 pb-4 transition-all duration-300 ${
-                    expandedFilters[property.name]
-                        ? "max-h-96 opacity-100 pt-2"
-                        : "max-h-0 opacity-0"
-                }`}
-              >
-                {/* SELECT / BOOLEAN */}
-                {(property.type === "SELECT" || property.type === "BOOLEAN") && (
-                  <select
-                    // CHIROYLI INPUT USLUBI
-                    className="w-full px-4 py-3 bg-white border-2 border-gray-200 text-base rounded-xl outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all appearance-none cursor-pointer"
-                    onChange={(e) =>
-                      handlePropertyChange(property.name, e.target.value)
-                    }
-                    value={selectedProperties[property.name] || ""}
-                  >
-                    <option value="">Tanlang</option>
-                    {property.type === "BOOLEAN" ? (
-                      <>
-                        <option value="true">Ha</option>
-                        <option value="false">Yo'q</option>
-                      </>
-                    ) : (
-                      property.options &&
-                      property.options.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                )}
-
-                {/* STRING / INTEGER / DOUBLE */}
-                {(property.type === "STRING" ||
-                  property.type === "INTEGER" ||
-                  property.type === "DOUBLE") && (
-                  <input
-                    type={property.type === "STRING" ? "text" : "number"}
-                    placeholder={`${property.name} kiriting`}
-                    value={selectedProperties[property.name] || ""}
-                    onChange={(e) =>
-                      handlePropertyChange(property.name, e.target.value)
-                    }
-                    // CHIROYLI INPUT USLUBI
-                    className="w-full px-4 py-3 bg-white border-2 border-gray-200 text-base rounded-xl outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
                   />
-                )}
+                </button>
+
+                <div
+                  className={`px-4 pb-4 transition-all duration-300 overflow-hidden ${
+                    expandedFilters[property.name]
+                      ? "max-h-96 opacity-100 pt-2"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
+                  {(property.type === "SELECT" ||
+                    property.type === "BOOLEAN") && (
+                    <select
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-base rounded-xl outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all appearance-none cursor-pointer"
+                      onChange={(e) =>
+                        handlePropertyChange(property.name, e.target.value)
+                      }
+                      value={selectedProperties[property.name] || ""}
+                    >
+                      <option value="">Tanlang</option>
+                      {property.type === "BOOLEAN" ? (
+                        <>
+                          <option value="true">Ha</option>
+                          <option value="false">Yo'q</option>
+                        </>
+                      ) : (
+                        property.options &&
+                        property.options.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  )}
+
+                  {(property.type === "STRING" ||
+                    property.type === "INTEGER" ||
+                    property.type === "DOUBLE") && (
+                    <input
+                      type={property.type === "STRING" ? "text" : "number"}
+                      placeholder={`${property.name} kiriting`}
+                      value={selectedProperties[property.name] || ""}
+                      onChange={(e) =>
+                        handlePropertyChange(property.name, e.target.value)
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 text-base rounded-xl outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        <div className="sticky bottom-20 bg-white p-4 border-t border-gray-100 space-y-3 shadow-[0_-5px_15px_-3px_rgba(0,0,0,0.05)]">
-          
+        {/* === Footer (Amalga oshirish tugmalari) === */}
+        <div className="sticky bottom-0 bg-white p-4 border-t border-gray-100 space-y-3 shadow-[0_-5px_15px_-3px_rgba(0,0,0,0.05)]">
           {getActiveFilterCount() > 0 && (
             <button
               onClick={clearFilters}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-base font-semibold py-3 rounded-2xl transition-all duration-300"
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-base font-semibold py-3 rounded-xl transition-all duration-300"
             >
               Filtrlarni tozalash ({getActiveFilterCount()})
             </button>
@@ -193,12 +228,11 @@ const MobileCatalogFilter = ({
           <button
             onClick={() => {
               applyFilters();
-              setMobileFiltersOpen(false);
+              // setMobileFiltersOpen(false); // applyFilters ichida yopiladi
             }}
-            // Asosiy tugma uslubi: Gradient Purple, katta va jozibali
-            className="w-full text-white text-base font-semibold py-3.5 rounded-2xl transition-all duration-300 shadow-xl shadow-purple-300/50"
+            className="w-full text-white text-base font-semibold py-3.5 rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/50 hover:shadow-purple-700/50"
             style={{
-              background: `linear-gradient(to right, ${PURPLE_COLOR}, #9333ea)`, // Katta, jozibali purple
+              background: `linear-gradient(to right, ${PURPLE_COLOR}, #9333ea)`,
             }}
           >
             Natijalarni ko'rish ({items?.length || 0})

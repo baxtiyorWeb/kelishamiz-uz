@@ -1,285 +1,284 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { get, isArray } from "lodash";
-import {
-  Search,
-  X,
-  DollarSign,
-  Clock,
-  Eye,
-  Grid3X3,
-  List,
-  Filter,
-  SlidersHorizontal,
-} from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useParams, Link } from "react-router-dom";
+import { get, isArray, debounce } from "lodash";
+import { Clock, DollarSign, Eye } from "lucide-react";
 
 import KEYS from "../../../export/keys";
 import URLS from "../../../export/urls";
 import useGetAllQuery from "../../../hooks/api/useGetAllQuery";
 import useInfiniteScrollQuery from "../../../hooks/api/useInfiniteScrollQuery";
-import ItemCard from "../../../common/components/ItemCard";
-import { Link } from "react-router-dom";
-import InfiniteScroll from "react-infinite-scroll-component";
-
 import CatalogBreadCrumbs from "../components/CatalogBreadCrumbs";
 import CatalogFilter from "../components/CatalogFilter";
 import MobileCatalogFilter from "../components/MobileCatalogFilter";
 
 const CatalogPage = () => {
   const { id } = useParams();
+  const categoryId = id ? Number(id) : null;
 
-  // ========== FILTER STATE ==========
-  const [filters, setFilters] = useState({
-    categoryId: id ? parseInt(id) : null,
-    minPrice: null,
-    maxPrice: null,
-    title: "",
-    ownProduct: false,
-    properties: null,
-    sortBy: null,
-    sortOrder: null,
-    paymentType: null,
-    currencyType: null,
-    negotiable: true,
-    regionId: null,
-    districtId: null,
+  // --- STATE: UI uchun (Inputlarda ko'rinib turadigan qiymatlar) ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [selectedProperties, setSelectedProperties] = useState({});
+  const [sortOption, setSortOption] = useState({
+    field: "createdAt",
+    order: "DESC",
   });
 
+  // Mobile filter ochilganmi?
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [selectedProperties, setSelectedProperties] = useState({});
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOption, setSortOption] = useState({ field: null, order: null });
   const [expandedFilters, setExpandedFilters] = useState({});
+  const [viewMode, setViewMode] = useState("grid");
 
-  // ========== API ==========
+  // --- STATE: API uchun (Debounce qilingan va formatlangan) ---
+  const [apiFilters, setApiFilters] = useState({
+    categoryId,
+    title: "",
+    minPrice: null,
+    maxPrice: null,
+    properties: [],
+    sortBy: "createdAt",
+    sortOrder: "DESC",
+    page: 1, // useInfiniteScrollQuery uchun 1 deb qoldiramiz
+    pageSize: 10,
+  });
+
+  // 1. Kategoriyani va Xususiyatlarni (Properties) yuklash
   const { data: categoryData } = useGetAllQuery({
-    key: `category_${id}`,
-    url: `/category/${id}`,
-    enabled: !!id,
+    key: `category_${categoryId}`,
+    url: `/category/${categoryId}`,
+    enabled: !!categoryId,
   });
   const category = get(categoryData, "data.content", {});
 
   const { data: propertiesData } = useGetAllQuery({
-    key: `/category/${id}/properties`,
-    url: `/category/${id}/properties`,
-    enabled: !!id,
-  });
-  const properties = isArray(get(propertiesData, "data.content", []))
-    ? get(propertiesData, "data.content", [])
-    : [];
-
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isLoading,
-    isFetchingNextPage,
-    refetch,
-  } = useInfiniteScrollQuery({
-    key: `${KEYS.product_filter}_${id}_${JSON.stringify(filters)}`,
-    url: URLS.product_filter,
-    elements: filters,
-    initialPageParam: 1,
+    key: `/category/${categoryId}/properties`,
+    url: `/category/${categoryId}/properties`,
+    enabled: !!categoryId,
   });
 
-  const items = data?.pages?.flatMap((page) => page?.content?.data || []) || [];
+  const properties = useMemo(() => {
+    return isArray(get(propertiesData, "data.content", []))
+      ? get(propertiesData, "data.content", [])
+      : [];
+  }, [propertiesData]);
 
-  useEffect(() => {
-    if (id) {
-      setFilters((prev) => ({ ...prev, categoryId: parseInt(id) }));
-      setSelectedProperties({});
-      setPriceRange({ min: "", max: "" });
-      setSearchQuery("");
-      setSortOption({ field: null, order: null });
-    }
-  }, [id]);
+  // 2. Filterlarni API formatiga o'tkazish funksiyasi
+  const generateApiPayload = useCallback(() => {
+    const formattedProperties = Object.entries(selectedProperties)
+      .filter(([_, value]) => value !== "" && value !== null)
+      .map(([key, value]) => ({ key, value }));
 
-  // ========== HANDLERS ==========
-  const applyFilters = () => {
-    const propertyFilters = Object.fromEntries(
-      Object.entries(selectedProperties).filter(
-        ([_, v]) => v !== "" && v !== null
-      )
-    );
-
-    setFilters({
-      ...filters,
+    return {
+      categoryId,
       title: searchQuery.trim(),
       minPrice: priceRange.min ? Number(priceRange.min) : null,
       maxPrice: priceRange.max ? Number(priceRange.max) : null,
-      properties:
-        Object.keys(propertyFilters).length > 0 ? propertyFilters : null,
+      properties: formattedProperties,
       sortBy: sortOption.field,
       sortOrder: sortOption.order,
+    };
+  }, [categoryId, searchQuery, priceRange, selectedProperties, sortOption]);
+
+  // --- ASOSIY TUZATISH: DEBOUNCED FILTR UCHUN useEffect ---
+  // Barcha UI filtr holatlari o'zgarganda 500ms kutib, keyin API so'rovini yangilaydi
+  useEffect(() => {
+    if (mobileFiltersOpen) return;
+
+    // Debounce funksiyasini bir marta yaratish
+    const debouncedUpdate = debounce((payload) => {
+      setApiFilters((prev) => ({
+        ...prev,
+        ...payload,
+        // Filtrlar o'zgarganda sahifani 1 ga qaytarish muhim!
+        page: 1,
+      }));
+    }, 500);
+
+    // Har bir filtr o'zgarishida yangi payloadni yuboramiz
+    const payload = generateApiPayload();
+    debouncedUpdate(payload);
+
+    // Cleanup funksiyasi: oldingi debounce ni bekor qilish
+    return () => debouncedUpdate.cancel();
+  }, [
+    searchQuery,
+    priceRange,
+    selectedProperties,
+    sortOption,
+    mobileFiltersOpen,
+    generateApiPayload,
+  ]);
+  // --- ASOSIY TUZATISH TUGADI ---
+
+  // 3. Mahsulotlarni yuklash (apiFilters o'zgarganda avtomatik ravishda qayta ishga tushadi)
+  const { data, fetchNextPage, hasNextPage, isLoading, refetch } =
+    useInfiniteScrollQuery({
+      // API filtrlariga bog'langan KESH KEY yaratish:
+      key: `${KEYS.product_filter}_${categoryId}_${JSON.stringify(apiFilters)}`,
+      url: URLS.product_filter,
+      method: "POST",
+      elements: apiFilters,
+      initialPageParam: 1,
     });
 
-    setMobileFiltersOpen(false);
+  const items = useMemo(
+    () => data?.pages?.flatMap((page) => page?.content?.data || []) || [],
+    [data]
+  );
+
+  console.log(items);
+
+  // Category o'zgarganda barcha filtrlarni tozalash
+  useEffect(() => {
+    if (categoryId) {
+      setSearchQuery("");
+      setPriceRange({ min: "", max: "" });
+      setSelectedProperties({});
+      setSortOption({ field: "createdAt", order: "DESC" });
+    }
+  }, [categoryId]);
+
+  // Handlers
+  const handlePriceChange = (type, value) =>
+    setPriceRange((prev) => ({ ...prev, [type]: value }));
+
+  const handlePropertyChange = (name, value) =>
+    setSelectedProperties((prev) => ({ ...prev, [name]: value }));
+
+  const toggleFilterExpand = (name) =>
+    setExpandedFilters((prev) => ({ ...prev, [name]: !prev[name] }));
+
+  const handleSortChange = (value) => {
+    if (!value) return;
+    const [field, order] = value.split("_");
+    setSortOption({ field, order });
   };
 
   const clearFilters = () => {
-    setSelectedProperties({});
-    setPriceRange({ min: "", max: "" });
     setSearchQuery("");
-    setSortOption({ field: null, order: null });
-    setFilters({
-      ...filters,
-      title: "",
-      minPrice: null,
-      maxPrice: null,
-      properties: null,
-      sortBy: null,
-      sortOrder: null,
-    });
+    setPriceRange({ min: "", max: "" });
+    setSelectedProperties({});
+    setSortOption({ field: "createdAt", order: "DESC" });
   };
 
-  const handlePropertyChange = (name, value) => {
-    setSelectedProperties((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handlePriceChange = (type, value) => {
-    setPriceRange((prev) => ({ ...prev, [type]: value }));
-  };
-
-  const handleSortChange = (field) => {
-    setSortOption((prev) => ({
-      field,
-      order: prev.field === field && prev.order === "DESC" ? "ASC" : "DESC",
+  // Mobil filtrlarni qo'llash faqat knopka bosilganda ishlaydi
+  const applyMobileFilters = () => {
+    setApiFilters((prev) => ({
+      ...prev,
+      ...generateApiPayload(),
+      // Mobil filtrlar qo'llanilganda ham sahifani 1 ga qaytarish muhim
+      page: 1,
     }));
-  };
-
-  const toggleFilterExpand = (name) => {
-    setExpandedFilters((prev) => ({ ...prev, [name]: !prev[name] }));
+    setMobileFiltersOpen(false);
   };
 
   const getActiveFilterCount = () => {
     let count = 0;
     if (searchQuery) count++;
     if (priceRange.min || priceRange.max) count++;
-    if (sortOption.field) count++;
-    count += Object.values(selectedProperties).filter((v) => v).length;
+    if (sortOption.field !== "createdAt" || sortOption.order !== "DESC")
+      count++;
+    count += Object.keys(selectedProperties).length;
     return count;
   };
-
-  const sortOptions = [
-    { field: "createdAt", label: "Yangi e'lonlar", icon: Clock },
-    { field: "price", label: "Narx bo'yicha", icon: DollarSign },
-    { field: "viewCount", label: "Mashhur e'lonlar", icon: Eye },
-  ];
 
   const renderSkeletons = () => (
     <div
       className={`grid ${
         viewMode === "grid"
-          ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
           : "grid-cols-1"
       } gap-4`}
     >
-      {[...Array(12)].map((_, i) => (
+      {[...Array(8)].map((_, i) => (
         <div
           key={i}
-          className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse"
-        >
-          <div className="aspect-square bg-gray-200" />
-          <div className="p-3 space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-3/4" />
-            <div className="h-3 bg-gray-200 rounded w-1/2" />
-            <div className="h-5 bg-gray-300 rounded w-1/3" />
-          </div>
-        </div>
+          className="bg-white rounded-xl h-64 animate-pulse bg-gray-200"
+        ></div>
       ))}
     </div>
   );
 
+  const sortOptions = [
+    { value: "createdAt_DESC", label: "Yangi e'lonlar" },
+    { value: "price_ASC", label: "Narx: Arzonrog'i" },
+    { value: "price_DESC", label: "Narx: Qimmatrog'i" },
+    { value: "title_ASC", label: "Nom bo'yicha (A-Z)" },
+  ];
+
+  const commonProps = {
+    searchQuery,
+    setSearchQuery,
+    priceRange,
+    handlePriceChange,
+    selectedProperties,
+    handlePropertyChange,
+    sortOption,
+    handleSortChange,
+    expandedFilters,
+    toggleFilterExpand,
+    properties,
+    clearFilters,
+    getActiveFilterCount,
+    sortOptions,
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <CatalogBreadCrumbs id={id} category={category} />
 
-      {/* Compact Header */}
-      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100">
-        <div className="container mx-auto px-4 py-3">
-          <h1 className="text-lg md:text-2xl font-bold text-purple-800 mb-2">
+      {/* Kategoriya Header */}
+      <div className="bg-white border-b border-gray-200 py-4 mb-4">
+        <div className="container mx-auto px-4">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
             {category?.name || "Katalog"}
           </h1>
-
-          {category?.children && category.children.length > 0 && (
-            <div className="relative">
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                {category.children.map((sub) => (
-                  <Link
-                    key={sub.id}
-                    to={`/catalog/${sub.id}`}
-                    className="flex-shrink-0 px-3 py-1 text-xs md:text-sm
-                      text-purple-700 bg-white/80 backdrop-blur
-                      border border-purple-200 rounded-full
-                      hover:bg-purple-100 hover:border-purple-300
-                      transition-all duration-200 whitespace-nowrap
-                      shadow-sm hover:shadow"
-                  >
-                    {sub.name}
-                  </Link>
-                ))}
-              </div>
+          {category?.children?.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {category.children.map((sub) => (
+                <Link
+                  key={sub.id}
+                  to={`/catalog/${sub.id}`}
+                  className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full whitespace-nowrap transition"
+                >
+                  {sub.name}
+                </Link>
+              ))}
             </div>
           )}
         </div>
       </div>
 
       <CatalogFilter
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        priceRange={priceRange}
-        selectedProperties={selectedProperties}
-        sortOption={sortOption}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        expandedFilters={expandedFilters}
-        properties={properties}
+        {...commonProps}
         items={items}
         isLoading={isLoading}
         fetchNextPage={fetchNextPage}
         hasNextPage={hasNextPage}
-        handlePriceChange={handlePriceChange}
-        handlePropertyChange={handlePropertyChange}
-        handleSortChange={handleSortChange}
-        toggleFilterExpand={toggleFilterExpand}
-        applyFilters={applyFilters}
-        clearFilters={clearFilters}
-        getActiveFilterCount={getActiveFilterCount}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
         setMobileFiltersOpen={setMobileFiltersOpen}
         renderSkeletons={renderSkeletons}
-        sortOptions={sortOptions}
-        refetch={refetch}
-        isProductLiked={(productId) => false}
+        // refetch propini olib tashladik, chunki u endi ota komponentda boshqariladi
       />
 
       <MobileCatalogFilter
+        {...commonProps}
         mobileFiltersOpen={mobileFiltersOpen}
         setMobileFiltersOpen={setMobileFiltersOpen}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        priceRange={priceRange}
-        handlePriceChange={handlePriceChange}
-        properties={properties}
-        selectedProperties={selectedProperties}
-        handlePropertyChange={handlePropertyChange}
-        getActiveFilterCount={getActiveFilterCount}
-        clearFilters={clearFilters}
-        applyFilters={applyFilters}
-        items={items}
-        refetch={refetch}
+        applyFilters={applyMobileFilters}
+        totalItems={items.length}
       />
 
       <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
         }
       `}</style>
     </div>
