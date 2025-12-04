@@ -18,6 +18,7 @@
     "axios": "^1.7.9",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.24",
+    "git-filter-repo": "^0.0.30",
     "i": "^0.3.7",
     "imask": "^7.6.1",
     "jsonwebtoken": "^9.0.2",
