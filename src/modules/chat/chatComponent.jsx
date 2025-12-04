@@ -475,243 +475,277 @@ export default function ChatPage() {
   const connectionDisplay = getConnectionStatus();
 
   return (
-    <div className="flex fixed w-[80dvw]  flex-col h-[80vh] bg-gray-100 font-sans md:flex-row">
-      <button
-        className="md:hidden p-4 bg-teal-500 text-white fixed top-0 left-0 z-50"
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+    <div className="min-h-screen bg-gray-100 p-0 md:p-6 font-sans">
+      <style jsx global>{`
+        .bg-primary-400 {
+          background-color: #c060f5;
+        }
+        .text-primary-400 {
+          color: #c060f5;
+        }
+        .focus:ring-primary-400:focus {
+          --tw-ring-color: #c060f5;
+        }
+        .border-primary-400 {
+          border-color: #c060f5;
+        }
+        .bg-primary-300 {
+          background-color: #d080ff;
+        }
+        .text-primary-300 {
+          color: #d080ff;
+        }
+        .hover\\:bg-primary-500:hover {
+          background-color: #a040e0;
+        } /* Bir oz to'qroq rang */
+        .bg-primary-50 {
+          background-color: #f8f0ff;
+        } /* Ochildiroq fon rang */
+        .text-primary-100 {
+          color: #e8cfff;
+        } /* Xabardagi kichik yozuvlar uchun */
+      `}</style>
+
+      <div className="flex fixed w-full h-full md:w-[80dvw] md:h-[90vh] md:max-h-[800px] md:relative md:mx-auto flex-col md:flex-row shadow-2xl rounded-xl overflow-hidden">
+        {/* Mobile Sidebar Toggle Button (Only visible on mobile) */}
+        <button
+          className="md:hidden p-4 bg-primary-400 text-white fixed top-0 left-0 z-50 w-full flex items-center shadow-lg"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
-
-      <div
-        className={`fixed inset-y-0 left-0 w-80 bg-white shadow-lg transform md:transform-none md:static md:flex md:flex-col z-40 transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:w-80 md:h-full`}
-      >
-        <div className="p-4 border-b border-gray-200">
-          <input
-            type="text"
-            placeholder="Qidiruv..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-          />
-        </div>
-        <div className="px-4 py-2">
-          <span
-            className={`inline-block w-3 h-3 rounded-full ${connectionDisplay.color} ${connectionDisplay.animate} mr-2`}
-          ></span>
-          <span className="text-sm text-gray-600">
-            {connectionDisplay.text}
+          <svg
+            className="w-6 h-6 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+          <span className="font-semibold">
+            {selectedChatRoom?.otherParticipant?.username || "Suhbatlar"}
           </span>
-        </div>
-        <div className="flex border-b border-gray-200">
-          <button className="flex-1 py-3 text-sm font-medium text-center text-teal-600 border-b-2 border-teal-500">
-            All
-          </button>
-          <button className="flex-1 py-3 text-sm font-medium text-center text-gray-500 hover:text-gray-800">
-            Incoming
-          </button>
-          <button className="flex-1 py-3 text-sm font-medium text-center text-gray-500 hover:text-gray-800">
-            Upcoming
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="p-4 space-y-4">
-              {messages.content?.map((_, i) => (
-                <div 
-                  key={i}
-                  className="flex items-center space-x-4 p-3 animate-pulse"
-                >
-                  <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredChatRooms.length === 0 ? (
-            <div className="p-6 text-center text-gray-500 text-sm">
-              {searchQuery ? "Hech narsa topilmadi" : "Hali suhbat yo'q"}
-            </div>
-          ) : (
-            filteredChatRooms.map((room) => {
-              const isSelected = selectedChatRoom?.id === room.id;
-              const lastMessageTime =
-                room.lastMessage?.createdAt || room.updatedAt;
-              const isUserOnlineStatus = isUserOnline(
-                room.otherParticipant?.id
-              );
+        </button>
 
-              return (
-                <div
-                  key={room.id}
-                  onClick={() => selectChatRoom(room)}
-                  className={`p-4 border-b border-gray-200 cursor-pointer transition-colors duration-200 ${
-                    isSelected ? "bg-teal-50" : "hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-full overflow-hidden">
-                        <img
-                          src={
-                            room.imageUrl ||
-                            `https://ui-avatars.com/api/?name=${
-                              room.otherParticipant?.username || "U"
-                            }&background=random&color=fff&size=256`
-                          }
-                          alt={room.otherParticipant?.username || "User"}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      {isUserOnlineStatus && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-gray-900 truncate">
-                          {room.otherParticipant?.username || "Noma'lum"}
-                        </h3>
-                        <span className="text-xs text-gray-400">
-                          {formatChatTime(lastMessageTime)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-xs text-gray-500 truncate">
-                          {room.lastMessage?.content || "Xabar yo'q"}
-                        </p>
-                        {room.unreadCount > 0 && (
-                          <span className="bg-teal-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                            {room.unreadCount}
-                          </span>
-                        )}
-                      </div>
+        {/* Sidebar (Chat List) */}
+        <div
+          className={`fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-lg transform md:transform-none md:static md:flex md:flex-col z-40 transition-transform duration-300 ease-in-out ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:w-80 md:h-full`}
+        >
+          <div className="p-4 border-b border-gray-200">
+            <input
+              type="text"
+              placeholder="Qidiruv..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400 bg-gray-50"
+            />
+          </div>
+          <div className="px-4 py-2">
+           
+          </div>
+          <div className="flex border-b border-gray-200">
+            <button className="flex-1 py-3 text-sm font-medium text-center text-primary-400 border-b-2 border-primary-400">
+              All
+            </button>
+            <button className="flex-1 py-3 text-sm font-medium text-center text-gray-500 hover:text-gray-800">
+              Incoming
+            </button>
+            <button className="flex-1 py-3 text-sm font-medium text-center text-gray-500 hover:text-gray-800">
+              Upcoming
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="p-4 space-y-4">
+                {/* Simplified Loading Skeleton */}
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center space-x-4 p-3 animate-pulse"
+                  >
+                    <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
+                ))}
+              </div>
+            ) : filteredChatRooms.length === 0 ? (
+              <div className="p-6 text-center text-gray-500 text-sm">
+                {searchQuery ? "Hech narsa topilmadi" : "Hali suhbat yo'q"}
+              </div>
+            ) : (
+              filteredChatRooms.map((room) => {
+                const isSelected = selectedChatRoom?.id === room.id;
+                const lastMessageTime =
+                  room.lastMessage?.createdAt || room.updatedAt;
+                const isUserOnlineStatus = isUserOnline(
+                  room.otherParticipant?.id
+                );
 
-      {/* Main Chat */}
-      <div className="flex-1 flex flex-col bg-white md:rounded-lg shadow-md overflow-hidden mt-16 md:mt-0">
-        {selectedChatRoom ? (
-          <>
-            <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center space-x-4">
-              <button
-                className="md:hidden text-gray-600"
-                onClick={() => setIsSidebarOpen(true)}
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <div className="relative">
-                <div className="w-10 h-10 rounded-full overflow-hidden">
-                  <img
-                    src={
-                      selectedChatRoom.imageUrl ||
-                      `https://ui-avatars.com/api/?name=${
-                        selectedChatRoom.otherParticipant?.username || "U"
-                      }&background=random&color=fff&size=256`
-                    }
-                    alt={selectedChatRoom.otherParticipant?.username || "User"}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {isUserOnline(selectedChatRoom.otherParticipant?.id) && (
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                )}
-              </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {selectedChatRoom.otherParticipant?.username || "Noma'lum"}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  {isUserOnline(selectedChatRoom.otherParticipant?.id)
-                    ? "Onlayn"
-                    : "Offlayn"}
-                </p>
-              </div>
-              <button
-                onClick={() => deleteChatRoom(selectedChatRoom.id)}
-                className="text-red-500"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-              {messages?.content?.map((message) => {
-                const isOwn = message.senderId === currentUserIdRef.current;
                 return (
                   <div
-                    key={message.id}
-                    className={`flex ${
-                      isOwn ? "justify-end" : "justify-start"
+                    key={room.id}
+                    onClick={() => selectChatRoom(room)}
+                    className={`p-4 border-b border-gray-200 cursor-pointer transition-colors duration-200 ${
+                      isSelected
+                        ? "bg-primary-50 border-r-4 border-primary-400"
+                        : "hover:bg-gray-50"
                     }`}
                   >
+                    <div className="flex items-center space-x-4">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-12 h-12 rounded-full overflow-hidden">
+                          <img
+                            src={`https://ui-avatars.com/api/?name=${
+                              room.otherParticipant?.username || "U"
+                            }&background=C060F5&color=fff&size=256`}
+                            alt={room.otherParticipant?.username || "User"}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        {isUserOnlineStatus && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-gray-900 truncate">
+                            {room.otherParticipant?.username || "Noma'lum"}
+                          </h3>
+                          <span className="text-xs text-gray-400 flex-shrink-0">
+                            {formatChatTime(lastMessageTime)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-gray-500 truncate">
+                            {room.lastMessage?.content || "Xabar yo'q"}
+                          </p>
+                          {room.unreadCount > 0 && (
+                            <span className="bg-primary-400 text-white text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ml-2">
+                              {room.unreadCount}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col bg-white overflow-hidden mt-14 md:mt-0">
+          {selectedChatRoom ? (
+            <>
+              {/* Chat Header */}
+              <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center space-x-4 shadow-sm flex-shrink-0">
+                <button
+                  className="md:hidden text-gray-600"
+                  onClick={() => setIsSidebarOpen(true)}
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full overflow-hidden">
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${
+                        selectedChatRoom.otherParticipant?.username || "U"
+                      }&background=C060F5&color=fff&size=256`}
+                      alt={
+                        selectedChatRoom.otherParticipant?.username || "User"
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {isUserOnline(selectedChatRoom.otherParticipant?.id) && (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-semibold text-gray-900 truncate">
+                    {selectedChatRoom.otherParticipant?.username || "Noma'lum"}
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {isUserOnline(selectedChatRoom.otherParticipant?.id)
+                      ? "Onlayn"
+                      : "Offlayn"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => deleteChatRoom(selectedChatRoom.id)}
+                  className="text-red-500 hover:text-red-700 p-1 rounded-full"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Chat Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 custom-scrollbar">
+                {messages?.content?.map((message) => {
+                  const isOwn = message.senderId === currentUserIdRef.current;
+                  return (
                     <div
-                      className={`rounded-lg p-3 max-w-[70%] shadow-sm transition-all duration-200 ${
-                        isOwn
-                          ? "bg-teal-500 text-white rounded-br-none"
-                          : "bg-white text-gray-900 rounded-bl-none border border-gray-200"
+                      key={message.id}
+                      className={`flex ${
+                        isOwn ? "justify-end" : "justify-start"
                       }`}
                     >
-                      <p className="text-sm break-words">{message.content}</p>
                       <div
-                        className={`mt-1 text-xs ${
+                        className={`rounded-xl p-3 max-w-[85%] sm:max-w-[70%] shadow-md transition-all duration-200 ${
                           isOwn
-                            ? "text-teal-100 text-right"
-                            : "text-gray-500 text-left"
+                            ? "bg-primary-400 text-white rounded-br-none"
+                            : "bg-white text-gray-900 rounded-bl-none border border-gray-200"
                         }`}
                       >
-                        <span>{formatTime(message.createdAt)}</span>
-                        {isOwn && (
-                          <>
-                            <span className="ml-2">
+                        <p className="text-sm break-words whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        <div
+                          className={`mt-1 flex items-center justify-end text-xs ${
+                            isOwn
+                              ? "text-primary-100" // O'zingizning xabaringiz vaqti
+                              : "text-gray-500"
+                          }`}
+                        >
+                          <span>{formatTime(message.createdAt)}</span>
+                          {isOwn && (
+                            <div className="ml-2 flex items-center space-x-1">
                               {message.status === "sending" ? (
                                 <svg
-                                  className="w-4 h-4 inline-block"
+                                  className="w-4 h-4 inline-block animate-spin"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -720,12 +754,12 @@ export default function ChatPage() {
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d="M12 8v4l4 4"
+                                    d="M12 8v4l4 4" // Kutilmoqda (soat)
                                   />
                                 </svg>
                               ) : message.read ? (
                                 <svg
-                                  className="w-4 h-4 inline-block text-teal-200"
+                                  className="w-4 h-4 inline-block text-primary-300" // O'qilgan (ikki belgi - ochroq binafsha)
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -736,10 +770,16 @@ export default function ChatPage() {
                                     strokeWidth={2}
                                     d="M5 13l4 4L19 7"
                                   />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-4 4"
+                                  />
                                 </svg>
                               ) : (
                                 <svg
-                                  className="w-4 h-4 inline-block"
+                                  className="w-4 h-4 inline-block" // Yetkazilgan (bitta belgi)
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -752,107 +792,115 @@ export default function ChatPage() {
                                   />
                                 </svg>
                               )}
-                            </span>
-                            <button
-                              onClick={() => deleteMessage(message.id)}
-                              className="ml-2 text-teal-200 hover:text-white"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                              <button
+                                onClick={() => deleteMessage(message.id)}
+                                className="text-primary-100 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                                title="Xabarni o'chirish"
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                            </button>
-                          </>
-                        )}
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Typing Indicator */}
+                {typingUsers.length > 0 && (
+                  <div className="flex justify-start">
+                    <div className="max-w-xs p-3 rounded-xl bg-white shadow-sm border border-gray-200 rounded-bl-none">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">
+                          {typingUsers.map((user) => user.username).join(", ")}{" "}
+                          yozmoqda
+                        </span>
+                        <div className="flex space-x-1">
+                          <div
+                            className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.1s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-              {typingUsers.length > 0 && (
-                <div className="flex justify-start">
-                  <div className="max-w-xs p-3 rounded-lg bg-white shadow-sm border border-gray-200 rounded-bl-none">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">
-                        {typingUsers.map((user) => user.username).join(", ")}{" "}
-                        yozmoqda
-                      </span>
-                      <div className="flex space-x-1">
-                        <div
-                          className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"
-                          style={{ animationDelay: "0s" }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.1s" }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.2s" }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-            <div className="p-4 border-t border-gray-200 bg-white">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="text"
-                  placeholder="Xabar yozing..."
-                  value={messageInput}
-                  onChange={handleMessageInputChange}
-                  onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500 bg-gray-50"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!messageInput.trim()}
-                  className="p-2 bg-teal-500 text-white rounded-full hover:bg-teal-600 disabled:opacity-50"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Message Input */}
+              <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="text"
+                    placeholder="Xabar yozing..."
+                    value={messageInput}
+                    onChange={handleMessageInputChange}
+                    onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-400 bg-gray-50"
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={!messageInput.trim()}
+                    className="p-3 bg-primary-400 text-white rounded-full hover:bg-primary-500 disabled:opacity-50 transition-colors"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            // Empty Chat State
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+              <div className="text-center p-4">
+                <div className="w-16 h-16 bg-primary-300 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                  <ChatIcon />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Suhbatni tanlang 💬
+                </h3>
+                <p className="text-gray-600 max-w-sm">
+                  Xabar yuborish uchun chap tomondagi suhbatlardan birini
+                  tanlang.
+                </p>
               </div>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center shadow-md">
-                <ChatIcon />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Suhbatni tanlang
-              </h3>
-              <p className="text-gray-600 max-w-sm">
-                Xabar yuborish uchun chap tomondagi suhbatlardan birini tanlang
-              </p>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

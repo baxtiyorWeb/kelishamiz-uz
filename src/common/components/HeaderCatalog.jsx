@@ -11,20 +11,12 @@ import {
   ChevronLeft,
   X,
   Search,
-  Grid,
-  Tag,
-  Layers,
   Package,
-  Car,
-  Smartphone,
-  Home,
-  ShoppingCart,
-  Zap,
 } from "lucide-react";
 import { cn } from "../../lib/utils.jsx";
 import { Link } from "react-router-dom";
 
-const HeaderCatalog = ({ isOpen, setisOpen }) => {
+const HeaderCatalog = ({ isOpen, setIsOpen }) => {
   const [selected, setSelected] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [hoveredChild, setHoveredChild] = useState(null);
@@ -84,7 +76,7 @@ const HeaderCatalog = ({ isOpen, setisOpen }) => {
   }, [isOpen]);
 
   const handleClose = () => {
-    setisOpen(false);
+    setIsOpen(false);
   };
 
   const grandchildren = isArray(get(hoveredChild, "children", []))
