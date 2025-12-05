@@ -290,19 +290,6 @@ const ProductDetail = () => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={handleLikeClick}
-              className={`p-1.5 rounded-full bg-gradient-to-br from-rose-100 to-pink-50 
-    group/likes hover:from-rose-200 hover:to-pink-100 transition-all duration-300
-    ${isLiked ? "text-rose-600" : "text-rose-500"}`}
-              aria-label="Sevimlilarga qo'shish"
-            >
-              <Heart
-                className={`w-5 h-5 transition-transform duration-300 ${
-                  isLiked ? "fill-rose-600" : "fill-none"
-                } group-hover/likes:scale-110`}
-              />
-            </button>
-            <button
               className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
               aria-label="Ulashish"
             >
