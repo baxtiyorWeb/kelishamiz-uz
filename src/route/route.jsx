@@ -32,7 +32,7 @@ export const AppRouter = () => {
       <Route path="/" element={<Layout />}>
         <Route index element={<HomeContainer />} />
         <Route path="detail/:id" element={<ProductPages />} />
-        <Route path="catalog/:id" element={<CatalogPage />} />
+        <Route path="catalog/:id?" element={<CatalogPage />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>

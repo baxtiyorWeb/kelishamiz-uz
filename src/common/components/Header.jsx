@@ -11,52 +11,67 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "react-query";
-import { get } from "lodash";
+import api from "../../config/auth/api";
 import useGetUser from "../../hooks/services/useGetUser";
 import useAuthStore from "../../store";
-import api from "../../config/auth/api";
-import DistrictSelector from "./Location"; 
+import DistrictSelector from "./Location";
 import HeaderCatalog from "./HeaderCatalog";
 
-const SearchForm = ({ isMobile = false }) => (
-  <form
-    onSubmit={(e) => e.preventDefault()}
-    className={`flex items-center w-full rounded-full border transition-all ${
-      isMobile
-        ? "shadow-sm border-gray-300"
-        : "shadow-sm border-gray-300 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200"
-    }`}
-  >
-    <input
-      type="text"
-      placeholder={isMobile ? "Qidirish..." : "Mahsulotlar va turkumlar izlash"}
-      className={`${
-        isMobile ? "h-9 text-xs" : "h-10 text-sm"
-      } flex-1 bg-white pl-3 md:pl-4 pr-2 text-gray-600 outline-none rounded-l-full`}
-    />
-    <button
-      type="submit"
-      aria-label="Qidirish"
-      className={`flex ${
-        isMobile ? "h-9 w-10" : "h-10 w-12"
-      } items-center justify-center text-gray-400 hover:text-purple-500 transition-colors bg-white rounded-r-full shrink-0`}
+const SearchForm = ({ isMobile = false }) => {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+
+    // Catalogga query param bilan yo'naltirish
+    navigate(`/catalog?search=${encodeURIComponent(query)}`);
+    setQuery(""); // inputni tozalash (ixtiyoriy)
+  };
+
+  return (
+    <form
+      onSubmit={handleSearch}
+      className={`flex items-center w-full rounded-full border transition-all ${
+        isMobile
+          ? "shadow-sm border-gray-300"
+          : "shadow-sm border-gray-300 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200"
+      }`}
     >
-      <SearchIcon size={isMobile ? 16 : 18} />
-    </button>
-  </form>
-);
+      <input
+        type="text"
+        placeholder={
+          isMobile ? "Qidirish..." : "Mahsulotlar va turkumlar izlash"
+        }
+        className={`${
+          isMobile ? "h-9 text-xs" : "h-10 text-sm"
+        } flex-1 bg-white pl-3 md:pl-4 pr-2 text-gray-600 outline-none rounded-l-full`}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <button
+        type="submit"
+        aria-label="Qidirish"
+        className={`flex ${
+          isMobile ? "h-9 w-10" : "h-10 w-12"
+        } items-center justify-center text-gray-400 hover:text-purple-500 transition-colors bg-white rounded-r-full shrink-0`}
+      >
+        <SearchIcon size={isMobile ? 16 : 18} />
+      </button>
+    </form>
+  );
+};
 
 const Header = () => {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
-
   const { isAuthenticated } = useAuthStore();
   const user = useGetUser();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const { data: districts, isLoading: isDistrictsLoading } = useQuery({
     queryKey: ["location_districts"],
@@ -71,21 +86,18 @@ const Header = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleFavoriteClick = useCallback(() => {
-    localStorage.setItem("liked", JSON.stringify("liked"));
-    navigate(isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login", {
-      state: { from: location.pathname, target: "favorites" },
+    navigate(isAuthenticated ? `/user/${user?.sub}` : "/auth/login", {
+      state: { from: window.location.pathname, target: "favorites" },
     });
-  }, [isAuthenticated, navigate, user, location]);
+  }, [isAuthenticated, navigate, user]);
 
   const LocationButton = ({ isDesktop = true }) => {
     const defaultText = isDistrictsLoading ? "Yuklanmoqda..." : "Toshkent";
-
     const selectedText = "Joylashuv";
 
     return (
@@ -117,6 +129,7 @@ const Header = () => {
             : "bg-gradient-to-r from-purple-50 via-white to-purple-50"
         }`}
       >
+        {/* --- Mobil versiya --- */}
         <div className="lg:hidden">
           <div className="flex items-center justify-between py-2.5 px-3">
             <Link to="/" aria-label="Bosh sahifa">
@@ -150,8 +163,9 @@ const Header = () => {
           </div>
         </div>
 
+        {/* --- Desktop versiya --- */}
         <div className="hidden lg:flex items-center justify-between py-2 px-4 max-w-full mx-auto">
-          <div className="flex items-center space-x-3 ">
+          <div className="flex items-center space-x-3">
             <Link to="/" aria-label="Bosh sahifa">
               <img
                 src="https://kelishamiz.vercel.app/assets/logo-BMjhHkCS.png"
@@ -209,7 +223,7 @@ const Header = () => {
             </button>
 
             <Link
-              to={isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login"}
+              to={isAuthenticated ? `/user/${user?.sub}` : "/auth/login"}
               className="group flex flex-col items-center w-20 justify-center"
               aria-label={isAuthenticated ? "Kabinet" : "Kirish"}
             >
