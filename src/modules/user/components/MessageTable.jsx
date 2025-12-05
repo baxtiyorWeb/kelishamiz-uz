@@ -527,7 +527,6 @@ const UserDashboard = () => {
 
   const isProductLiked = useCallback(
     (productId) => {
-      
       const token = localStorage.getItem("accessToken");
 
       if (!token) {
@@ -544,8 +543,6 @@ const UserDashboard = () => {
     },
     [dashboardData]
   );
-  console.log(isProductLiked());
-  console.log(dashboardData);
   const products =
     dashboardData?.content?.products || dashboardData?.content || [];
   const stats = dashboardData?.content?.stats || {};
@@ -637,13 +634,6 @@ const UserDashboard = () => {
               <h2 className="text-xl md:text-2xl font-bold text-gray-800">
                 Mening E'lonlarim
               </h2>
-              <Link
-                to="/add-item"
-                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98] text-sm font-medium shadow-lg "
-              >
-                <Plus size={18} />
-                <span>E'lon qo'shish</span>
-              </Link>
             </div>
 
             <div className="flex items-center gap-3 mb-6 overflow-x-auto whitespace-nowrap -mx-4 px-4 md:mx-0 md:px-0">

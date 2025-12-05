@@ -17,10 +17,9 @@ import { get } from "lodash";
 import useGetUser from "../../hooks/services/useGetUser";
 import useAuthStore from "../../store";
 import api from "../../config/auth/api";
-import DistrictSelector from "./Location"; // Nomni DistrictSelector.jsx deb o'zgartirdim.
+import DistrictSelector from "./Location"; 
 import HeaderCatalog from "./HeaderCatalog";
 
-// Utility component for Search Form
 const SearchForm = ({ isMobile = false }) => (
   <form
     onSubmit={(e) => e.preventDefault()}
@@ -65,7 +64,7 @@ const Header = () => {
       const response = await api.get("/location/districts");
       return response.data;
     },
-    staleTime: Infinity, 
+    staleTime: Infinity,
   });
 
   useEffect(() => {
@@ -79,16 +78,15 @@ const Header = () => {
 
   const handleFavoriteClick = useCallback(() => {
     localStorage.setItem("liked", JSON.stringify("liked"));
-    navigate(
-      isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login",
-      { state: { from: location.pathname, target: "favorites" } } 
-    );
+    navigate(isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login", {
+      state: { from: location.pathname, target: "favorites" },
+    });
   }, [isAuthenticated, navigate, user, location]);
 
   const LocationButton = ({ isDesktop = true }) => {
     const defaultText = isDistrictsLoading ? "Yuklanmoqda..." : "Toshkent";
 
-    const selectedText = "Joylashuv"; 
+    const selectedText = "Joylashuv";
 
     return (
       <button
@@ -230,8 +228,8 @@ const Header = () => {
 
         {isCatalogOpen && (
           <HeaderCatalog
-            setIsOpen={setIsCatalogOpen}
             isOpen={isCatalogOpen}
+            setIsOpen={setIsCatalogOpen}
             id="header-catalog"
           />
         )}
