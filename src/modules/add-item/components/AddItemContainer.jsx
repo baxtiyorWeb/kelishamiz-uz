@@ -696,7 +696,7 @@ const AddItemContainer = () => {
                       />
                     )}
 
-                    {prop.type === "NUMBER" && (
+                    {prop.type === "NUMBER" || prop.type === "INT" && (
                       <StyledInput
                         type="number"
                         value={userVal}
