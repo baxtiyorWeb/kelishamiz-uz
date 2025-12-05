@@ -18,8 +18,6 @@ import api from "./../../../config/auth/api";
 import useGetUser from "../../../hooks/services/useGetUser";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 
-// --- Yordamchi Funktsiyalar (O'zgarishsiz) ---
-
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
@@ -50,9 +48,6 @@ const formatPrice = (price, currency) => {
 
 const getAuthToken = () => localStorage.getItem("accessToken");
 
-// --- Fetch Funksiyalari (React Query uchun) ---
-
-// 1. Mahsulot ma'lumotlarini olish
 const fetchProductById = async (id) => {
   if (!id) throw new Error("Mahsulot IDsi mavjud emas");
   const response = await api.get(`/products/by-id/${id}`);
@@ -65,13 +60,11 @@ const fetchProductById = async (id) => {
   );
 };
 
-// 2. Yoqtirish holatini o'zgartirish (POST)
 const toggleLike = async ({ productId }) => {
   const response = await api.post(`/products/${productId}/like`, {});
-  return response.data; // Serverdan yangi holat va sanog'ini qaytarish kutiladi
+  return response.data;
 };
 
-// --- Asosiy Komponent ---
 const useRegisterView = (id) => {
   const mutation = useMutation(
     async () => {
@@ -91,9 +84,11 @@ const useRegisterView = (id) => {
 
   return mutation;
 };
+
 const ProductDetail = () => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLiked, setIsLiked] = useState(null);
   const { id } = useParams();
   const user = useGetUser();
   const userId = user?.sub;
@@ -122,24 +117,35 @@ const ProductDetail = () => {
   const images =
     product?.images?.sort((a, b) => a.order - b.order).map((img) => img.url) ||
     [];
-
   const likesCount = product?.likesCount || 0;
-  const isLiked = (!!userId && product?.liked_ids?.includes(userId)) || false;
+
+  const { data: isLikedData } = useQuery({
+    queryKey: ["isliked", id, userId], // faqat product va user id-ga bog'laymiz
+    queryFn: async () => {
+      const res = await api.get(`/products/${id}/like/status?userId=${userId}`);
+      return res.data?.content?.liked;
+    },
+    enabled: !!id && !!userId, // faqat id va userId mavjud bo'lsa ishlaydi
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (typeof isLikedData === "boolean") {
+      setIsLiked(isLikedData);
+    }
+  }, [isLikedData]);
 
   const likeMutation = useMutation(toggleLike, {
     onMutate: async () => {
-      // Optimistik Yangilashni boshlash: so'rov tugagunicha UI ni o'zgartirish
       await queryClient.cancelQueries(["productDetail", id]);
 
       const previousProduct = queryClient.getQueryData(["productDetail", id]);
 
-      // Yangi holatni hisoblash (Optimistik)
       const newIsLiked = !isLiked;
       const newLikesCount = newIsLiked
         ? likesCount + 1
         : Math.max(0, likesCount - 1);
 
-      // Keshni optimistik yangilash
       queryClient.setQueryData(["productDetail", id], (old) => {
         if (!old) return old;
 
@@ -159,11 +165,9 @@ const ProductDetail = () => {
         };
       });
 
-      // Optimistik yangilanish natijasini qaytarish (Rollback uchun)
       return { previousProduct };
     },
     onError: (err, variables, context) => {
-      // Xato yuz berganda avvalgi holatni qaytarish (Rollback)
       console.error("Error toggling like, rolling back:", err);
       if (context?.previousProduct) {
         queryClient.setQueryData(
@@ -176,7 +180,6 @@ const ProductDetail = () => {
       );
     },
     onSettled: () => {
-      // Muvaffaqiyatli yoki xato bilan tugasa, keshni bekor qilib, haqiqiy ma'lumotni yuklash
       queryClient.invalidateQueries(["productDetail", id]);
     },
   });
@@ -191,17 +194,14 @@ const ProductDetail = () => {
       const token = getAuthToken();
 
       if (userId && token) {
-        // Tizimga kirgan, optimistik UI bilan serverga so'rov yuborish
         likeMutation.mutate({ productId: id });
       } else {
-        // Tizimga kirmagan, ogohlantirish berish (anonim like saqlanmaydi)
         alert("Iltimos, yoqtirishni saqlash uchun tizimga kiring!");
       }
     },
     [id, userId, likeMutation]
   );
 
-  // Qolgan Image Gallery funksiyalari (o'zgarishsiz)
   const nextImage = () => {
     if (images.length === 0) return;
     setCurrentImage((prev) => (prev + 1) % images.length);
@@ -215,17 +215,13 @@ const ProductDetail = () => {
   const openModal = (index) => {
     setCurrentImage(index);
     setIsModalOpen(true);
-    // Modal ochilganda scrollni o'chirish
     document.body.style.overflow = "hidden";
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    // Modal yopilganda scrollni tiklash
     document.body.style.overflow = "unset";
   };
-
-  // --- UX/UI: Rendering Logikasi ---
 
   if (isLoading) {
     return (
@@ -260,24 +256,24 @@ const ProductDetail = () => {
     );
   }
 
-  const specifications = [
-    { label: "Kategoriya", value: product.category?.name || "N/A" },
-    { label: "To'lov turi", value: product.paymentType || "N/A" },
-    { label: "Valyuta", value: product.currencyType || "N/A" },
-    { label: "Kelishuv", value: product.negotiable ? "Bor" : "Yo'q" },
-    { label: "Viloyat", value: product.region?.name || "N/A" },
-    { label: "Tuman", value: product.district?.name || "N/A" },
-  ];
-
   const propertyFeatures =
-    product?.propertyValues?.map((prop) =>
-      typeof prop.value === "object"
-        ? `${prop.value.key}: ${prop.value.value}`
-        : prop.value
-    ) || [];
+    product?.propertyValues?.map((prop) => {
+      if (typeof prop.value === "object") {
+        return {
+          key: prop.value.key, // left text
+          value: prop.value.value, // right text
+        };
+      }
+
+      return {
+        key: prop.key || "",
+        value: prop.value || "",
+      };
+    }) || [];
+
+  const primaryColor = "#A64AC9";
   return (
     <>
-      {/* --- Mobile Header --- */}
       <header className="bg-white md:hidden sm:block border-b sticky top-0 z-20">
         <div className="max-w-6xl mx-auto sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -288,22 +284,23 @@ const ProductDetail = () => {
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900 hidden sm:block">
-              Mahsulot Tafsilotlari
-            </h1>
+            <p className="text-sm font-medium text-gray-500">
+              {product.category?.name || "Kategoriya"}
+            </p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={handleLikeClick}
-              // Optimistik yangilanish tufayli likeMutation.isLoading ni o'chirib qo'yish
-              className={`p-2 rounded-lg transition-colors ${
-                isLiked
-                  ? "bg-red-50 text-red-500"
-                  : "hover:bg-gray-100 text-gray-600"
-              }`}
+              className={`p-1.5 rounded-full bg-gradient-to-br from-rose-100 to-pink-50 
+    group/likes hover:from-rose-200 hover:to-pink-100 transition-all duration-300
+    ${isLiked ? "text-rose-600" : "text-rose-500"}`}
               aria-label="Sevimlilarga qo'shish"
             >
-              <Heart className={`w-6 h-6 ${isLiked ? "fill-current" : ""}`} />
+              <Heart
+                className={`w-5 h-5 transition-transform duration-300 ${
+                  isLiked ? "fill-rose-600" : "fill-none"
+                } group-hover/likes:scale-110`}
+              />
             </button>
             <button
               className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
@@ -314,18 +311,15 @@ const ProductDetail = () => {
           </div>
         </div>
       </header>
-      {/* --- Main Content Layout --- */}
+
       <div className="max-w-7xl mx-auto sm:px-6 py-6 lg:py-8">
         <div className="grid lg:grid-cols-5 gap-6 lg:gap-8">
-          {/* --- Left Column: Images, Description, Specs --- */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Image Section */}
-            <section className="bg-white rounded-xl overflow-hidden shadow-sm">
+            <section className="bg-white rounded-xl overflow-hidden shadow-sm relative">
               <div className="relative group">
                 <button
                   onClick={() => openModal(currentImage)}
-                  // Fullscreen rasm uchun mobil qurilmalarda ham to'g'ri ishlaydigan aspekt nisbat
-                  className="aspect-[4/3] w-full h-auto max-h-[500px] block focus:outline-none focus:ring-4 focus:ring-purple-200 cursor-zoom-in"
+                  className="aspect-[4/3] w-full h-auto max-h-[350px] block focus:outline-none focus:ring-4 focus:ring-purple-200 cursor-zoom-in"
                   aria-label="Rasmni kattalashtirish"
                 >
                   {images.length > 0 ? (
@@ -387,10 +381,91 @@ const ProductDetail = () => {
                     </span>
                   )}
                 </div>
+
+                <div
+                  className="hidden lg:flex absolute bottom-3 right-3  gap-2 items-center 
+    bg-white/100 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-white/20"
+                >
+                  <div className="flex items-center gap-1 group/views cursor-pointer">
+                    <div
+                      className="p-1.5 rounded-full bg-gradient-to-br from-purple-100 to-purple-50 
+        group-hover/views:from-purple-200 group-hover/views:to-purple-100 transition-all duration-300"
+                    >
+                      <Eye
+                        size={16}
+                        className="text-purple-600 group-hover/views:scale-110 transition-transform"
+                      />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-700 min-w-[20px] text-center">
+                      {product.viewCount || 0}
+                    </span>
+                  </div>
+
+                  <div className="w-px h-5 bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+
+                  <div className="flex items-center gap-1 group/likes cursor-pointer">
+                    <button
+                      onClick={handleLikeClick}
+                      className={`p-1.5 rounded-full bg-gradient-to-br from-rose-100 to-pink-50
+        hover:from-rose-200 hover:to-pink-100 transition-all duration-300
+        ${isLiked ? "text-rose-600" : "text-rose-500"}`}
+                      aria-label="Sevimlilarga qo'shish"
+                    >
+                      <Heart
+                        className={`w-5 h-5 transition-transform duration-300 
+          ${
+            isLiked ? "fill-rose-600" : "fill-none"
+          } group-hover/likes:scale-110`}
+                      />
+                    </button>
+                    <span className="text-sm font-semibold text-gray-700 min-w-[20px] text-center">
+                      {likesCount}
+                    </span>
+                  </div>
+                </div>
               </div>
             </section>
+            <div
+              className="flex lg:hidden w-max float-right  bottom-3 right-3  gap-2 items-center 
+    bg-white/100 backdrop-blur-md px-3 py-1.5 rounded-full  border border-white/20"
+            >
+              <div className="flex items-center gap-1 group/views cursor-pointer">
+                <div
+                  className="p-1 rounded-full bg-gradient-to-br from-purple-100 to-purple-50 
+        group-hover/views:from-purple-200 group-hover/views:to-purple-100 transition-all duration-300"
+                >
+                  <Eye
+                    size={14} // kichikroq icon mobilga
+                    className="text-purple-600 group-hover/views:scale-110 transition-transform"
+                  />
+                </div>
+                <span className="text-xs font-semibold text-gray-700 min-w-[20px] text-center">
+                  {product.viewCount || 0}
+                </span>
+              </div>
 
-            {/* Thumbnail Gallery */}
+              <div className="w-px h-4 bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+
+              <div className="flex items-center gap-1 group/likes cursor-pointer">
+                <button
+                  onClick={handleLikeClick}
+                  className={`p-1 rounded-full bg-gradient-to-br from-rose-100 to-pink-50
+        hover:from-rose-200 hover:to-pink-100 transition-all duration-300
+        ${isLiked ? "text-rose-600" : "text-rose-500"}`}
+                  aria-label="Sevimlilarga qo'shish"
+                >
+                  <Heart
+                    className={`w-4 h-4 transition-transform duration-300 
+          ${
+            isLiked ? "fill-rose-600" : "fill-none"
+          } group-hover/likes:scale-110`}
+                  />
+                </button>
+                <span className="text-xs font-semibold text-gray-700 min-w-[20px] text-center">
+                  {likesCount}
+                </span>
+              </div>
+            </div>
             {images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {images.map((img, idx) => (
@@ -399,7 +474,7 @@ const ProductDetail = () => {
                     onClick={() => setCurrentImage(idx)}
                     className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
                       currentImage === idx
-                        ? " scale-100"
+                        ? "scale-100"
                         : "opacity-70 hover:opacity-100"
                     }`}
                     style={{
@@ -417,103 +492,30 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Mobile Title/Price/Location */}
-            <div className="bg-white rounded-xl p-5 shadow-sm lg:hidden">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {product.title}
-              </h1>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span
-                  className="text-3xl font-bold"
-                  style={{ color: "#A64AC9" }}
-                >
-                  {formatPrice(product.price, product.currencyType)}
-                </span>
-                {product.negotiable && (
-                  <span className="text-sm text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
-                    Kelishuv
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>
-                    {product.region?.name}, {product.district?.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{formatDate(product.createdAt)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Description Section */}
-            <section className="bg-white rounded-xl p-5 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-3 border-b pb-2">
-                Tavsif
-              </h2>
-              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+            <section className="bg-white rounded-xl p-5 shadow-sm space-y-5">
+              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap word">
                 {product.description || "Tavsif mavjud emas."}
+               
               </p>
-              <div className="flex items-center gap-4 text-xs text-gray-500 mt-4 pt-3 border-t">
-                <div className="flex items-center gap-1">
-                  <Eye className="w-4 h-4" />
-                  <span>{product.viewCount || 0} ko'rishlar</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Heart className="w-4 h-4" />
-                  <span>{likesCount} yoqtirishlar</span>
-                </div>
-              </div>
             </section>
 
-            {/* Specifications Section */}
-            <section className="bg-white rounded-xl p-5 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
-                Texnik Xususiyatlar
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
-                {specifications.map((spec, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col border-b border-gray-100 pb-2"
-                  >
-                    <span className="text-xs font-medium text-gray-500">
-                      {spec.label}
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {spec.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Key Features Section */}
             {propertyFeatures.length > 0 && (
               <section className="bg-white rounded-xl p-5 shadow-sm">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
                   Asosiy Xususiyatlar
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {propertyFeatures.map((feature, idx) => (
+                <div className="space-y-3">
+                  {propertyFeatures.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg"
+                      className="flex items-center justify-between py-2"
                     >
-                      <div
-                        className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: "#E0AAFF" }}
-                      >
-                        <Check
-                          className="w-3 h-3"
-                          style={{ color: "#A64AC9" }}
-                        />
-                      </div>
-                      <span className="text-sm text-gray-700 font-medium">
-                        {feature}
+                      <span className="text-sm font-medium text-gray-600">
+                        {item?.key}
+                      </span>
+                      <div className="flex-1 mx-4 border-b border-dashed border-gray-300"></div>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {item?.value}
                       </span>
                     </div>
                   ))}
@@ -522,16 +524,14 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* --- Right Column: Price, Seller Info, Safety --- */}
           <div className="lg:col-span-2">
             <div className="lg:sticky lg:top-20 space-y-6">
-              {/* Desktop Price/Title/Location */}
               <div className="bg-white rounded-xl p-5 hidden lg:block">
                 <div className="mb-4 flex justify-between items-center">
                   <div className="flex items-baseline gap-2 mb-1">
                     <span
                       className="text-3xl font-bold"
-                      style={{ color: "#A64AC9" }}
+                      style={{ color: primaryColor }}
                     >
                       {formatPrice(product.price, product.currencyType)}
                     </span>
@@ -544,16 +544,15 @@ const ProductDetail = () => {
 
                   <button
                     onClick={handleLikeClick}
-                    // Optimistik yangilanish tufayli likeMutation.isLoading ni o'chirib qo'yish
-                    className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
-                      isLiked
-                        ? "bg-purple-100 text-purple-600"
-                        : "bg-gray-100 hover:bg-purple-50 hover:text-purple-600"
-                    }`}
+                    className={`p-1.5 rounded-full bg-gradient-to-br from-rose-100 to-pink-50 
+    group/likes hover:from-rose-200 hover:to-pink-100 transition-all duration-300
+    ${isLiked ? "text-rose-600" : "text-rose-500"}`}
                     aria-label="Sevimlilarga qo'shish"
                   >
                     <Heart
-                      className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`}
+                      className={`w-5 h-5 transition-transform duration-300 ${
+                        isLiked ? "fill-rose-600" : "fill-none"
+                      } group-hover/likes:scale-110`}
                     />
                   </button>
                 </div>
@@ -575,10 +574,15 @@ const ProductDetail = () => {
                       Joylashtirildi {formatDate(product.createdAt)}
                     </span>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <Check className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-600">
+                      To'lov turi: {product.paymentType || "N/A"}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Seller Information */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
                 <h3 className="text-xl font-semibold text-gray-900 mb-5 border-b pb-3">
                   Sotuvchi Ma'lumotlari
@@ -589,7 +593,7 @@ const ProductDetail = () => {
                     className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 shadow"
                     style={{
                       backgroundColor:
-                        product.profile?.avatarColor || "#A64AC9",
+                        product.profile?.avatarColor || primaryColor,
                     }}
                   >
                     {product.profile?.avatar ? (
@@ -615,7 +619,6 @@ const ProductDetail = () => {
                           {new Date(product.profile.createdAt).getFullYear()}
                         </p>
                       )}
-
                       {product?.district?.name && (
                         <p className="flex items-center gap-1">
                           <span className="font-medium text-gray-700">
@@ -624,7 +627,6 @@ const ProductDetail = () => {
                           {product?.district?.name}
                         </p>
                       )}
-
                       {product.profile?.phoneNumber && (
                         <p className="flex items-center gap-1">
                           <span className="font-medium text-gray-700">
@@ -637,14 +639,14 @@ const ProductDetail = () => {
                   </div>
                 </div>
 
-                {/* Buttons */}
                 <div className="grid grid-cols-2 gap-3">
                   {product.profile?.phoneNumber && (
                     <a
                       href={`tel:${product.profile.phoneNumber}`}
-                      className="py-3 px-4 rounded-xl font-medium text-white text-sm  
-        flex items-center justify-center gap-2 transition-all  
-        hover:opacity-90 shadow-md bg-[#A64AC9]"
+                      className="py-3 px-4 rounded-xl font-medium text-white text-sm 
+                  flex items-center justify-center gap-2 transition-all 
+                  hover:opacity-90 shadow-md"
+                      style={{ backgroundColor: primaryColor }}
                     >
                       <Phone className="w-4 h-4" />
                       Qo'ng'iroq
@@ -654,10 +656,10 @@ const ProductDetail = () => {
                   {product.profile?.userId && (
                     <a
                       href={`/chat?userId=${product.profile.userId}&productId=${product.id}`}
-                      className="py-3 px-4 rounded-xl font-medium text-sm  
-        flex items-center justify-center gap-2 border-2 transition-all  
-        hover:bg-gray-50 shadow-md"
-                      style={{ borderColor: "#A64AC9", color: "#A64AC9" }}
+                      className="py-3 px-4 rounded-xl font-medium text-sm 
+                  flex items-center justify-center gap-2 border-2 transition-all 
+                  hover:bg-gray-50 shadow-md"
+                      style={{ borderColor: primaryColor, color: primaryColor }}
                     >
                       <MessageCircle className="w-4 h-4" />
                       Chat
@@ -666,12 +668,11 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Safety Tips */}
-              <div className="bg-white rounded-xl p-5 ">
+              <div className="bg-white rounded-xl p-5">
                 <div className="flex items-center gap-2 mb-3 border-b pb-2">
                   <AlertCircle
                     className="w-5 h-5 flex-shrink-0"
-                    style={{ color: "#A64AC9" }}
+                    style={{ color: primaryColor }}
                   />
                   <h3 className="text-lg font-semibold text-gray-900">
                     Xavfsizlik bo'yicha maslahatlar
@@ -689,7 +690,6 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* --- Mobile Bottom Bar --- */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 shadow-2xl lg:hidden z-30">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           <div className="flex flex-col">
@@ -718,14 +718,13 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* --- Modal for Fullscreen Image --- */}
       {isModalOpen && images.length > 0 && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 backdrop-blur-sm transition-opacity duration-300 ease-out"
           onClick={closeModal}
         >
           <div
-            className="relative w-full h-full max-w-7xl max-h-full" // max-h-full va w-full qo'shildi
+            className="relative w-full h-full max-w-7xl max-h-full"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -740,7 +739,6 @@ const ProductDetail = () => {
               <img
                 src={images[currentImage]}
                 alt={`${product.title} - ${currentImage + 1}`}
-                // max-width va max-height ni qo'shib, rasmning to'liq hajmda bo'lishini ta'minlaymiz
                 className="max-h-full max-w-full object-contain"
               />
             </div>

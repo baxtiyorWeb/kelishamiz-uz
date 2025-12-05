@@ -295,6 +295,7 @@ const ProfileInfo = ({ isMobile = false, onClose, profile_info }) => {
   const content = profile_info?.content;
   const initial = content?.fullName?.charAt(0) || "U"; // 'U' - User
   const avatarUrl = content?.avatar;
+  
 
   const avatar = avatarUrl ? (
     <img

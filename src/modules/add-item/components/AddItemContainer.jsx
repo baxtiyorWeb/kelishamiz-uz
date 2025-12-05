@@ -283,11 +283,20 @@ const AddItemContainer = () => {
     }));
   };
 
-  const handlePropertyChange = (propertyId, value) => {
+  const handlePropertyChange = (propertyId, value, name, type) => {
     setFormData((prev) => ({
       ...prev,
       properties: prev.properties.map((p) =>
-        p.propertyId === propertyId ? { ...p, value } : p
+        p.propertyId === propertyId
+          ? {
+              ...p,
+              type: type,
+              value: {
+                key: name,
+                value: value,
+              },
+            }
+          : p
       ),
     }));
   };
@@ -679,7 +688,7 @@ const AddItemContainer = () => {
               {categoryProperties.map((prop) => {
                 const userVal =
                   formData.properties.find((p) => p.propertyId === prop.id)
-                    ?.value ?? "";
+                    ?.value?.value ?? "";
                 return (
                   <div key={prop.id}>
                     <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -690,27 +699,42 @@ const AddItemContainer = () => {
                       <StyledInput
                         value={userVal}
                         onChange={(e) =>
-                          handlePropertyChange(prop.id, e.target.value)
+                          handlePropertyChange(
+                            prop.id,
+                            e.target.value,
+                            prop.name,
+                            prop.type
+                          )
                         }
                         placeholder={prop.name}
                       />
                     )}
 
-                    {prop.type === "NUMBER" || prop.type === "INT" && (
-                      <StyledInput
-                        type="number"
-                        value={userVal}
-                        onChange={(e) =>
-                          handlePropertyChange(prop.id, e.target.value)
-                        }
-                      />
-                    )}
+                    {prop.type === "NUMBER" ||
+                      (prop.type === "INT" && (
+                        <StyledInput
+                          type="number"
+                          value={userVal}
+                          onChange={(e) =>
+                            handlePropertyChange(
+                              prop.id,
+                              e.target.value,
+                              prop?.name
+                            )
+                          }
+                        />
+                      ))}
 
                     {(prop.type === "SELECT" || prop.options) && (
                       <StyledSelect
                         value={userVal}
                         onChange={(e) =>
-                          handlePropertyChange(prop.id, e.target.value)
+                          handlePropertyChange(
+                            prop.id,
+                            e.target.value,
+                            prop.name,
+                            prop.type
+                          )
                         }
                       >
                         <option value="">Tanlang</option>
@@ -727,7 +751,12 @@ const AddItemContainer = () => {
                         type="date"
                         value={userVal}
                         onChange={(e) =>
-                          handlePropertyChange(prop.id, e.target.value)
+                          handlePropertyChange(
+                            prop.id,
+                            e.target.value,
+                            prop.name,
+                            prop.type
+                          )
                         }
                       />
                     )}
@@ -740,7 +769,9 @@ const AddItemContainer = () => {
                           onChange={(e) =>
                             handlePropertyChange(
                               prop.id,
-                              e.target.checked ? "true" : "false"
+                              e.target.checked ? "true" : "false",
+                              prop.name,
+                              prop.type
                             )
                           }
                           label={prop.name}
