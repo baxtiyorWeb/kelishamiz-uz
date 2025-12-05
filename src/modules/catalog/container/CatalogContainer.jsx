@@ -284,7 +284,7 @@ const CatalogPage = () => {
             {getActiveFilterCount() > 0 && (
               <button
                 onClick={clearFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 font-medium text-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 font-medium text-sm"
                 aria-label="Barcha filtrlarni tozalash"
               >
                 <X className="w-4 h-4" />
