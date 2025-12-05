@@ -10,6 +10,7 @@ import UserPage from "./../modules/user/pages/UserPage.jsx";
 import PrivateRoute from "./PrivateRoute.jsx";
 import AdminPanel from "../../admin/admin-panel.jsx";
 import ChatPage from "../modules/chat/chatComponent.jsx";
+import SubscriptionPage from "../modules/user/pages/SubsriptionPage.jsx";
 
 export const AppRouter = () => {
   return (
@@ -25,6 +26,7 @@ export const AppRouter = () => {
         <Route path="add-item" element={<AddItem />} />
         <Route path="user/:id" element={<UserPage />} />
         <Route path="chat" element={<ChatPage />} />
+        <Route path="pricing" element={<SubscriptionPage />} />
       </Route>
       <Route path="/admin-panel" element={<AdminPanel />} />
       <Route path="/" element={<Layout />}>

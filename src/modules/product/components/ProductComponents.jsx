@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Heart,
   Share2,
@@ -72,7 +72,25 @@ const toggleLike = async ({ productId }) => {
 };
 
 // --- Asosiy Komponent ---
+const useRegisterView = (id) => {
+  const mutation = useMutation(
+    async () => {
+      if (!id) throw new Error("Mahsulot ID mavjud emas");
+      const response = await api.post(`/products/${id}/view`);
+      return response.data;
+    },
+    {
+      onError: (err) => {
+        console.error("View so‘rovi yuborishda xato:", err);
+      },
+      onSuccess: (data) => {
+        console.log("View ro‘yxatga olindi:", data);
+      },
+    }
+  );
 
+  return mutation;
+};
 const ProductDetail = () => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,7 +100,12 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // --- 1. Mahsulot Ma'lumotlarini Yuklash (useQuery) ---
+  const viewMutation = useRegisterView(id);
+
+  useEffect(() => {
+    if (id) viewMutation.mutate();
+  }, [id]);
+
   const {
     data: product,
     isLoading,
@@ -100,16 +123,9 @@ const ProductDetail = () => {
     product?.images?.sort((a, b) => a.order - b.order).map((img) => img.url) ||
     [];
 
-  // isLiked va likesCount ni product ma'lumotlaridan olish
-  // Bu qator optimistik yangilanish uchun asosiy manba bo'lib xizmat qiladi
   const likesCount = product?.likesCount || 0;
-  // Mahsulot API'si liked_ids ni qaytarishi shart, aks holda bu mantiq ishlamaydi.
-  // userId mavjud bo'lsa va u liked_ids qatorida bo'lsa, yoqtirilgan hisoblanadi.
-  const isLiked =
-    (!!userId && product?.liked_ids?.includes(userId)) || false;
+  const isLiked = (!!userId && product?.liked_ids?.includes(userId)) || false;
 
-
-  // --- 2. Yoqtirish Holatini O'zgartirish (useMutation) ---
   const likeMutation = useMutation(toggleLike, {
     onMutate: async () => {
       // Optimistik Yangilashni boshlash: so'rov tugagunicha UI ni o'zgartirish
@@ -126,7 +142,7 @@ const ProductDetail = () => {
       // Keshni optimistik yangilash
       queryClient.setQueryData(["productDetail", id], (old) => {
         if (!old) return old;
-        
+
         let newLikedIds = old.liked_ids ? [...old.liked_ids] : [];
         if (newIsLiked) {
           if (userId && !newLikedIds.includes(userId)) {
@@ -184,7 +200,7 @@ const ProductDetail = () => {
     },
     [id, userId, likeMutation]
   );
-  
+
   // Qolgan Image Gallery funksiyalari (o'zgarishsiz)
   const nextImage = () => {
     if (images.length === 0) return;
@@ -200,13 +216,13 @@ const ProductDetail = () => {
     setCurrentImage(index);
     setIsModalOpen(true);
     // Modal ochilganda scrollni o'chirish
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     // Modal yopilganda scrollni tiklash
-    document.body.style.overflow = 'unset';
+    document.body.style.overflow = "unset";
   };
 
   // --- UX/UI: Rendering Logikasi ---
@@ -254,8 +270,11 @@ const ProductDetail = () => {
   ];
 
   const propertyFeatures =
-    product?.propertyValues?.map((prop) => prop.value) || [];
-
+    product?.propertyValues?.map((prop) =>
+      typeof prop.value === "object"
+        ? `${prop.value.key}: ${prop.value.value}`
+        : prop.value
+    ) || [];
   return (
     <>
       {/* --- Mobile Header --- */}
@@ -722,7 +741,7 @@ const ProductDetail = () => {
                 src={images[currentImage]}
                 alt={`${product.title} - ${currentImage + 1}`}
                 // max-width va max-height ni qo'shib, rasmning to'liq hajmda bo'lishini ta'minlaymiz
-                className="max-h-full max-w-full object-contain" 
+                className="max-h-full max-w-full object-contain"
               />
             </div>
 
