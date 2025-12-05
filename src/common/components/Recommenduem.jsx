@@ -62,7 +62,6 @@ const Recommenduem = () => {
       },
     });
 
-    console.log(data);
     
 
   useEffect(() => {
@@ -77,10 +76,8 @@ const Recommenduem = () => {
     }
   }, []);
 
-  // districtIds o'zgarganda refetch qilish
   useEffect(() => {
     if (districtIds.length >= 0) {
-      console.log("District IDs changed:", districtIds);
       refetch();
     }
   }, [districtIds, refetch]);
@@ -94,12 +91,12 @@ const Recommenduem = () => {
       return (
         data?.pages?.some((page) =>
           get(page, "content.data", []).some(
-            (item) => item.id === productId && item.isLiked
+            (item) => item.id === productId && item.isLike
           )
         ) || false
       );
     }
-  }, [likedProducts, data]);
+  }, [data]);
 
   const items = isArray(get(data, "pages", []))
     ? data?.pages?.flatMap((page) => get(page, "content.data", []))

@@ -67,15 +67,7 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
 
   const detailLink = useMemo(() => `/detail/${item?.id}?infoTab=1`, [item?.id]);
 
-  // NOTE: mainImage is computed but not directly used in the current structure
-  // The image is loaded via item?.images[item?.imageIndex]?.url
-  const mainImage = useMemo(() => {
-    if (item?.images && item.images.length > 0) {
-      const main = item.images.find((img) => img.isMainImage);
-      return main ? main.url : item.images[0].url;
-    }
-    return item?.mainImage || "https://via.placeholder.com/150";
-  }, [item?.images, item?.mainImage]);
+
 
   const handleLikeClick = useCallback(
     async (e) => {
@@ -97,11 +89,8 @@ const ItemCard = React.memo(({ item, index, authToken, refresh , viewMode}) => {
           newIsLiked = response.data?.content?.liked;
           newLikesCount = response.data?.content?.likesCount;
 
-          refresh();
         } else {
-          console.log(
-            "Using localStorage for unauthenticated user or missing token"
-          );
+         
           const likedProducts = JSON.parse(
             localStorage.getItem("likedProducts") || "[]"
           );

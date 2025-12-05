@@ -515,14 +515,9 @@ const AddItemContainer = () => {
       ),
     };
 
-    // isLoadingCategories, mainCategoryId, setSubcategories va boshqa funksiyalar/state'lar
-    // yuqoridagi asosiy komponentda e'lon qilingan deb faraz qilinadi.
-
     switch (currentStep) {
-      // --- 1-BOSQICH: Asosiy Ma'lumotlar (Title, Description, Price) ---
       case 0:
         return (
-          // space-y-6 o'rniga space-y-4
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -544,7 +539,7 @@ const AddItemContainer = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows={4} // rows 5 o'rniga 4
+                rows={2} // rows 5 o'rniga 4
                 required
               />
             </div>
@@ -600,7 +595,6 @@ const AddItemContainer = () => {
           </div>
         );
 
-      // --- 2-BOSQICH: Kategoriyalarni tanlash ---
       case 1:
         return (
           <div className="space-y-4">
@@ -919,27 +913,7 @@ const AddItemContainer = () => {
   const PRIMARY_COLOR = "#A64AC9";
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="mb-6 flex items-start justify-start border-b border-gray-100 pb-4">
-          <div
-            className="p-3 mr-4 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: PRIMARY_COLOR + "15" }} // Ochiq binafsha fon
-          >
-            <PlusCircle className="w-6 h-6" style={{ color: PRIMARY_COLOR }} />
-          </div>
-
-          <div>
-            <h1
-              className="text-2xl font-extrabold" // Kichiklashtirilgan: 3xl -> 2xl
-              style={{ color: PRIMARY_COLOR }} // Binafsha sarlavha
-            >
-              Yangi E'lon Qo'shish
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Ma'lumotlarni to'ldiring va e'loningizni joylashtiring
-            </p>
-          </div>
-        </div>
+      <div className="container mx-auto px-4 max-w-full">
         <div className="flex flex-row items-center justify-between flex-wrap mb-6">
           {steps.map((step, i) => {
             const isCompleted = i < currentStep;
@@ -950,9 +924,8 @@ const AddItemContainer = () => {
             return (
               <div
                 key={i}
-                className="flex flex-col items-center justify-center relative mb-4 sm:mb-0 w-[60px]"
+                className="flex flex-col items-center justify-center relative sm:mb-0 w-[60px]"
               >
-                {/* Desktop chiziqlar */}
                 {i > 0 && (
                   <div
                     className="absolute left-0 top-5 h-0.5 hidden sm:block"
@@ -994,7 +967,7 @@ const AddItemContainer = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-3xl shadow-sm p-8 mb-6 min-h-[400px]">
+          <div className="bg-white rounded-3xl shadow-sm px-4 py-2  min-h-[400px]">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
                 {steps[currentStep].title}
@@ -1004,12 +977,12 @@ const AddItemContainer = () => {
             {renderStepContent()}
           </div>
 
-          <div className="flex gap-4">
+          <div className=" gap-4 grid grid-cols-2">
             {currentStep > 0 && (
               <button
                 type="button"
                 onClick={prevStep}
-                className="px-6 py-3.5 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 flex items-center gap-2"
+                className="px-6 py-2  mt-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 flex items-center gap-2"
               >
                 <ChevronLeft className="w-5 h-5" />
                 Orqaga
@@ -1020,7 +993,7 @@ const AddItemContainer = () => {
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 flex items-center justify-center gap-2"
+                className="flex-1 px-6 mt-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 flex items-center justify-center gap-2"
               >
                 Keyingisi
                 <ChevronRight className="w-5 h-5" />
@@ -1029,16 +1002,14 @@ const AddItemContainer = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-purple-600 hover:to-purple-700 flex items-center justify-center gap-2 disabled:opacity-70"
+                className="flex-1 px-6 mt-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl text-sm hover:from-purple-600 hover:to-purple-700 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
                     <LoadingSpinner /> Yuklanmoqda...
                   </>
                 ) : (
-                  <>
-                    <Check className="w-5 h-5" /> E'lonni joylashtirish
-                  </>
+                  <>E&apos;lonni joylashtirish</>
                 )}
               </button>
             )}

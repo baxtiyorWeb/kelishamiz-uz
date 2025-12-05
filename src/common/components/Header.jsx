@@ -62,14 +62,12 @@ const Header = () => {
   const { data: districts, isLoading: isDistrictsLoading } = useQuery({
     queryKey: ["location_districts"],
     queryFn: async () => {
-      // API chaqiruvini try-catch blokiga oldim va .data ga murojaatni to'g'irladim.
       const response = await api.get("/location/districts");
       return response.data;
     },
-    staleTime: Infinity, // Lokal ma'lumotlar uchun mos
+    staleTime: Infinity, 
   });
 
-  // Scroll event handler
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -80,19 +78,17 @@ const Header = () => {
   }, []);
 
   const handleFavoriteClick = useCallback(() => {
-    // Sevimlilar uchun lokal saqlash ishlatilishi shart emas, ammo asl kodni saqladim.
     localStorage.setItem("liked", JSON.stringify("liked"));
     navigate(
       isAuthenticated ? `/user/${get(user, "sub")}` : "/auth/login",
-      { state: { from: location.pathname, target: "favorites" } } // Qayerga borishini bilish uchun state qo'shdim
+      { state: { from: location.pathname, target: "favorites" } } 
     );
   }, [isAuthenticated, navigate, user, location]);
 
   const LocationButton = ({ isDesktop = true }) => {
     const defaultText = isDistrictsLoading ? "Yuklanmoqda..." : "Toshkent";
 
-    // Default holat: faqat poytaxt ko'rsatilsin
-    const selectedText = "Joylashuv"; // Bu yerga tanlangan tumanlar sonini hisoblash mumkin edi, ammo soddalik uchun qoldirildi.
+    const selectedText = "Joylashuv"; 
 
     return (
       <button

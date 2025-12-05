@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 // Bu modullar loyihangizda mavjud deb hisoblanadi
 import api from "../../../config/auth/api";
 import { useQuery, useQueryClient, useMutation } from "react-query";
@@ -25,6 +25,7 @@ import {
 import ItemCard from "./../../../common/components/ItemCard";
 import Container from "../../../common/components/Container";
 import ProductUpdateModal from "./ProductUpdateModal";
+import { get } from "lodash";
 
 // --- Yordamchi Vizual Komponentlar ---
 
@@ -58,9 +59,6 @@ const StatCard = ({ icon: Icon, label, value, color = "purple" }) => {
   );
 };
 
-/**
- * Foydalanuvchi Boshqaruv panelidagi e'lon kartasi (Tahrirlash/O'chirish tugmalari bilan).
- */
 const DashboardItemCard = ({ product, onLike, isLiked, onEdit, onDelete }) => (
   <div className="relative group">
     <ItemCard
@@ -341,9 +339,6 @@ const ProfileInfo = ({ isMobile = false, onClose, profile_info }) => {
   );
 };
 
-/**
- * Boshqaruv panelining Yon Menyusi (Sidebar).
- */
 const SidebarContent = ({ isMobile = false, onClose, profile_info }) => {
   const sidebarLinks = [
     { icon: Package, label: "E'lonlarim", href: "/dashboard", badge: null },
@@ -394,25 +389,24 @@ const SidebarContent = ({ isMobile = false, onClose, profile_info }) => {
   );
 };
 
-// --- Asosiy Komponent: UserDashboard ---
-
 const UserDashboard = () => {
-  const [activeTab, setActiveTab] = useState("active");
+  const [activeTab, setActiveTab] = useState(() => {
+    const liked = JSON.parse(localStorage.getItem("liked") || "[]");
+    return liked.length > 0 ? "saved" : "active";
+  });
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [likedProducts, setLikedProducts] = useState([]);
 
-  // Tahrirlash/O'chirish/Xabar modali holatlari
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-
   const queryClient = useQueryClient();
 
   const { data: profile_info, isLoading: isProfileLoading } = useQuery({
-    queryKey: ["profile_me", ], 
+    queryKey: ["profile_me"],
     queryFn: async () => {
       const response = await api.get("/profiles/me");
       return response.data;
@@ -425,7 +419,6 @@ const UserDashboard = () => {
     setLikedProducts(stored);
   }, []);
 
-  // Filterlash uchun tablar
   const tabs = [
     { id: "active", label: "Faol", icon: Package, filter: "elonlar" },
     { id: "pending", label: "Kutilmoqda", icon: Clock, filter: "kutilmoqda" },
@@ -437,10 +430,15 @@ const UserDashboard = () => {
     },
   ];
 
-  // Dashbord ma'lumotlarini (e'lonlar va statistika) olish
+  useEffect(() => {
+    setTimeout(() => {
+      localStorage.removeItem("liked");
+    }, 1500);
+  }, []);
+
   const fetchData = async () => {
-    const currentFilter =
-      tabs.find((t) => t.id === activeTab)?.filter || "elonlar";
+    const currentTab = tabs.find((t) => t.id === activeTab);
+    const currentFilter = currentTab?.filter || "elonlar";
 
     const response = await api.get(
       `/profiles/me/dashboard?filter=${currentFilter}`
@@ -454,14 +452,13 @@ const UserDashboard = () => {
     queryFn: fetchData,
   });
 
-  // E'lonni o'chirish
   const deleteMutation = useMutation({
     mutationFn: async (productId) => {
       await api.delete(`/products/by-id/${productId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["dashboard", "active"]); // Faol e'lonlarni yangilash
-      queryClient.invalidateQueries(["dashboard", "pending"]); // Kutilmoqda e'lonlarni yangilash
+      queryClient.invalidateQueries(["dashboard", "active"]);
+      queryClient.invalidateQueries(["dashboard", "pending"]);
       setSuccessMessage("E'lon muvaffaqiyatli o'chirildi.");
       setIsSuccessModalOpen(true);
       closeDeleteModal();
@@ -472,30 +469,25 @@ const UserDashboard = () => {
     },
   });
 
-  // Yoqtirish/Yoqtirmaslik
   const handleLike = async (productId) => {
     const token = localStorage.getItem("accessToken");
     const isCurrentlyLiked = likedProducts.includes(productId);
 
     if (!token) {
-      // Avtorizatsiyadan o'tmagan foydalanuvchi uchun Local Storage
       const updatedLikes = isCurrentlyLiked
         ? likedProducts.filter((id) => id !== productId)
         : [...likedProducts, productId];
       localStorage.setItem("likedProducts", JSON.stringify(updatedLikes));
       setLikedProducts(updatedLikes);
-      // Agar 'saved' tabida bo'lsak va yoqtirishni o'chirsak, o'sha e'lon ro'yxatdan olib tashlanishi uchun dashboardni yangilash
+
       if (activeTab === "saved" && isCurrentlyLiked) {
         queryClient.invalidateQueries(["dashboard", activeTab]);
       }
     } else {
-      // Avtorizatsiyadan o'tgan foydalanuvchi uchun API orqali
       try {
         await api.post(`/products/${productId}/like`, {});
-        // Serverdagi holat o'zgargani uchun yoqtirilganlar ro'yxatini yangilash (agar "saved" tabida bo'lsa)
         queryClient.invalidateQueries(["dashboard", "saved"]);
 
-        // Ma'lumotni to'g'ri sinxronlash uchun
         setLikedProducts((prev) =>
           isCurrentlyLiked
             ? prev.filter((id) => id !== productId)
@@ -507,50 +499,62 @@ const UserDashboard = () => {
     }
   };
 
-  // Tahrirlash Modalini ochish
   const handleEdit = (product) => {
     setProductToEdit(product);
     setIsEditModalOpen(true);
   };
 
-  // O'chirish Modalini ochish
   const handleDelete = (product) => {
     setProductToDelete(product);
     setIsDeleteModalOpen(true);
   };
 
-  // O'chirishni tasdiqlash
   const handleConfirmDelete = (productId) => {
     if (productId && !deleteMutation.isLoading) {
       deleteMutation.mutate(productId);
     }
   };
 
-  // O'chirish Modalini yopish
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setProductToDelete(null);
   };
 
-  // Muvaffaqiyat Modalini yopish
   const closeSuccessModal = () => {
     setIsSuccessModalOpen(false);
     setSuccessMessage("");
   };
 
-  const isProductLiked = (productId) => {
-    return likedProducts.includes(productId);
-  };
+  const isProductLiked = useCallback(
+    (productId) => {
+      
+      const token = localStorage.getItem("accessToken");
 
+      if (!token) {
+        return likedProducts.includes(productId);
+      } else {
+        return (
+          dashboardData?.data?.some((page) =>
+            get(page, "content.products", []).some(
+              (item) => item.id === productId && item.isLike
+            )
+          ) || false
+        );
+      }
+    },
+    [dashboardData]
+  );
+  console.log(isProductLiked());
+  console.log(dashboardData);
   const products =
     dashboardData?.content?.products || dashboardData?.content || [];
   const stats = dashboardData?.content?.stats || {};
 
   return (
     <Container className="py-6 md:py-10">
-      <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
+      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 mt-5">
         <aside className="hidden lg:block w-80 flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sticky top-6">
+          <div className="bg-white rounded-2xl  border border-gray-100 p-6 sticky top-6">
             <ProfileInfo profile_info={profile_info} />
             <SidebarContent profile_info={profile_info} />
 
@@ -601,7 +605,7 @@ const UserDashboard = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 ">
             <StatCard
               icon={Package}
               label="Jami e'lonlar"
@@ -635,7 +639,7 @@ const UserDashboard = () => {
               </h2>
               <Link
                 to="/add-item"
-                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98] text-sm font-medium shadow-lg shadow-purple-500/30"
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98] text-sm font-medium shadow-lg "
               >
                 <Plus size={18} />
                 <span>E'lon qo'shish</span>
@@ -700,7 +704,6 @@ const UserDashboard = () => {
           </div>
         </main>
       </div>
-
 
       <ProductUpdateModal
         isOpen={isEditModalOpen}

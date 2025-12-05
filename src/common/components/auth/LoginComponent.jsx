@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { IMaskInput } from "react-imask"; // YANGI: IMaskInput
+import { IMaskInput } from "react-imask";
 import {
   Phone,
   Lock,
@@ -17,11 +17,81 @@ import {
 } from "lucide-react";
 import api from "../../../config/auth/api";
 
-const PRIMARY_COLOR = "#A64AC9";
-const PRIMARY_LIGHT = "#C060F5";
+const PRIMARY_COLOR = "#C060F5";
+const PRIMARY_LIGHT = "#D080FF";
+
+const OtpInputGrid = ({ length = 6, value, onChange, disabled }) => {
+  const [otp, setOtp] = useState(Array(length).fill(""));
+  const inputRefs = useRef([]);
+
+  useEffect(() => {
+    if (value === "") {
+      setOtp(Array(length).fill(""));
+    }
+  }, [value, length]);
+
+  const handleChange = (e, index) => {
+    const val = e.target.value;
+    if (/[^0-9]/.test(val)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = val.slice(-1);
+    setOtp(newOtp);
+    onChange(newOtp.join(""));
+
+    if (val && index < length - 1) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
+
+  const handleKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      e.preventDefault();
+      inputRefs.current[index - 1].focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text").replace(/\D/g, "");
+    const newOtp = Array(length).fill("");
+
+    for (let i = 0; i < length && i < pasteData.length; i++) {
+      newOtp[i] = pasteData[i];
+    }
+
+    setOtp(newOtp);
+    onChange(newOtp.join(""));
+
+    const lastIndex = Math.min(length - 1, pasteData.length - 1);
+    if (lastIndex >= 0) {
+      inputRefs.current[lastIndex].focus();
+    }
+  };
+
+  return (
+    <div className="flex justify-between gap-2" onPaste={handlePaste}>
+      {otp.map((digit, index) => (
+        <input
+          key={index}
+          ref={(el) => (inputRefs.current[index] = el)}
+          type="text"
+          value={digit}
+          onChange={(e) => handleChange(e, index)}
+          onKeyDown={(e) => handleKeyDown(e, index)}
+          maxLength={1}
+          disabled={disabled}
+          inputMode="numeric"
+          className="w-full h-14 text-2xl font-bold text-center border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-all disabled:bg-gray-50"
+          style={{ caretColor: PRIMARY_COLOR }}
+        />
+      ))}
+    </div>
+  );
+};
 
 const LoginComponent = () => {
-  const [phone, setPhone] = useState(""); // Endi faqat raqamlar (998901234567)
+  const [phone, setPhone] = useState("");
   const [step, setStep] = useState("phone");
   const [code, setCode] = useState("");
   const [username, setUsername] = useState("");
@@ -34,7 +104,14 @@ const LoginComponent = () => {
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [success, setSuccess] = useState("");
-  const [responseCode, setResponseCode] = useState("");
+
+  const isCodeValid = code.length === 6;
+  const isFormValid = useMemo(() => {
+    if (step === "phone") return phone.length === 12;
+    if (step === "otp") return isCodeValid;
+    if (step === "register") return username.trim() && regionId && districtId;
+    return false;
+  }, [step, phone, isCodeValid, username, regionId, districtId]);
 
   useEffect(() => {
     if (step === "register") fetchRegionsData();
@@ -50,10 +127,136 @@ const LoginComponent = () => {
 
   const fetchRegionsData = async () => {
     try {
+      setLoading(true);
       const response = await api.get("/location/regions");
       if (response.data?.content) setRegions(response.data.content);
     } catch (err) {
       setError("Viloyatlarni yuklashda xatolik");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendPhone = async () => {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    if (phone.length !== 12) {
+      setError("To'liq telefon raqamini kiriting (12 raqam)");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const checkRes = await api.post("/auth/check-phone", {
+        phone: `+${phone}`,
+      });
+      setIsNewUser(!checkRes.data?.exists);
+
+      await api.post("/auth/send-otp", { phone: `+${phone}` });
+
+      setStep("otp");
+      setCountdown(120);
+      setSuccess("Kod yuborildi");
+      setCode("");
+    } catch (err) {
+      if (err?.response?.status === 409) {
+        setStep("otp");
+        setCountdown(120);
+        setError("Bu raqam ro'yxatdan o'tgan. Kodni kuting.");
+      } else {
+        setError("Xatolik yuz berdi. Qayta urining.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    if (!isCodeValid) {
+      setError("Kod noto'g'ri yoki to'liq emas (6 raqam bo'lishi kerak)");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const verifyRes = await api.post("/auth/verify-otp", {
+        phone: `+${phone}`,
+        code: code,
+      });
+
+      if (verifyRes.data?.success) {
+        if (isNewUser) {
+          setStep("register");
+          setSuccess("Kod tasdiqlandi. Ro'yxatdan o'ting.");
+        } else {
+          const loginRes = await api.post("/auth/login/verify-otp", {
+            phone: `+${phone}`,
+            code: code,
+          });
+          localStorage.setItem("accessToken", loginRes.data?.accessToken);
+          localStorage.setItem("refreshToken", loginRes.data?.refreshToken);
+          setSuccess("Muvaffaqiyatli! Tizimga kirildi.");
+          setTimeout(() => (window.location.href = "/"), 1500);
+        }
+      } else {
+        setError("Kod noto'g'ri. Qayta urinib ko'ring.");
+        setCode("");
+      }
+    } catch (err) {
+      setError("Xatolik yuz berdi");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAccount = async () => {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    if (!isFormValid) {
+      setError("Barcha maydonlarni to'ldirish shart");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await api.post("/auth/create-account", {
+        phone: `+${phone}`,
+        username,
+        regionId: parseInt(regionId),
+        districtId: parseInt(districtId),
+      });
+
+      localStorage.setItem("accessToken", res.data?.accessToken);
+      localStorage.setItem("refreshToken", res.data?.refreshToken);
+      setSuccess("Hisob yaratildi! Tizimga kirildi.");
+      setTimeout(() => (window.location.href = "/"), 1500);
+    } catch (err) {
+      setError("Hisob yaratishda xatolik");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+    setLoading(true);
+    try {
+      await api.post("/auth/send-otp", { phone: `+${phone}` });
+      setCountdown(120);
+      setSuccess("Yangi kod yuborildi");
+      setCode("");
+    } catch (err) {
+      setError("Kod yuborishda xatolik");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,140 +274,14 @@ const LoginComponent = () => {
     return `${m}:${sec < 10 ? "0" : ""}${sec}`;
   };
 
-  const handleSendPhone = async () => {
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    if (phone.length !== 12) {
-      setError("To'liq telefon raqamini kiriting");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const checkRes = await api.post("/auth/check-phone", {
-        phone: `+${phone}`,
-      });
-      setIsNewUser(!checkRes.data?.exists);
-
-      const res = await api.post("/auth/send-otp", { phone: `+${phone}` });
-      setStep("otp");
-      setCountdown(120);
-      setSuccess("Kod yuborildi");
-      setResponseCode(res.data.code || "");
-
-      if (res.data.code) {
-        setTimeout(() => setCode(res.data.code), 1000);
-      }
-    } catch (err) {
-      if (err?.response?.status === 409) {
-        setStep("otp");
-        setCountdown(120);
-        setError("Bu raqam ro'yxatdan o'tgan. Kod kiriting.");
-      } else {
-        setError("Xatolik yuz berdi. Qayta urining.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    const finalCode = responseCode || code;
-    if (!finalCode || finalCode.length < 4) {
-      setError("Kod noto'g'ri");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const verifyRes = await api.post("/auth/verify-otp", {
-        phone: `+${phone}`,
-        code: finalCode,
-      });
-
-      if (verifyRes.data?.success) {
-        if (isNewUser) {
-          setStep("register");
-          setSuccess("Kod tasdiqlandi");
-        } else {
-          const loginRes = await api.post("/auth/login/verify-otp", {
-            phone: `+${phone}`,
-            code: finalCode,
-          });
-          localStorage.setItem("accessToken", loginRes.data?.accessToken);
-          localStorage.setItem("refreshToken", loginRes.data?.refreshToken);
-          setSuccess("Muvaffaqiyatli!");
-          setTimeout(() => (window.location.href = "/"), 1500);
-        }
-      } else {
-        setError("Kod noto'g'ri");
-      }
-    } catch (err) {
-      setError("Xatolik yuz berdi");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateAccount = async () => {
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    if (!username.trim() || !regionId || !districtId) {
-      setError("Barcha maydonlarni to'ldiring");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const res = await api.post("/auth/create-account", {
-        phone: `+${phone}`,
-        username,
-        regionId: parseInt(regionId),
-        districtId: parseInt(districtId),
-      });
-
-      localStorage.setItem("accessToken", res.data?.content?.accessToken);
-      localStorage.setItem("refreshToken", res.data?.content?.refreshToken);
-      setSuccess("Hisob yaratildi!");
-      setTimeout(() => (window.location.href = "/"), 1500);
-    } catch (err) {
-      setError(
-        err?.response?.status === 409
-          ? "Raqam allaqachon ishlatilgan"
-          : "Xatolik"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (countdown > 0) return;
-    setLoading(true);
-    try {
-      const res = await api.post("/auth/send-otp", { phone: `+${phone}` });
-      setCountdown(120);
-      setResponseCode(res.data?.code || "");
-      setSuccess("Yangi kod yuborildi");
-      setCode("");
-    } catch (err) {
-      setError("Kod yuborishda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const goBack = () => {
-    if (step === "otp") setStep("phone");
-    if (step === "register") setStep("otp");
+    if (step === "otp") {
+      setStep("phone");
+      setCode("");
+    }
+    if (step === "register") {
+      setStep("otp");
+    }
     setError("");
     setSuccess("");
   };
@@ -217,7 +294,11 @@ const LoginComponent = () => {
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
   };
 
   const InputField = ({ icon: Icon, ...props }) => (
@@ -227,7 +308,7 @@ const LoginComponent = () => {
       </div>
       <input
         {...props}
-        className="w-full  pl-10 pr-3 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-sm"
+        className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-base placeholder:text-gray-400 transition"
       />
     </div>
   );
@@ -239,7 +320,7 @@ const LoginComponent = () => {
       </div>
       <select
         {...props}
-        className="w-full pl-10 pr-8 py-3 rounded-lg border border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-sm appearance-none"
+        className="w-full pl-10 pr-8 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-base appearance-none bg-white transition disabled:bg-gray-50"
       >
         {children}
       </select>
@@ -262,9 +343,8 @@ const LoginComponent = () => {
   );
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-purple-50 to-pink-50">
-      <div className="w-full max-w-4xl bg-white rounded-xl shadow-2xl flex overflow-hidden min-h-[520px]">
-        {/* Chap qism */}
+    <div className="flex min-h-screen items-center justify-center p-0 bg-white md:bg-gray-50/50">
+      <div className="w-full max-w-4xl bg-white rounded-none md:rounded-xl shadow-none md:shadow-2xl flex overflow-hidden min-h-screen md:min-h-[600px]">
         <div
           className="hidden md:flex flex-col justify-between p-10 w-1/2 text-white"
           style={{
@@ -272,76 +352,94 @@ const LoginComponent = () => {
           }}
         >
           <div>
-            <h1 className="text-4xl font-bold flex items-center">
-              <LogIn className="mr-3" /> E-Surxondaryo
+            <h1 className="text-3xl font-bold flex items-center">
+              <LogIn className="mr-3 w-7 h-7" /> E-Surxondaryo
             </h1>
-            <motion.h2 className="text-4xl font-extrabold mt-8 leading-tight">
+            <h2 className="text-4xl font-extrabold mt-12 leading-tight">
               Surxondaryo bo'yicha{" "}
               <span className="block text-yellow-300">
                 Soting va Sotib oling!
               </span>
-            </motion.h2>
+            </h2>
           </div>
-          <p className="text-purple-100">Tez. Ishonchli. Mahalliy.</p>
+
+          <div className="text-purple-100/90 text-sm">
+            <p className="mb-2 font-medium">Foydalanish shartlari:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>
+                Ro'yxatdan o'tish faqat Surxondaryo viloyati fuqarolari uchun.
+              </li>
+              <li>SMS orqali kod yuboriladi, maxfiylik kafolatlanadi.</li>
+              <li>Shaxsiy ma'lumotlaringiz xavfsiz saqlanadi.</li>
+            </ul>
+          </div>
         </div>
 
-        {/* O'ng qism */}
-        <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
-          <div className="flex justify-between items-center mb-6">
-            <div>
+        <div className="w-full md:w-1/2 p-6 sm:p-10 flex flex-col justify-center">
+          <div className="flex justify-between items-start mb-8">
+            <div className="w-full">
               <h2
-                className="text-3xl font-bold"
+                className="text-3xl font-extrabold mb-1"
                 style={{ color: PRIMARY_COLOR }}
               >
-                {step === "phone" && "Telefon raqam"}
+                {step === "phone" && "Tizimga kirish"}
                 {step === "otp" && "Kod tasdiqlash"}
                 {step === "register" && "Ro'yxatdan o'tish"}
               </h2>
-              <p className="text-gray-500 text-sm mt-1">
-                {step === "phone" && "Raqamingizni kiriting"}
-                {step === "otp" && "SMSdagi kodni kiriting"}
-                {step === "register" && "Ma'lumotlarni to'ldiring"}
+              <p className="text-gray-500 text-sm">
+                {step === "phone" && "Telefon raqamingizni kiriting"}
+                {step === "otp" && "SMSdagi 6 raqamli kodni kiriting"}
+                {step === "register" && "Shaxsiy ma'lumotlaringizni to'ldiring"}
               </p>
             </div>
             {step !== "phone" && (
               <button
                 onClick={goBack}
-                className="p-2 hover:bg-gray-100 rounded-full"
+                className="p-2 ml-4 hover:bg-gray-100 rounded-full flex-shrink-0 transition"
+                aria-label="Orqaga"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-6 h-6 text-gray-600" />
               </button>
             )}
           </div>
 
-          <div className="mb-6 flex gap-2">
+          <div className="mb-8 flex gap-2">
             <div
-              className={`h-1 flex-1 rounded-full ${
+              className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
                 step !== "phone" ? "bg-purple-500" : "bg-gray-200"
               }`}
             />
             <div
-              className={`h-1 flex-1 rounded-full ${
+              className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
                 step === "otp" || step === "register"
                   ? "bg-purple-500"
                   : "bg-gray-200"
               }`}
             />
             <div
-              className={`h-1 flex-1 rounded-full ${
+              className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
                 step === "register" ? "bg-purple-500" : "bg-gray-200"
               }`}
             />
           </div>
 
           {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center text-sm text-green-700">
-              <CheckCircle className="mr-2 w-5 h-5" /> {success}
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 bg-green-50 border border-green-300 rounded-xl flex items-center text-sm text-green-700"
+            >
+              <CheckCircle className="mr-2 w-5 h-5 flex-shrink-0" /> {success}
+            </motion.div>
           )}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center text-sm text-red-700">
-              <AlertCircle className="mr-2 w-5 h-5" /> {error}
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 bg-red-50 border border-red-300 rounded-xl flex items-center text-sm text-red-700"
+            >
+              <AlertCircle className="mr-2 w-5 h-5 flex-shrink-0" /> {error}
+            </motion.div>
           )}
 
           <AnimatePresence mode="wait">
@@ -353,7 +451,6 @@ const LoginComponent = () => {
               exit="exit"
               className="space-y-6"
             >
-              {/* PHONE STEP */}
               {step === "phone" && (
                 <>
                   <motion.div variants={itemVariants}>
@@ -366,8 +463,9 @@ const LoginComponent = () => {
                         value={phone}
                         onAccept={(value) => setPhone(value.replace(/\D/g, ""))}
                         placeholder="+998 __ ___ __ __"
-                        className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-sm"
+                        className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-base transition"
                         disabled={loading}
+                        inputMode="tel"
                       />
                     </div>
                   </motion.div>
@@ -375,9 +473,9 @@ const LoginComponent = () => {
                   <motion.div variants={itemVariants}>
                     <button
                       onClick={handleSendPhone}
-                      disabled={loading || phone.length !== 12}
+                      disabled={loading || !isFormValid}
                       style={{ backgroundColor: PRIMARY_COLOR }}
-                      className="w-full py-3 rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition"
+                      className="w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition duration-200"
                     >
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -390,39 +488,33 @@ const LoginComponent = () => {
                 </>
               )}
 
-              {/* OTP STEP */}
               {step === "otp" && (
                 <>
                   <motion.div variants={itemVariants} className="text-center">
                     <div
                       className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3"
-                      style={{ backgroundColor: PRIMARY_COLOR + "15" }}
+                      style={{ backgroundColor: PRIMARY_LIGHT + "30" }}
                     >
                       <Shield
                         className="w-6 h-6"
                         style={{ color: PRIMARY_COLOR }}
                       />
                     </div>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">
+                    <p className="text-sm text-gray-600 mb-4">
+                      <span className="font-semibold text-gray-800">
                         +{phone.slice(0, 3)} {phone.slice(3, 5)}{" "}
                         {phone.slice(5, 8)} {phone.slice(8, 10)}{" "}
                         {phone.slice(10)}
                       </span>{" "}
-                      ga kod yuborildi
+                      raqamiga maxfiy kod yuborildi.
                     </p>
                   </motion.div>
 
                   <motion.div variants={itemVariants}>
-                    <InputField
-                      icon={Lock}
-                      type="text"
+                    <OtpInputGrid
+                      length={6}
                       value={code}
-                      onChange={(e) =>
-                        setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-                      }
-                      placeholder="______"
-                      maxLength={6}
+                      onChange={setCode}
                       disabled={loading}
                     />
                   </motion.div>
@@ -430,9 +522,9 @@ const LoginComponent = () => {
                   <motion.div variants={itemVariants}>
                     <button
                       onClick={handleVerifyOtp}
-                      disabled={loading || (!code && !responseCode)}
+                      disabled={loading || !isFormValid}
                       style={{ backgroundColor: PRIMARY_COLOR }}
-                      className="w-full  py-3 rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                      className="w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition duration-200"
                     >
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -445,14 +537,14 @@ const LoginComponent = () => {
 
                   <motion.div
                     variants={itemVariants}
-                    className="text-center text-sm"
+                    className="text-center text-sm pt-2"
                   >
                     {countdown > 0 ? (
                       <p className="text-gray-500">
                         Qayta yuborish:{" "}
                         <span
                           style={{ color: PRIMARY_COLOR }}
-                          className="font-medium"
+                          className="font-semibold"
                         >
                           {formatTime(countdown)}
                         </span>
@@ -462,7 +554,7 @@ const LoginComponent = () => {
                         onClick={handleResendOtp}
                         disabled={loading}
                         style={{ color: PRIMARY_COLOR }}
-                        className="font-medium hover:underline"
+                        className="font-semibold hover:text-purple-600 transition disabled:opacity-50"
                       >
                         Kodni qayta yuborish
                       </button>
@@ -471,7 +563,6 @@ const LoginComponent = () => {
                 </>
               )}
 
-              {/* REGISTER STEP */}
               {step === "register" && (
                 <>
                   <motion.div variants={itemVariants}>
@@ -479,7 +570,7 @@ const LoginComponent = () => {
                       icon={User}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Ismingiz"
+                      placeholder="Ism va Familiyangiz"
                       disabled={loading}
                     />
                   </motion.div>
@@ -490,7 +581,9 @@ const LoginComponent = () => {
                       onChange={handleRegionChange}
                       disabled={loading}
                     >
-                      <option value="">Viloyat</option>
+                      <option value="" disabled>
+                        Viloyatni tanlang
+                      </option>
                       {regions.map((r) => (
                         <option key={r.id} value={r.id}>
                           {r.name}
@@ -505,7 +598,9 @@ const LoginComponent = () => {
                       onChange={(e) => setDistrictId(e.target.value)}
                       disabled={loading || !regionId}
                     >
-                      <option value="">Tuman/Shahar</option>
+                      <option value="" disabled>
+                        Tuman/Shaharni tanlang
+                      </option>
                       {districts.map((d) => (
                         <option key={d.id} value={d.id}>
                           {d.name}
@@ -516,11 +611,9 @@ const LoginComponent = () => {
                   <motion.div variants={itemVariants}>
                     <button
                       onClick={handleCreateAccount}
-                      disabled={
-                        loading || !username || !regionId || !districtId
-                      }
+                      disabled={loading || !isFormValid}
                       style={{ backgroundColor: PRIMARY_COLOR }}
-                      className="w-full py-3 rounded-lg text-white font-medium flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                      className="w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition duration-200"
                     >
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -534,6 +627,20 @@ const LoginComponent = () => {
               )}
             </motion.div>
           </AnimatePresence>
+
+          <div className="mt-8 text-center text-xs text-gray-500 md:hidden">
+            <p className="mb-1">Tizimdan foydalanish orqali siz:</p>
+            <p>
+              <span className="font-bold" style={{ color: PRIMARY_COLOR }}>
+                Foydalanish shartlari
+              </span>
+              ga va{" "}
+              <span className="font-bold" style={{ color: PRIMARY_COLOR }}>
+                Maxfiylik siyosati
+              </span>
+              ga rozilik bildirasiz.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -319,14 +319,11 @@ const CatalogFilter = ({
             )}
           </div>
 
-          {/* Products Grid */}
           {isLoading ? (
             renderSkeletons()
           ) : items.length === 0 ? (
             <div className="text-center py-12 md:py-16 bg-white rounded-xl border border-gray-100">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl mx-auto flex items-center justify-center mb-4">
-                <Sparkles className="w-10 h-10 text-purple-600" />
-              </div>
+              
               <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">
                 Hech narsa topilmadi
               </h3>

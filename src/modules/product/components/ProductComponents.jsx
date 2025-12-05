@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Heart,
   Share2,
   MapPin,
   Clock,
   Eye,
-  Shield,
   Phone,
   MessageCircle,
   ChevronLeft,
@@ -16,7 +15,10 @@ import {
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "./../../../config/auth/api";
-import Container from "../../../common/components/Container";
+import useGetUser from "../../../hooks/services/useGetUser";
+import { useQuery, useMutation, useQueryClient } from "react-query";
+
+// --- Yordamchi Funktsiyalar (O'zgarishsiz) ---
 
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
@@ -46,16 +48,144 @@ const formatPrice = (price, currency) => {
   })}`;
 };
 
+const getAuthToken = () => localStorage.getItem("accessToken");
+
+// --- Fetch Funksiyalari (React Query uchun) ---
+
+// 1. Mahsulot ma'lumotlarini olish
+const fetchProductById = async (id) => {
+  if (!id) throw new Error("Mahsulot IDsi mavjud emas");
+  const response = await api.get(`/products/by-id/${id}`);
+  if (response.data.success && response.data.content) {
+    return response.data.content;
+  }
+  throw new Error(
+    response.data?.message ||
+      "Mahsulot ma'lumotlarini yuklashda xatolik yuz berdi."
+  );
+};
+
+// 2. Yoqtirish holatini o'zgartirish (POST)
+const toggleLike = async ({ productId }) => {
+  const response = await api.post(`/products/${productId}/like`, {});
+  return response.data; // Serverdan yangi holat va sanog'ini qaytarish kutiladi
+};
+
+// --- Asosiy Komponent ---
+
 const ProductDetail = () => {
   const [currentImage, setCurrentImage] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { id } = useParams();
+  const user = useGetUser();
+  const userId = user?.sub;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
+  // --- 1. Mahsulot Ma'lumotlarini Yuklash (useQuery) ---
+  const {
+    data: product,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(["productDetail", id], () => fetchProductById(id), {
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    onError: (err) => {
+      console.error("Failed to load product details:", err);
+    },
+  });
+
+  const images =
+    product?.images?.sort((a, b) => a.order - b.order).map((img) => img.url) ||
+    [];
+
+  // isLiked va likesCount ni product ma'lumotlaridan olish
+  // Bu qator optimistik yangilanish uchun asosiy manba bo'lib xizmat qiladi
+  const likesCount = product?.likesCount || 0;
+  // Mahsulot API'si liked_ids ni qaytarishi shart, aks holda bu mantiq ishlamaydi.
+  // userId mavjud bo'lsa va u liked_ids qatorida bo'lsa, yoqtirilgan hisoblanadi.
+  const isLiked =
+    (!!userId && product?.liked_ids?.includes(userId)) || false;
+
+
+  // --- 2. Yoqtirish Holatini O'zgartirish (useMutation) ---
+  const likeMutation = useMutation(toggleLike, {
+    onMutate: async () => {
+      // Optimistik Yangilashni boshlash: so'rov tugagunicha UI ni o'zgartirish
+      await queryClient.cancelQueries(["productDetail", id]);
+
+      const previousProduct = queryClient.getQueryData(["productDetail", id]);
+
+      // Yangi holatni hisoblash (Optimistik)
+      const newIsLiked = !isLiked;
+      const newLikesCount = newIsLiked
+        ? likesCount + 1
+        : Math.max(0, likesCount - 1);
+
+      // Keshni optimistik yangilash
+      queryClient.setQueryData(["productDetail", id], (old) => {
+        if (!old) return old;
+        
+        let newLikedIds = old.liked_ids ? [...old.liked_ids] : [];
+        if (newIsLiked) {
+          if (userId && !newLikedIds.includes(userId)) {
+            newLikedIds.push(userId);
+          }
+        } else {
+          newLikedIds = newLikedIds.filter((likedId) => likedId !== userId);
+        }
+
+        return {
+          ...old,
+          likesCount: newLikesCount,
+          liked_ids: newLikedIds,
+        };
+      });
+
+      // Optimistik yangilanish natijasini qaytarish (Rollback uchun)
+      return { previousProduct };
+    },
+    onError: (err, variables, context) => {
+      // Xato yuz berganda avvalgi holatni qaytarish (Rollback)
+      console.error("Error toggling like, rolling back:", err);
+      if (context?.previousProduct) {
+        queryClient.setQueryData(
+          ["productDetail", id],
+          context.previousProduct
+        );
+      }
+      alert(
+        "Yoqtirishni saqlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
+      );
+    },
+    onSettled: () => {
+      // Muvaffaqiyatli yoki xato bilan tugasa, keshni bekor qilib, haqiqiy ma'lumotni yuklash
+      queryClient.invalidateQueries(["productDetail", id]);
+    },
+  });
+
+  const handleLikeClick = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!id) return;
+
+      const token = getAuthToken();
+
+      if (userId && token) {
+        // Tizimga kirgan, optimistik UI bilan serverga so'rov yuborish
+        likeMutation.mutate({ productId: id });
+      } else {
+        // Tizimga kirmagan, ogohlantirish berish (anonim like saqlanmaydi)
+        alert("Iltimos, yoqtirishni saqlash uchun tizimga kiring!");
+      }
+    },
+    [id, userId, likeMutation]
+  );
+  
+  // Qolgan Image Gallery funksiyalari (o'zgarishsiz)
   const nextImage = () => {
     if (images.length === 0) return;
     setCurrentImage((prev) => (prev + 1) % images.length);
@@ -69,56 +199,19 @@ const ProductDetail = () => {
   const openModal = (index) => {
     setCurrentImage(index);
     setIsModalOpen(true);
+    // Modal ochilganda scrollni o'chirish
+    document.body.style.overflow = 'hidden';
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
+    // Modal yopilganda scrollni tiklash
+    document.body.style.overflow = 'unset';
   };
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/products/by-id/${id}`);
-        if (response.data.success && response.data.content) {
-          setProduct(response.data.content);
-          setIsFavorite(response.data.content.liked_ids?.length > 0);
-        } else {
-          setError("Mahsulot topilmadi.");
-        }
-      } catch (err) {
-        setError(
-          err.response?.data?.message ||
-            err.message ||
-            "Mahsulot ma'lumotlarini yuklashda xatolik yuz berdi."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+  // --- UX/UI: Rendering Logikasi ---
 
-    fetchProduct();
-  }, [id]);
-
-  const images =
-    product?.images?.sort((a, b) => a.order - b.order).map((img) => img.url) ||
-    [];
-
-  const specifications = product
-    ? [
-        { label: "Kategoriya", value: product.category?.name || "N/A" },
-        { label: "To'lov turi", value: product.paymentType || "N/A" },
-        { label: "Valyuta", value: product.currencyType || "N/A" },
-        { label: "Kelishuv", value: product.negotiable ? "Bor" : "Yo'q" },
-        { label: "Viloyat", value: product.region?.name || "N/A" },
-        { label: "Tuman", value: product.district?.name || "N/A" },
-      ]
-    : [];
-
-  const propertyFeatures =
-    product?.propertyValues?.map((prop) => prop.value) || [];
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
@@ -129,7 +222,7 @@ const ProductDetail = () => {
     );
   }
 
-  if (error || !product) {
+  if (isError || !product) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center bg-white p-8 rounded-xl ">
@@ -137,7 +230,9 @@ const ProductDetail = () => {
           <p className="text-xl font-semibold text-red-600 mb-2">
             Mahsulotni yuklashda xatolik
           </p>
-          <p className="text-gray-600 text-sm">{error}</p>
+          <p className="text-gray-600 text-sm">
+            {error?.message || "Mahsulot topilmadi yoki xato yuz berdi."}
+          </p>
           <button
             onClick={() => navigate("/")}
             className="mt-4 text-purple-600 hover:text-purple-700 font-medium text-sm"
@@ -149,8 +244,21 @@ const ProductDetail = () => {
     );
   }
 
+  const specifications = [
+    { label: "Kategoriya", value: product.category?.name || "N/A" },
+    { label: "To'lov turi", value: product.paymentType || "N/A" },
+    { label: "Valyuta", value: product.currencyType || "N/A" },
+    { label: "Kelishuv", value: product.negotiable ? "Bor" : "Yo'q" },
+    { label: "Viloyat", value: product.region?.name || "N/A" },
+    { label: "Tuman", value: product.district?.name || "N/A" },
+  ];
+
+  const propertyFeatures =
+    product?.propertyValues?.map((prop) => prop.value) || [];
+
   return (
     <>
+      {/* --- Mobile Header --- */}
       <header className="bg-white md:hidden sm:block border-b sticky top-0 z-20">
         <div className="max-w-6xl mx-auto sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -167,17 +275,16 @@ const ProductDetail = () => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setIsFavorite(!isFavorite)}
+              onClick={handleLikeClick}
+              // Optimistik yangilanish tufayli likeMutation.isLoading ni o'chirib qo'yish
               className={`p-2 rounded-lg transition-colors ${
-                isFavorite
+                isLiked
                   ? "bg-red-50 text-red-500"
                   : "hover:bg-gray-100 text-gray-600"
               }`}
               aria-label="Sevimlilarga qo'shish"
             >
-              <Heart
-                className={`w-6 h-6 ${isFavorite ? "fill-current" : ""}`}
-              />
+              <Heart className={`w-6 h-6 ${isLiked ? "fill-current" : ""}`} />
             </button>
             <button
               className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
@@ -188,13 +295,17 @@ const ProductDetail = () => {
           </div>
         </div>
       </header>
-      <div className="sm:px-6 py-6 lg:py-8">
+      {/* --- Main Content Layout --- */}
+      <div className="max-w-7xl mx-auto sm:px-6 py-6 lg:py-8">
         <div className="grid lg:grid-cols-5 gap-6 lg:gap-8">
+          {/* --- Left Column: Images, Description, Specs --- */}
           <div className="lg:col-span-3 space-y-6">
+            {/* Image Section */}
             <section className="bg-white rounded-xl overflow-hidden shadow-sm">
               <div className="relative group">
                 <button
                   onClick={() => openModal(currentImage)}
+                  // Fullscreen rasm uchun mobil qurilmalarda ham to'g'ri ishlaydigan aspekt nisbat
                   className="aspect-[4/3] w-full h-auto max-h-[500px] block focus:outline-none focus:ring-4 focus:ring-purple-200 cursor-zoom-in"
                   aria-label="Rasmni kattalashtirish"
                 >
@@ -260,6 +371,7 @@ const ProductDetail = () => {
               </div>
             </section>
 
+            {/* Thumbnail Gallery */}
             {images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {images.map((img, idx) => (
@@ -286,6 +398,7 @@ const ProductDetail = () => {
               </div>
             )}
 
+            {/* Mobile Title/Price/Location */}
             <div className="bg-white rounded-xl p-5 shadow-sm lg:hidden">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 {product.title}
@@ -317,6 +430,7 @@ const ProductDetail = () => {
               </div>
             </div>
 
+            {/* Description Section */}
             <section className="bg-white rounded-xl p-5 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-3 border-b pb-2">
                 Tavsif
@@ -331,11 +445,12 @@ const ProductDetail = () => {
                 </div>
                 <div className="flex items-center gap-1">
                   <Heart className="w-4 h-4" />
-                  <span>{product.likesCount || 0} yoqtirishlar</span>
+                  <span>{likesCount} yoqtirishlar</span>
                 </div>
               </div>
             </section>
 
+            {/* Specifications Section */}
             <section className="bg-white rounded-xl p-5 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
                 Texnik Xususiyatlar
@@ -357,6 +472,7 @@ const ProductDetail = () => {
               </div>
             </section>
 
+            {/* Key Features Section */}
             {propertyFeatures.length > 0 && (
               <section className="bg-white rounded-xl p-5 shadow-sm">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
@@ -387,10 +503,12 @@ const ProductDetail = () => {
             )}
           </div>
 
+          {/* --- Right Column: Price, Seller Info, Safety --- */}
           <div className="lg:col-span-2">
             <div className="lg:sticky lg:top-20 space-y-6">
-              <div className="bg-white rounded-xl p-5  hidden lg:block">
-                <div className="mb-4">
+              {/* Desktop Price/Title/Location */}
+              <div className="bg-white rounded-xl p-5 hidden lg:block">
+                <div className="mb-4 flex justify-between items-center">
                   <div className="flex items-baseline gap-2 mb-1">
                     <span
                       className="text-3xl font-bold"
@@ -404,6 +522,21 @@ const ProductDetail = () => {
                       </span>
                     )}
                   </div>
+
+                  <button
+                    onClick={handleLikeClick}
+                    // Optimistik yangilanish tufayli likeMutation.isLoading ni o'chirib qo'yish
+                    className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
+                      isLiked
+                        ? "bg-purple-100 text-purple-600"
+                        : "bg-gray-100 hover:bg-purple-50 hover:text-purple-600"
+                    }`}
+                    aria-label="Sevimlilarga qo'shish"
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`}
+                    />
+                  </button>
                 </div>
 
                 <h1 className="text-xl font-semibold text-gray-900 mb-4">
@@ -424,25 +557,14 @@ const ProductDetail = () => {
                     </span>
                   </div>
                 </div>
-
-                {/* <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-start gap-2">
-                  <Shield className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-blue-900">
-                    Xaridor Himoyasi: Pulni qaytarish kafolati.{" "}
-                    <a href="#" className="underline font-medium">
-                      Shartlar
-                    </a>{" "}
-                    haqida ko'proq o'qing.
-                  </p>
-                </div> */}
               </div>
 
-              <div className="bg-white rounded-2xl p-6  border border-gray-100">
+              {/* Seller Information */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100">
                 <h3 className="text-xl font-semibold text-gray-900 mb-5 border-b pb-3">
                   Sotuvchi Ma'lumotlari
                 </h3>
 
-                {/* Avatar + Name */}
                 <div className="flex items-center gap-4 mb-6">
                   <div
                     className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 shadow"
@@ -475,7 +597,6 @@ const ProductDetail = () => {
                         </p>
                       )}
 
-                      {/* District Name */}
                       {product?.district?.name && (
                         <p className="flex items-center gap-1">
                           <span className="font-medium text-gray-700">
@@ -485,7 +606,6 @@ const ProductDetail = () => {
                         </p>
                       )}
 
-                      {/* Phone Number */}
                       {product.profile?.phoneNumber && (
                         <p className="flex items-center gap-1">
                           <span className="font-medium text-gray-700">
@@ -503,8 +623,8 @@ const ProductDetail = () => {
                   {product.profile?.phoneNumber && (
                     <a
                       href={`tel:${product.profile.phoneNumber}`}
-                      className="py-3 px-4 rounded-xl font-medium text-white text-sm 
-        flex items-center justify-center gap-2 transition-all 
+                      className="py-3 px-4 rounded-xl font-medium text-white text-sm  
+        flex items-center justify-center gap-2 transition-all  
         hover:opacity-90 shadow-md bg-[#A64AC9]"
                     >
                       <Phone className="w-4 h-4" />
@@ -515,8 +635,8 @@ const ProductDetail = () => {
                   {product.profile?.userId && (
                     <a
                       href={`/chat?userId=${product.profile.userId}&productId=${product.id}`}
-                      className="py-3 px-4 rounded-xl font-medium text-sm 
-        flex items-center justify-center gap-2 border-2 transition-all 
+                      className="py-3 px-4 rounded-xl font-medium text-sm  
+        flex items-center justify-center gap-2 border-2 transition-all  
         hover:bg-gray-50 shadow-md"
                       style={{ borderColor: "#A64AC9", color: "#A64AC9" }}
                     >
@@ -527,6 +647,7 @@ const ProductDetail = () => {
                 </div>
               </div>
 
+              {/* Safety Tips */}
               <div className="bg-white rounded-xl p-5 ">
                 <div className="flex items-center gap-2 mb-3 border-b pb-2">
                   <AlertCircle
@@ -549,6 +670,7 @@ const ProductDetail = () => {
         </div>
       </div>
 
+      {/* --- Mobile Bottom Bar --- */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 shadow-2xl lg:hidden z-30">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           <div className="flex flex-col">
@@ -562,8 +684,10 @@ const ProductDetail = () => {
               href={`/chat?userId=${product.profile?.userId}&productId=${product.id}`}
               className="py-2 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 border transition-all hover:bg-gray-50"
               style={{ borderColor: "#A64AC9", color: "#A64AC9" }}
+              aria-label="Chat orqali bog'lanish"
             >
               <MessageCircle className="w-5 h-5" />
+              Chat
             </a>
             <button
               className="py-2 px-4 rounded-xl font-semibold text-white text-sm transition-all hover:opacity-90"
@@ -575,13 +699,14 @@ const ProductDetail = () => {
         </div>
       </div>
 
+      {/* --- Modal for Fullscreen Image --- */}
       {isModalOpen && images.length > 0 && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 backdrop-blur-sm transition-opacity duration-300 ease-out"
           onClick={closeModal}
         >
           <div
-            className="relative w-full max-w-7xl max-h-[90vh]"
+            className="relative w-full h-full max-w-7xl max-h-full" // max-h-full va w-full qo'shildi
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -592,11 +717,12 @@ const ProductDetail = () => {
               <X className="w-8 h-8" />
             </button>
 
-            <div className="aspect-video max-h-[80vh] mx-auto flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center p-4">
               <img
                 src={images[currentImage]}
                 alt={`${product.title} - ${currentImage + 1}`}
-                className="max-h-full max-w-full object-contain"
+                // max-width va max-height ni qo'shib, rasmning to'liq hajmda bo'lishini ta'minlaymiz
+                className="max-h-full max-w-full object-contain" 
               />
             </div>
 
