@@ -1,28 +1,20 @@
-import React from "react";
 import {
   Filter,
   Search,
   DollarSign,
   ChevronDown,
   X,
-  Grid3X3,
-  List,
   SlidersHorizontal,
-  ArrowDownNarrowWide,
-  ArrowUpWideNarrow,
-  Sparkles,
 } from "lucide-react";
 import ItemCard from "../../../common/components/ItemCard";
 import InfiniteScroll from "react-infinite-scroll-component";
-
+import Container from "./../../../common/components/Container"
 const CatalogFilter = ({
   searchQuery,
   setSearchQuery,
   priceRange,
   selectedProperties,
   sortOption,
-  viewMode,
-  setViewMode,
   expandedFilters,
   properties,
   items,
@@ -38,8 +30,6 @@ const CatalogFilter = ({
   setMobileFiltersOpen,
   renderSkeletons,
   sortOptions,
-  // refetch propini olib tashladik
-  isProductLiked = () => false,
 }) => {
   const removeProperty = (propertyName) => {
     handlePropertyChange(propertyName, "");
@@ -51,7 +41,6 @@ const CatalogFilter = ({
   };
 
   const clearSort = () => {
-    // Saralashni boshlang'ich holatga (createdAt_DESC) qaytarish
     handleSortChange("createdAt_DESC");
   };
 
@@ -60,13 +49,11 @@ const CatalogFilter = ({
   };
 
   return (
-    <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
+    <div>
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* ===================== COMPACT SIDEBAR ===================== */}
         <aside className="hidden lg:block w-72 flex-shrink-0">
           <div className="sticky top-4 space-y-3">
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              {/* Header */}
               <div className="flex items-center justify-between mb-4 pb-3 border-b">
                 <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
                   <Filter className="w-4 h-4 text-purple-600" />
@@ -197,19 +184,14 @@ const CatalogFilter = ({
           </div>
         </aside>
 
-        {/* ===================== MAIN CONTENT ===================== */}
         <div className="flex-1 min-w-0">
-          {/* Compact Toolbar */}
           <div className="bg-white rounded-xl p-3 md:p-4 mb-4 shadow-sm border border-gray-100">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              {/* Sort Buttons */}
+            <div className="flex  sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="w-full max-w-xs">
                 <select
                   className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm shadow-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  // sortOption.field va sortOption.order ni birlashtirib, joriy qiymatni yaratish
                   value={sortOption.field + "_" + sortOption.order}
                   onChange={(e) => {
-                    // Yangi qiymatni to'g'ridan-to'g'ri handlerga yuborish
                     handleSortChange(e.target.value);
                   }}
                 >
@@ -221,7 +203,6 @@ const CatalogFilter = ({
                 </select>
               </div>
 
-              {/* Mobile Filter Button */}
               <button
                 onClick={() => setMobileFiltersOpen(true)}
                 className="lg:hidden relative flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium text-xs shadow-md"
@@ -236,7 +217,6 @@ const CatalogFilter = ({
               </button>
             </div>
 
-            {/* Active Filters - Compact Tags */}
             {getActiveFilterCount() > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5">
                 {searchQuery && (
@@ -267,7 +247,6 @@ const CatalogFilter = ({
                   </span>
                 )}
 
-                {/* Saralash tagini to'g'ri ko'rsatish */}
                 {(sortOption.field !== "createdAt" ||
                   sortOption.order !== "DESC") && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
@@ -323,7 +302,6 @@ const CatalogFilter = ({
             renderSkeletons()
           ) : items.length === 0 ? (
             <div className="text-center py-12 md:py-16 bg-white rounded-xl border border-gray-100">
-              
               <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">
                 Hech narsa topilmadi
               </h3>

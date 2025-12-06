@@ -6,13 +6,7 @@ import { useEffect, useState } from "react";
 import KEYS from "../../export/keys.js";
 import URLS from "../../export/urls.js";
 import usePaginateQuery from "../../hooks/api/usePaginateQuery.js";
-import {
-  ChevronRight,
-  ChevronLeft,
-  X,
-  Search,
-  Package,
-} from "lucide-react";
+import { ChevronRight, ChevronLeft, X, Search, Package } from "lucide-react";
 import { cn } from "../../lib/utils.jsx";
 import { Link } from "react-router-dom";
 
@@ -21,7 +15,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [hoveredChild, setHoveredChild] = useState(null);
 
-  // Mobile uchun view state (parent, child, grandchild)
   const [mobileView, setMobileView] = useState("parent");
 
   const { data: parentList, isLoading } = usePaginateQuery({
@@ -68,7 +61,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
     };
   }, [isOpen]);
 
-  // Modal yopilganda mobile view ni reset qilish
   useEffect(() => {
     if (!isOpen) {
       setMobileView("parent");
@@ -83,7 +75,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
     ? get(hoveredChild, "children", [])
     : [];
 
-  // Mobile uchun parent tanlash
   const handleParentSelect = (item) => {
     setSelected(item);
     if (window.innerWidth < 768) {
@@ -91,7 +82,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  // Mobile uchun child tanlash
   const handleChildSelect = (category) => {
     setHoveredChild(category);
     if (window.innerWidth < 768) {
@@ -99,7 +89,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  // Mobile uchun orqaga qaytish
   const handleBack = () => {
     if (mobileView === "grandchild") {
       setMobileView("child");
@@ -125,9 +114,7 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
   `}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="bg-gradient-to-r rounded-xl from-purple-600 to-indigo-600 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between flex-shrink-0">
-          {/* Mobile uchun back button */}
           {mobileView !== "parent" && (
             <button
               onClick={handleBack}
@@ -152,11 +139,8 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
           </button>
         </div>
 
-        {/* Main Content */}
         <div className="flex h-[calc(100%-56px)] md:h-[calc(100%-68px)]">
-          {/* DESKTOP: 3-Column Layout */}
           <div className="hidden md:flex w-full">
-            {/* Column 1: Parent Categories */}
             <div className="w-64 bg-white border-r overflow-y-auto flex-shrink-0">
               <div className="p-3 bg-gray-50 border-b sticky top-0 z-10">
                 <div className="relative">
@@ -195,7 +179,7 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
                         className={cn(
                           "w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all text-sm",
                           isEqual(get(item, "id"), get(selected, "id"))
-                            ? "bg-purple-600 text-white shadow-lg shadow-purple-200"
+                            ? "bg-purple-600 text-white  shadow-purple-200"
                             : "hover:bg-purple-50 text-gray-700 hover:text-purple-700"
                         )}
                         onClick={() => setSelected(item)}
@@ -220,7 +204,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
               </div>
             </div>
 
-            {/* Column 2 & 3 */}
             <div className="flex-1 flex overflow-hidden">
               {selected ? (
                 <div className="flex w-full">
@@ -237,7 +220,7 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
                         <Link
                           to={`/catalog/${get(selected, "id")}`}
                           onClick={handleClose}
-                          className="block px-3 py-2 rounded-xl text-sm font-bold text-purple-600 hover:bg-purple-100 transition-colors bg-white shadow-sm mb-2"
+                          className="block px-3 py-2 rounded-xl text-sm font-bold text-purple-600 hover:bg-purple-100 transition-colors bg-white  mb-2"
                         >
                           Barcha mahsulotlarni ko'rish
                         </Link>
@@ -254,7 +237,7 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
                               className={cn(
                                 "w-full flex items-center justify-between text-left px-3 py-2 rounded-xl transition-colors text-sm group",
                                 isCurrent
-                                  ? "bg-purple-600 text-white shadow-md"
+                                  ? "bg-purple-600 text-white "
                                   : "text-gray-700 hover:bg-purple-100 hover:text-purple-700"
                               )}
                               onMouseEnter={() => setHoveredChild(category)}
@@ -328,12 +311,9 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
             </div>
           </div>
 
-          {/* MOBILE: Single Column with Views */}
           <div className="md:hidden w-full overflow-hidden">
-            {/* Parent View */}
             {mobileView === "parent" && (
               <div className="h-full overflow-y-auto">
-                {/* Search */}
                 <div className="p-3 bg-gray-50 border-b sticky top-0 z-10">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -347,7 +327,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
                   </div>
                 </div>
 
-                {/* Categories */}
                 <div className="p-3">
                   {isLoading ? (
                     <div className="space-y-3">
@@ -387,7 +366,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
               </div>
             )}
 
-            {/* Child View */}
             {mobileView === "child" && selected && (
               <div className="h-full overflow-y-auto">
                 <div className="p-3">
@@ -426,7 +404,6 @@ const HeaderCatalog = ({ isOpen, setIsOpen }) => {
               </div>
             )}
 
-            {/* Grandchild View */}
             {mobileView === "grandchild" && hoveredChild && (
               <div className="h-full overflow-y-auto">
                 <div className="p-3">

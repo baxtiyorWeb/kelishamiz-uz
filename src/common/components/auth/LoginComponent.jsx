@@ -566,12 +566,18 @@ const LoginComponent = () => {
               {step === "register" && (
                 <>
                   <motion.div variants={itemVariants}>
-                    <InputField
-                      icon={User}
+                   
+                    <IMaskInput
+                      mask={/^\S.*$/} // mask emas, oddiy text bosilsin
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onAccept={(value) => setUsername(value)}
                       placeholder="Ism va Familiyangiz"
                       disabled={loading}
+                      className="
+      w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200
+      focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20
+      text-base transition
+    "
                     />
                   </motion.div>
                   <motion.div variants={itemVariants}>

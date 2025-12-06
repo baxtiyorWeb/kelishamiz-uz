@@ -10,6 +10,7 @@ import useInfiniteScrollQuery from "../../../hooks/api/useInfiniteScrollQuery";
 import CatalogBreadCrumbs from "../components/CatalogBreadCrumbs";
 import CatalogFilter from "../components/CatalogFilter";
 import MobileCatalogFilter from "../components/MobileCatalogFilter";
+import Container from "../../../common/components/Container";
 
 const CatalogPage = () => {
   // ==================== URL PARAMETRLARI ====================
@@ -258,18 +259,13 @@ const CatalogPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumbs */}
-      <div className=" mx-auto px-4 py-4">
-        <CatalogBreadCrumbs id={id} category={category} />
-      </div>
+      <CatalogBreadCrumbs id={id} category={category} />
 
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200 shadow-sm mb-6">
-        <div className="container mx-auto px-4 py-5">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* Title & Count */}
+      <div className="bg-gradient-to-r mx-auto  rounded-xl mb-3 from-white to-purple-50/40 border-b border-gray-100">
+        <Container>
+          <div className="flex flex-col py-3 md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
                 {pageTitle}
               </h1>
               {items.length > 0 && !isLoading && (
@@ -280,7 +276,6 @@ const CatalogPage = () => {
               )}
             </div>
 
-            {/* Clear Filters Button */}
             {getActiveFilterCount() > 0 && (
               <button
                 onClick={clearFilters}
@@ -293,7 +288,6 @@ const CatalogPage = () => {
             )}
           </div>
 
-          {/* Sub-categories */}
           {category?.children?.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -313,24 +307,22 @@ const CatalogPage = () => {
               </div>
             </div>
           )}
-        </div>
+        </Container>
       </div>
 
-      {/* Main Content */}
-        <CatalogFilter
-          {...commonProps}
-          items={items}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          fetchNextPage={fetchNextPage}
-          hasNextPage={hasNextPage}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          setMobileFiltersOpen={setMobileFiltersOpen}
-          renderSkeletons={renderSkeletons}
-        />
+      <CatalogFilter
+        {...commonProps}
+        items={items}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        fetchNextPage={fetchNextPage}
+        hasNextPage={hasNextPage}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        setMobileFiltersOpen={setMobileFiltersOpen}
+        renderSkeletons={renderSkeletons}
+      />
 
-      {/* Mobile Filters Modal */}
       <MobileCatalogFilter
         {...commonProps}
         mobileFiltersOpen={mobileFiltersOpen}
@@ -339,7 +331,6 @@ const CatalogPage = () => {
         totalItems={items.length}
       />
 
-      {/* Scrollbar Styling */}
       <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
